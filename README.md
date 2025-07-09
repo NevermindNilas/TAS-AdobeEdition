@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img src="bolt-assets/Built_With_BOLT_CEP_Logo_White_V01.svg" alt="Built With BOLT_CEP" height="60"/>
+  <img src="bolt-assets/Built_With_BOLT_CEP_Logo_White_V01.svg" alt="Built With BOLT_CEP" height="100"/>
 </p>
 
 ---

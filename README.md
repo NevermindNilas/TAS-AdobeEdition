@@ -1,7 +1,7 @@
 # TAS-AdobeEdition
 
 <p align="center">
-  <img src="built-with-bolt-cep.png" alt="TAS-AdobeEdition Logo" width="400"/>
+  <img src="built-with-bolt-cep.png" alt="TAS-AdobeEdition Logo" width="800"/>
 </p>
 
 <p align="center">

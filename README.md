@@ -5,6 +5,10 @@
   <a href="https://github.com/NevermindNilas/TheAnimeScripter"><img src="https://img.shields.io/badge/Main%20Repo-TheAnimeScripter-blue?style=for-the-badge" alt="Main Repo"/></a>
 </p>
 
+<p align="center">
+  <img src="bolt-assets/Built_With_BOLT_CEP_Logo_White_V01.svg" alt="Built With BOLT_CEP" height="60"/>
+</p>
+
 ---
 
 > **TAS-AdobeEdition** is the bridge that connects the creative power of Adobe with the automation magic of TheAnimeScripter CLI.

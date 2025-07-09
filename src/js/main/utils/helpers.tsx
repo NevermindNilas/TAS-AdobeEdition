@@ -9,18 +9,18 @@ import { generateToast } from "./generateToast";
 export function getTASPaths() {
     const appDataPath = path.join(os.homedir(), "AppData", "Roaming");
     const tasFolder = path.join(appDataPath, "TheAnimeScripter");
-    const tasAppDataPath = path.join(tasFolder, "TAS");
-    const tasExePath = path.join(tasAppDataPath, "main.exe");
-    const logTxtPath = path.join(tasFolder, "TAS-Log.log");
-    const progressLogPath = path.join(tasFolder, "progressLog.json");
+    const tasAppDataPath = path.join(appDataPath, "TheAnimeScripter", "TAS-Portable");
+    const pythonExePath = path.join(tasAppDataPath, "python.exe");
+    const mainPyPath = path.join(tasAppDataPath, "main.py");
+    const tasRoamingPath = path.join(appDataPath, "TheAnimeScripter");
 
     return {
         appDataPath,
         tasFolder,
         tasAppDataPath,
-        tasExePath,
-        logTxtPath,
-        progressLogPath,
+        pythonExePath,
+        mainPyPath,
+        tasRoamingPath,
     };
 }
 

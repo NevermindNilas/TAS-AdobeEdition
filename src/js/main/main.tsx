@@ -58,7 +58,7 @@ import SortOrderDown from "@spectrum-icons/workflow/SortOrderDown";
 import SortOrderUp from "@spectrum-icons/workflow/SortOrderUp";
 import Wrench from "@spectrum-icons/workflow/Wrench";
 
-import { child_process, fs, os, path } from "../lib/cep/node";
+import { child_process, fs, path } from "../lib/cep/node";
 import { evalTS } from "../lib/utils/bolt";
 import { animeDownloadLogic } from "./utils/animeDownloadLogic";
 import autoCutLogic from "./utils/autoCutClipLogic";
@@ -79,6 +79,7 @@ import { openChangelog, openGitHubWiki } from "./utils/Socials";
 import execTakeScreenshot from "./utils/takeScreenshot";
 import { youtubeDownloadLogic } from "./utils/urlToVideo";
 import { useDebounce } from "./utils/useDebounce";
+import { getTASPaths } from "./utils/helpers";
 
 // Tab Components
 import { aboutTab } from "./utils/aboutTab";
@@ -136,30 +137,17 @@ const DEPTHMODELEXAMPLES = {
     default: "https://files.catbox.moe/28i39s.png", // Default fallback
 };
 
-// Relative path
-const relativePath = "./TAS";
 
-// Get the full path
-const theAnimeScripterPath = path.resolve(__dirname, relativePath);
 
-// Construct the path to the AppData folder on Windows
-const appDataPath = path.join(os.homedir(), "AppData", "Roaming");
+// TAS Paths
+const {
+    tasAppDataPath,
+    pythonExePath,
+    mainPyPath,
+    tasFolder,
+    tasRoamingPath,
+} = getTASPaths();
 
-// Construct the path to the TAS folder
-const tasFolder = path.join(appDataPath, "TheAnimeScripter");
-
-// if path Appdata/Roaming/TheAnimeScripter/TAS does not exist, create it
-const tasAppDataPath = path.join(appDataPath, "TheAnimeScripter", "TAS-Portable");
-
-// if path Appdata/Roaming/TheAnimeScripter/TAS-Portable
-const pythonExePath = path.join(tasAppDataPath, "python.exe");
-
-// if path Appdata/Roaming/TheAnimeScripter/TAS-Portable/main.py
-const mainPyPath = path.join(tasAppDataPath, "main.py");
-
-const tasRoamingPath = path.join(appDataPath, "TheAnimeScripter");
-
-console.log("Full path:", theAnimeScripterPath);
 
 const Main = () => {
     const [tasVersion, setVersion] = useState(DEFAULT.tasVersion);
@@ -290,7 +278,6 @@ const Main = () => {
     const [progressBarStatus, setProgressBarStatus] = useState<string>();
     const [currentFrame, setCurrentFrame] = useState(0);
     const [totalFrames, setTotalFrames] = useState(100);
-    const [currentInput, setCurrentInput] = useState<string | null>(null);
     const [processingFps, setProcessingFps] = useState<number>(0);
     const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number>(0);
 
@@ -478,34 +465,6 @@ const Main = () => {
         setShowDownloadDialog(false);
     };
 
-    const startAnimeDownload = async () => {
-        var isSaved = await checkIfProjectIsSaved();
-        if (!isSaved) {
-            return;
-        }
-
-        let path = await evalTS("getPath");
-        // Use Node.js path module to get the directory name
-        path = require("path").dirname(path);
-        var { command, outputPath } = animeDownloadLogic(pythonExePath, path);
-        console.log("Command:", command);
-
-        command = `start /wait cmd /c "${command}"`;
-
-        const process = child_process.exec(command);
-        generateToast(3, "Anime download initiated.");
-        process.on("exit", code => {
-            console.log(`Child process exited with code ${code}`);
-            try {
-                evalTS("importVideo", outputPath);
-            } catch (error) {
-                console.error("Error importing video:", error);
-            } finally {
-                generateToast(1, "Anime download completed.");
-            }
-        });
-    };
-
     const startAutoCut = async () => {
         try {
 
@@ -522,7 +481,6 @@ const Main = () => {
             }
 
             const { inpoint, outpoint, input, name } = info;
-            setCurrentInput("AutoCutting " + name);
 
             // make
             var command = await autoCutLogic(
@@ -1123,9 +1081,7 @@ const Main = () => {
         }
     }, []);
 
-    // Dialog state management to prevent layout shifts
     useEffect(() => {
-        // Function to prevent layout shifts when dialogs open
         const preventLayoutShift = () => {
             const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 
@@ -1135,7 +1091,6 @@ const Main = () => {
                 if (scrollbarWidth > 0) {
                     document.body.style.paddingRight = `${scrollbarWidth}px`;
                 }
-                // Also prevent horizontal overflow on the document
                 document.documentElement.style.overflowX = 'hidden';
             } else {
                 document.body.classList.remove('spectrum-modal-is-open');
@@ -1763,19 +1718,7 @@ const Main = () => {
                                                                                             / Denoise
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    {/*
-                                                                                    <Item key="dpir">
-                                                                                    <Gauge2 />
-                                                                                    <Text>
-                                                                                    DPIR
-                                                                                    </Text>
-                                                                                    <Text slot="description">
-                                                                                    IRL / Video
-                                                                                    Games / CGI
-                                                                                    / Denoise
-                                                                                    </Text>
-                                                                                    </Item>
-                                                                                    */}
+                                                                    
                                                                                     <Item key="scunet">
                                                                                         <Gauge1 />
                                                                                         <Text>

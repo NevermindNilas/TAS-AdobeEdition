@@ -1,8 +1,5 @@
 # TAS-AdobeEdition
 
-<p align="center">
-  <img src="built-with-bolt-cep.png" alt="TAS-AdobeEdition Logo" width="800"/>
-</p>
 
 <p align="center">
   <a href="https://github.com/NevermindNilas/TheAnimeScripter"><img src="https://img.shields.io/badge/Main%20Repo-TheAnimeScripter-blue?style=for-the-badge" alt="Main Repo"/></a>

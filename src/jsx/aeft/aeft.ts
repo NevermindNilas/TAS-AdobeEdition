@@ -561,28 +561,11 @@ export const removeDuplicates = () => {
     return removeDuplicateFrames();
 };
 
-function checkChunk(curFrame: number[], prevFrame: number[], chunk: number): number {
-    const cr = Math.abs(curFrame[0] - prevFrame[0]);
-    const cg = Math.abs(curFrame[1] - prevFrame[1]);
-    const cb = Math.abs(curFrame[2] - prevFrame[2]);
-    return cr + cg + cb;
-}
-
-function checkRGB(curFrame: number[][], prevFrame: number[][], acc: number): number {
-    let sum = 0;
-    for (let i = 0; i < acc; i++) {
-        sum += checkChunk(curFrame[i], prevFrame[i], i);
-    }
-    return sum;
-}
 
 function frameToTime(frameNumber: number, comp: CompItem): number {
     return frameNumber / comp.frameRate;
 }
 
-function timeToFrame(timeInSeconds: number, comp: CompItem): number {
-    return Math.round(timeInSeconds * comp.frameRate);
-}
 
 function parseInputAsFrame(input: string | number, comp: CompItem): number {
     if (typeof input === "string") {

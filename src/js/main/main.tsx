@@ -249,7 +249,6 @@ const Main = () => {
     // Tab management for swipe gestures
     const tabKeys = ["Chain", "Extra", "Toolbox", "Logs", "About"];
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
-    // Removed: slideDirection, touchStartX, touchStartY, minSwipeDistance, maxVerticalDistance, handleTouchStart, handleTouchEnd
 
     // Tab selection change (no direction logic)
     const handleTabSelectionChange = (key: Key) => {
@@ -377,25 +376,6 @@ const Main = () => {
 
     const checkIfBackendExists = async () => {
         let isEmpty = true;
-
-        // old tas path is C:\Users\<username>\AppData\Roaming\TheAnimeScripter\TAS
-        // new tas path is C:\Users\<username>\AppData\Roaming\TheAnimeScripter\TAS-Portable
-        const oldTasExists = fs.existsSync(path.join(appDataPath, "TheAnimeScripter", "TAS"));
-        if (oldTasExists) {
-            // remove the old folder
-            try {
-                fs.rmdirSync(path.join(appDataPath, "TheAnimeScripter", "TAS"), {
-                    recursive: true,
-                });
-                generateToast(1, "Old TAS folder removed successfully.");
-            } catch (error) {
-                console.error("Error removing old folder:", error);
-                generateToast(
-                    2,
-                    "Error: Failed to remove old TAS folder. Please contact Nilas on Discord."
-                );
-            }
-        }
 
         const tasExists = fs.existsSync(tasAppDataPath);
         if (tasExists) {

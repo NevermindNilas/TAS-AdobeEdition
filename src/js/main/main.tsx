@@ -79,7 +79,7 @@ import { openChangelog, openGitHubWiki } from "./utils/Socials";
 import execTakeScreenshot from "./utils/takeScreenshot";
 import { youtubeDownloadLogic } from "./utils/urlToVideo";
 import { useDebounce } from "./utils/useDebounce";
-import { getTASPaths } from "./utils/helpers";
+import { getTASPaths, getCurrentSocketPort, isSocketConnected, reconnectSocket, addPortToCommand } from "./utils/helpers";
 
 // Tab Components
 import { aboutTab } from "./utils/aboutTab";
@@ -243,7 +243,6 @@ const Main = () => {
         setSelectedTab(key);
     };
 
-    // Animation variants for tab content (fade only)
     const slideAnimationVariants = {
         initial: {
             opacity: 0,
@@ -257,7 +256,6 @@ const Main = () => {
     };
 
 
-    // Format ETA seconds to readable time string
     const formatETA = (seconds: number): string => {
         if (seconds <= 0) return "";
 
@@ -274,7 +272,9 @@ const Main = () => {
         } else {
             return "Almost done!";
         }
-    }; // Progress Bar Inference
+    }; 
+    
+    // Progress Bar Inference
     const [progressBarStatus, setProgressBarStatus] = useState<string>();
     const [currentFrame, setCurrentFrame] = useState(0);
     const [totalFrames, setTotalFrames] = useState(100);
@@ -285,22 +285,18 @@ const Main = () => {
     const [fullLogs, setFullLogs] = useState<string[]>([]);
 
 
-    // Initialize socket and handle progress updates
     useEffect(() => {
-        // Ensure socket connection is established
-        socketManager.getSocket(); // Call getSocket to ensure the instance is created and connected
+        socketManager.getSocket();
 
         const unsubscribeProgress = socketManager.onProgressUpdate((data) => {
             console.log("Socket progress update received:", data);
             
-            // Use functional updates to ensure all state changes are applied together
             setIsProcessing(true); // Assume processing if we get progress updates
             setTotalFrames(data.totalFrames);
             setCurrentFrame(data.currentFrame);
             setProcessingFps(data.fps);
             setEstimatedTimeRemaining(data.eta);
             
-            // Force status update with functional update to ensure it's not batched incorrectly
             setProgressBarStatus(data.status)
         });
 
@@ -491,7 +487,12 @@ const Main = () => {
                 inpoint,
                 outpoint
             );
-            console.log("Command:", command);
+            console.log("Command before port addition:", command);
+            
+            // Add the current socket port to the command
+            command = addPortToCommand(command);
+            console.log("Command after port addition:", command);
+            
             setIsProcessing(true);
             executeProcess(command, "Auto Cutting Clip", () => {
                 evalTS("autoClip", tasRoamingPath);
@@ -591,9 +592,12 @@ const Main = () => {
             depthres,
             half
         );
-        console.log("Command:", command);
+        console.log("Command before port addition:", command);
+        
+        // Add the current socket port to the command
+        command = addPortToCommand(command);
+        console.log("Command after port addition:", command);
 
-        command = `${command}`;
         setIsProcessing(true);
         executeProcess(
             command,
@@ -643,10 +647,15 @@ const Main = () => {
             half
         );
         
+        console.log("Command before port addition:", command);
+        
+        // Add the current socket port to the command
+        const modifiedCommand = addPortToCommand(command);
+        console.log("Command after port addition:", modifiedCommand);
 
         setIsProcessing(true);
         executeProcess(
-            command,
+            modifiedCommand,
             "Background removal",
             () => {
                 evalTS("importVideo", outputPath);
@@ -816,8 +825,11 @@ const Main = () => {
         }
 
         var command = attempt.join(" ");
-        console.log("Command:", command);
-        command = `${command}`;
+        console.log("Command before port addition:", command);
+        
+        // Add the current socket port to the command
+        command = addPortToCommand(command);
+        console.log("Command after port addition:", command);
 
         setIsProcessing(true);
         executeProcess(

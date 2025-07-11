@@ -1,3 +1,5 @@
+import { generateToast } from "../../js/main/utils/generateToast";
+
 export const example = () => {};
 
 export const getPath = () => {
@@ -40,7 +42,7 @@ function autoclip(tasAppdataPath: string) {
         autoClipLog.open("r");
 
         if (currentLayer == null) {
-            alert("Please select a layer.");
+            generateToast(2, "Please select a layer.");
             return;
         }
 
@@ -49,13 +51,13 @@ function autoclip(tasAppdataPath: string) {
         while (!autoClipLog.eof) {
             var line = autoClipLog.readln();
             if (currentComp == null) {
-                alert("No active composition found.");
+                generateToast(2, "No active composition found.");
                 return;
             }
             var parsedInput = parseInputAsFrame(line, currentComp);
             var timestamp = parsedInput + inPoint;
             if (currentLayer == null) {
-                alert("Please select a layer.");
+                generateToast(2, "Please select a layer.");
                 return;
             }
             var duplicateLayer = currentLayer.duplicate();
@@ -66,14 +68,14 @@ function autoclip(tasAppdataPath: string) {
         }
         autoClipLog.close();
     } catch (error: any) {
-        alert("Error auto-cutting clip: " + error.toString());
+        generateToast(2, "Error auto-cutting clip: " + error.toString());
     }
 }
 
 function importOutput(outPath: string) {
     try {
         if (!app) {
-            alert("This script is not running in a compatible environment.");
+            generateToast(2, "This script is not running in a compatible environment.");
             return;
         }
         if (currentComp == null) {
@@ -81,7 +83,7 @@ function importOutput(outPath: string) {
             if (activeComp && activeComp instanceof CompItem && activeComp !== null) {
                 currentComp = activeComp;
             } else {
-                alert("No active or existent composition has been selected.");
+                generateToast(2, "No active or existent composition has been selected.");
                 return;
             }
         }
@@ -112,14 +114,14 @@ function importOutput(outPath: string) {
             if (scaleProperty !== null && scaleProperty instanceof Property) {
                 scaleProperty.setValue([scaleFactor, scaleFactor]);
             } else {
-                alert("Unable to access the Scale property.");
+                generateToast(2, "Unable to access the Scale property.");
             }
         }
 
         currentLayer = null;
         currentComp = null;
     } catch (error: any) {
-        alert("Error importing output: " + error.toString());
+        generateToast(2, "Error importing output: " + error.toString());
     }
 }
 
@@ -139,7 +141,7 @@ function renderActiveComp(renderMethod: string) {
 
         var comp = app.project.activeItem;
         if (!comp || !(comp instanceof CompItem)) {
-            alert("No active composition selected.");
+            generateToast(2, "No active composition selected.");
             return null;
         }
 
@@ -219,8 +221,7 @@ function renderActiveComp(renderMethod: string) {
                 outputPath = preRendersPath + outputName;
                 outputModule.applyTemplate(template);
             } else {
-                alert("Error applying render template: " + error.toString()) +
-                    ". Please check the pre-render settings.";
+        generateToast(2, "Error applying render template: " + error.toString() + ". Please check the pre-render settings.");
             }
         }
 
@@ -245,7 +246,7 @@ function renderActiveComp(renderMethod: string) {
 
         return info;
     } catch (error: any) {
-        alert("Error rendering active composition: " + error.toString());
+        generateToast(2, "Error rendering active composition: " + error.toString());
         return null;
     }
 }
@@ -254,7 +255,7 @@ function clearCache(): void {
     try {
         app.purge(PurgeTarget.ALL_CACHES);
     } catch (error: any) {
-        alert("Error clearing cache: " + error.toString());
+        generateToast(2, "Error clearing cache: " + error.toString());
     }
 }
 
@@ -312,7 +313,7 @@ function createAdjustmentLayer(duration: string) {
 }
 function createSolidLayer(duration: string, hexColor: string) {
     if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
-        alert("Please select a composition.");
+        generateToast(2, "Please select a composition.");
         return;
     }
 
@@ -365,7 +366,7 @@ function createSolidLayer(duration: string, hexColor: string) {
 
 function createNullLayer(duration: string) {
     if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
-        alert("Please select a composition.");
+        generateToast(2, "Please select a composition.");
         return;
     }
 
@@ -423,7 +424,7 @@ export const sequenceLayers = (order: string) => {
     }
 
     if (order !== "topDown" && order !== "bottomUp") {
-        alert("Invalid order. Use 'topDown' or 'bottomUp'.");
+        generateToast(2, "Invalid order. Use 'topDown' or 'bottomUp'.");
         return;
     }
 
@@ -587,13 +588,13 @@ export const removeDuplicateFrames = (
 ): boolean => {
     try {
         if (!app.project?.activeItem || !(app.project.activeItem instanceof CompItem)) {
-            alert("No composition selected");
+            generateToast(2, "No composition selected");
             return false;
         }
 
         const comp = app.project.activeItem as CompItem;
         if (comp.selectedLayers.length === 0) {
-            alert("Please select at least one layer");
+            generateToast(2, "Please select at least one layer");
             return false;
         }
 
@@ -614,7 +615,7 @@ export const removeDuplicateFrames = (
             const inPoint = layer.inPoint;
 
             if (!layer.canSetTimeRemapEnabled) {
-                alert(`Layer "${layer.name}" does not support time remapping`);
+                generateToast(2, `Layer "${layer.name}" does not support time remapping`);
                 continue;
             }
 
@@ -672,7 +673,7 @@ export const removeDuplicateFrames = (
         app.endUndoGroup();
         return true;
     } catch (error: any) {
-        alert("Error removing duplicate frames: " + error.toString());
+        generateToast(2, "Error removing duplicate frames: " + error.toString());
         return false;
     }
 };

@@ -3488,7 +3488,7 @@ const Main = () => {
                                                                                         <Text slot="description">
                                                                                             700x700 /
                                                                                             for NVidia
-                                                                                            GTX models /
+                                                                                            CUDA models /
                                                                                             recommended
                                                                                         </Text>
                                                                                     </Item>
@@ -3500,8 +3500,8 @@ const Main = () => {
                                                                                         <Text slot="description">
                                                                                             Input Width
                                                                                             x Height /
-                                                                                            for NVidia
-                                                                                            GTX models
+                                                                                            NVidia
+                                                                                            CUDA models / recommended GPU 3090/4090/5090
                                                                                         </Text>
                                                                                     </Item>
                                                                                 </Picker>

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New
 - Introduced `addPortToCommand` function to dynamically add the AE comms server URL to commands.
 - Improved error handling and reconnection logic in the socket connection.
+- All alerts now use the `generateToasts` function for consistency.
 
 ### Changed
 - Updated WebSocket to dynamically adjust the port based on if a port is already in use or not.
+- Updated the `main.tsx` file to include more detailed descriptions for depth map quality settings.

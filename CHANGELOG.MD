@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Introduced `addPortToCommand` function to dynamically add the AE comms server URL to commands.
 - Improved error handling and reconnection logic in the socket connection.
 - All alerts now use the `generateToasts` function for consistency.
+- Added a new `startExtraTabLogic` function to handle logic for extra tabs like depth map extraction and background removal.
 
 ### Changed
 - Updated WebSocket to dynamically adjust the port based on if a port is already in use or not.

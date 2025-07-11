@@ -66,7 +66,6 @@ import checkForGPU from "./utils/checkForGPU";
 import checkForUpdates from "./utils/checkTASVersionGithub";
 import execClearCache from "./utils/clearCache";
 import DEFAULT from "./utils/DEFAULTS";
-import { depthMapExtractionLogic } from "./utils/depthMap";
 import downloadTASCLI from "./utils/downloadTAS";
 import { generateToast } from "./utils/generateToast";
 import getCurrentVersion from "./utils/getCurrentVersion";
@@ -74,12 +73,13 @@ import { getAELayerInfo, getAEProjectFolderPath } from "./utils/helpers";
 import { offlineModeLogic } from "./utils/offlineMode";
 import OpenTASFolder from "./utils/openTASFolder";
 import execPrecompose from "./utils/precompose";
-import { removeBackgroundLogic } from "./utils/removeBackground";
 import { openChangelog, openGitHubWiki } from "./utils/Socials";
 import execTakeScreenshot from "./utils/takeScreenshot";
 import { youtubeDownloadLogic } from "./utils/urlToVideo";
 import { useDebounce } from "./utils/useDebounce";
-import { getTASPaths, getCurrentSocketPort, isSocketConnected, reconnectSocket, addPortToCommand } from "./utils/helpers";
+import { getTASPaths, addPortToCommand } from "./utils/helpers";
+import { depthMapExtractionLogic } from "./utils/depthMap";
+import { removeBackgroundLogic } from "./utils/removeBackground";
 
 // Tab Components
 import { aboutTab } from "./utils/aboutTab";
@@ -269,11 +269,13 @@ const Main = () => {
             return `${minutes}m ${remainingSeconds}s remaining`;
         } else if (remainingSeconds > 0) {
             return `${remainingSeconds}s remaining`;
-        } else {
+        } else if (remainingSeconds === 0 && minutes === 0 && hours === 0) {
             return "Almost done!";
+        } else {
+            return "Processing...";
         }
-    }; 
-    
+    };
+
     // Progress Bar Inference
     const [progressBarStatus, setProgressBarStatus] = useState<string>();
     const [currentFrame, setCurrentFrame] = useState(0);
@@ -290,13 +292,13 @@ const Main = () => {
 
         const unsubscribeProgress = socketManager.onProgressUpdate((data) => {
             console.log("Socket progress update received:", data);
-            
+
             setIsProcessing(true); // Assume processing if we get progress updates
             setTotalFrames(data.totalFrames);
             setCurrentFrame(data.currentFrame);
             setProcessingFps(data.fps);
             setEstimatedTimeRemaining(data.eta);
-            
+
             setProgressBarStatus(data.status)
         });
 
@@ -450,7 +452,7 @@ const Main = () => {
         setTotalFrames(100);
         setProcessingFps(0);
         setEstimatedTimeRemaining(0);
-        
+
         generateToast(toastState || 2, toastMessage || "Processing cancelled.");
     }, []);
 
@@ -488,11 +490,11 @@ const Main = () => {
                 outpoint
             );
             console.log("Command before port addition:", command);
-            
+
             // Add the current socket port to the command
             command = addPortToCommand(command);
             console.log("Command after port addition:", command);
-            
+
             setIsProcessing(true);
             executeProcess(command, "Auto Cutting Clip", () => {
                 evalTS("autoClip", tasRoamingPath);
@@ -517,7 +519,6 @@ const Main = () => {
             pythonExePath,
             path
         );
-        console.log("Command:", command);
 
         command = `start /wait cmd /c "${command}"`;
 
@@ -528,7 +529,7 @@ const Main = () => {
         });
     };
 
-    const startDepthMapExtraction = async () => {
+    const startExtraTabLogic = async (mode: string) => {
         var isSaved = await checkIfProjectIsSaved();
         if (!isSaved) {
             return;
@@ -542,128 +543,122 @@ const Main = () => {
         var path = await evalTS("getPath"); // gets the path to the project file
         var path = path.replace(/[^\\]+$/, "");
         console.log(path);
-        var depthMethod = depthModel;
-        var workflowBitDepth = bitDepth;
-        var depthres = depthQuality;
 
-        // Check if depthMethod is null and provide a default value or handle the case appropriately
-        if (depthMethod === null) {
-            console.error("Depth method is null. Please select a depth method.");
-            return;
-        }
+        if (mode === "depth") {
+            var toast = "Depth map extraction";
+            var depthMethod = depthModel;
+            var workflowBitDepth = bitDepth;
+            var depthres = depthQuality;
 
-        if (workflowBitDepth === null) {
-            console.error("Bit depth is null. Please select a bit depth.");
-            return;
-        }
+            // Check if depthMethod is null and provide a default value or handle the case appropriately
+            if (depthMethod === null) {
+                console.error("Depth method is null. Please select a depth method.");
+                return;
+            }
 
-        if (depthres === null) {
-            console.error("Depth quality is null. Please select a depth quality.");
-            return;
-        }
+            if (workflowBitDepth === null) {
+                console.error("Bit depth is null. Please select a bit depth.");
+                return;
+            }
 
-        var renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
-        generateToast(3, "Initiating the pre-render step...");
-        var info: any | null = null;
-        // @ts-ignore
-        info = await evalTS("render", renderAlgo);
-        if (info === "undefined") {
-            generateToast(
-                2,
-                "Error: Rendering failed. Consider using an alternative encoding method."
+            if (depthres === null) {
+                console.error("Depth quality is null. Please select a depth quality.");
+                return;
+            }
+
+            var renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
+            generateToast(3, "Initiating the pre-render step...");
+            var info: any | null = null;
+            // @ts-ignore
+            info = await evalTS("render", renderAlgo);
+            if (info === "undefined") {
+                generateToast(
+                    2,
+                    "Error: Rendering failed. Consider using an alternative encoding method."
+                );
+                return;
+            }
+
+            //var inpoint = info?.inpoint;
+            //var outpoint = info?.outpoint;
+            var input = info?.input;
+            var name = info?.name;
+
+
+            const half = aiPrecision || DEFAULT.aiPrecision;
+
+            var { command, outputPath } = await depthMapExtractionLogic(
+                pythonExePath,
+                mainPyPath,
+                input,
+                path,
+                depthMethod,
+                workflowBitDepth,
+                depthres,
+                half
             );
+            console.log("Command before port addition:", command);
+
+            // Add the current socket port to the command
+            command = addPortToCommand(command);
+            console.log("Command after port addition:", command);
+
+        } else if (mode === "background") {
+            var toast = "Background removal";
+            generateToast(3, "Initiating the pre-render step...");
+
+            const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
+            var info: any | null = null;
+            // @ts-ignore
+            info = await evalTS("render", renderAlgo);
+            if (info === "undefined") {
+                generateToast(
+                    2,
+                    "Error: Rendering failed. Consider using an alternative encoding method."
+                );
+                return;
+            }
+
+            //var inpoint = info?.inpoint;
+            //var outpoint = info?.outpoint;
+            var input = info?.input;
+            var name = info?.name;
+
+
+            const backgroundMethod = segmentMethod || DEFAULT.segmentMethod;
+            const half = aiPrecision || DEFAULT.aiPrecision;
+            var { command, outputPath } = await removeBackgroundLogic(
+                pythonExePath,
+                mainPyPath,
+                input,
+                path,
+                backgroundMethod,
+                half
+            );
+
+            console.log("Command before port addition:", command);
+
+            // Add the current socket port to the command
+            command = addPortToCommand(command);
+            console.log("Command after port addition:", command);
         }
 
-        //var inpoint = info?.inpoint;
-        //var outpoint = info?.outpoint;
-        var input = info?.input;
-        var name = info?.name;
-        
-
-        const half = aiPrecision || DEFAULT.aiPrecision;
-
-        var { command, outputPath } = await depthMapExtractionLogic(
-            pythonExePath,
-            mainPyPath,
-            input,
-            path,
-            depthMethod,
-            workflowBitDepth,
-            depthres,
-            half
-        );
-        console.log("Command before port addition:", command);
-        
-        // Add the current socket port to the command
-        command = addPortToCommand(command);
-        console.log("Command after port addition:", command);
+        else {
+            generateToast(2, "Invalid mode selected for extraction.");
+            return;
+        }
 
         setIsProcessing(true);
         executeProcess(
             command,
-            "Depth map extraction",
+            toast,
             () => {
                 evalTS("importVideo", outputPath);
             },
             input,
             outputPath
         );
-    };
-
-    const startBackgroundRemoval = async () => {
-        if (!(await checkIfProjectIsSaved())) return;
-
-        const path = (await evalTS("getPath")).replace(/[^\\]+$/, "");
-        console.log(path);
-
-        generateToast(3, "Initiating the pre-render step...");
-
-        const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
-        var info: any | null = null;
-        // @ts-ignore
-        info = await evalTS("render", renderAlgo);
-        if (info === "undefined") {
-            generateToast(
-                2,
-                "Error: Rendering failed. Consider using an alternative encoding method."
-            );
-            return;
-        }
-
-        //var inpoint = info?.inpoint;
-        //var outpoint = info?.outpoint;
-        var input = info?.input;
-        var name = info?.name;
-
-        
-        const backgroundMethod = segmentMethod || DEFAULT.segmentMethod;
-        const half = aiPrecision || DEFAULT.aiPrecision;
-        const { command, outputPath } = await removeBackgroundLogic(
-            pythonExePath,
-            mainPyPath,
-            input,
-            path,
-            backgroundMethod,
-            half
-        );
-        
-        console.log("Command before port addition:", command);
-        
-        // Add the current socket port to the command
-        const modifiedCommand = addPortToCommand(command);
-        console.log("Command after port addition:", modifiedCommand);
-
-        setIsProcessing(true);
-        executeProcess(
-            modifiedCommand,
-            "Background removal",
-            () => {
-                evalTS("importVideo", outputPath);
-            },
-            input,
-            outputPath
-        );
-    };
+    }
 
     const startOfflineMode = async () => {
         var command = offlineModeLogic(pythonExePath, mainPyPath);
@@ -704,9 +699,8 @@ const Main = () => {
         //var inpoint = info?.inpoint;
         //var outpoint = info?.outpoint;
         var input = info?.input;
-        var name = info?.name;
 
-        
+
         // in case if the user has not selected any processing options other than pre-render
         if (!interpolate && !upscale && !deduplicate && !restore && !sharpening && !resize) {
             evalTS("importVideo", input);
@@ -826,7 +820,7 @@ const Main = () => {
 
         var command = attempt.join(" ");
         console.log("Command before port addition:", command);
-        
+
         // Add the current socket port to the command
         command = addPortToCommand(command);
         console.log("Command after port addition:", command);
@@ -1005,7 +999,7 @@ const Main = () => {
             } finally {
                 // Always reset processing state when process exits
                 console.log("Process exit cleanup: Resetting processing state");
-                
+
                 // Add a small delay to ensure any final socket messages are processed
                 setTimeout(() => {
                     setIsProcessing(false);
@@ -1014,7 +1008,7 @@ const Main = () => {
                     setProcessingFps(0);
                     setEstimatedTimeRemaining(0);
                 }, 500); // 500ms delay
-                
+
                 // Check the ref here too
                 if (!processCancelledRef.current && !hasFailed) {
                     generateToast(1, `${toastMessage} completed.`);
@@ -1093,87 +1087,6 @@ const Main = () => {
         }
     }, []);
 
-    useEffect(() => {
-        const preventLayoutShift = () => {
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
-            if (showDownloadDialog) {
-                document.body.classList.add('spectrum-modal-is-open');
-                document.body.style.overflow = 'hidden';
-                if (scrollbarWidth > 0) {
-                    document.body.style.paddingRight = `${scrollbarWidth}px`;
-                }
-                document.documentElement.style.overflowX = 'hidden';
-            } else {
-                document.body.classList.remove('spectrum-modal-is-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-                document.documentElement.style.overflowX = '';
-            }
-        };
-
-        preventLayoutShift();
-
-        // Cleanup function
-        return () => {
-            document.body.classList.remove('spectrum-modal-is-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-            document.documentElement.style.overflowX = '';
-        };
-    }, [showDownloadDialog]);
-
-    // Global dialog listener to handle all dialog state changes
-    useEffect(() => {
-        const handleDialogOpen = () => {
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-            document.body.classList.add('spectrum-modal-is-open');
-            document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflowX = 'hidden';
-            if (scrollbarWidth > 0) {
-                document.body.style.paddingRight = `${scrollbarWidth}px`;
-            }
-        };
-
-        const handleDialogClose = () => {
-            // Small delay to ensure smooth transitions
-            setTimeout(() => {
-                if (!document.querySelector('.spectrum-Modal, .spectrum-Dialog')) {
-                    document.body.classList.remove('spectrum-modal-is-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                    document.documentElement.style.overflowX = '';
-                }
-            }, 100);
-        };
-
-        // Listen for React Spectrum dialog events
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList') {
-                    const modals = document.querySelectorAll('.spectrum-Modal, .spectrum-Dialog');
-                    if (modals.length > 0) {
-                        handleDialogOpen();
-                    } else {
-                        handleDialogClose();
-                    }
-                }
-            });
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        return () => {
-            observer.disconnect();
-            document.body.classList.remove('spectrum-modal-is-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-            document.documentElement.style.overflowX = '';
-        };
-    }, []);
 
     // Debounced save settings
     const debouncedSaveSettings = useDebounce((settingsToSave: any) => {
@@ -1370,7 +1283,7 @@ const Main = () => {
                                             initial="initial"
                                             animate="animate"
                                             exit="exit"
-                                            
+
                                             style={{
                                                 width: '100%',
                                             }}
@@ -1730,7 +1643,7 @@ const Main = () => {
                                                                                             / Denoise
                                                                                         </Text>
                                                                                     </Item>
-                                                                    
+
                                                                                     <Item key="scunet">
                                                                                         <Gauge1 />
                                                                                         <Text>
@@ -2902,7 +2815,7 @@ const Main = () => {
                                                             <ActionButton
                                                                 staticColor="white"
                                                                 width={"100%"}
-                                                                onPress={startChain}
+                                                                onPress={() => { void startChain(); }}
                                                                 isDisabled={
                                                                     isDownloading || isProcessing
                                                                 }
@@ -2922,7 +2835,7 @@ const Main = () => {
                                             initial="initial"
                                             animate="animate"
                                             exit="exit"
-                                            
+
                                             style={{
                                                 width: '100%',
                                             }}
@@ -3005,16 +2918,16 @@ const Main = () => {
                                                                         !youtubeUrl.includes(
                                                                             "https://www.youtube.com"
                                                                         ) &&
-                                                                    !youtubeUrl.includes(
-                                                                        "https://youtu.be"
-                                                                    )
+                                                                        !youtubeUrl.includes(
+                                                                            "https://youtu.be"
+                                                                        )
                                                                         ? "invalid"
                                                                         : undefined
                                                                 }
                                                             />
                                                             <TooltipTrigger delay={0}>
                                                                 <ActionButton
-                                                                    onPress={startYoutubeDownload}
+                                                                    onPress={() => { void startYoutubeDownload(); }}
                                                                     staticColor="white"
                                                                 >
                                                                     <Download />
@@ -3122,7 +3035,7 @@ const Main = () => {
                                                             </Flex>
                                                             <Flex direction="row" gap={8}>
                                                                 <ActionButton
-                                                                    onPress={startDepthMapExtraction}
+                                                                    onPress={() => { void startExtraTabLogic("depth"); }}
                                                                     width="100%"
                                                                 >
                                                                     Extract Depth Map
@@ -3619,7 +3532,7 @@ const Main = () => {
                                                             </Flex>
                                                             <Flex direction="row" gap={8}>
                                                                 <ActionButton
-                                                                    onPress={startBackgroundRemoval}
+                                                                    onPress={() => { void startExtraTabLogic("background"); }}
                                                                     width="100%"
                                                                 >
                                                                     Remove Background
@@ -3773,7 +3686,7 @@ const Main = () => {
                                                             </Flex>
                                                             <Flex direction="row" gap={8}>
                                                                 <ActionButton
-                                                                    onPress={startAutoCut}
+                                                                    onPress={() => { void startAutoCut(); }}
                                                                     width="100%"
                                                                 >
                                                                     Auto Cut Clip
@@ -3900,7 +3813,7 @@ const Main = () => {
                                                                 onPress={OpenTASFolder}
                                                                 width="100%"
                                                             >
-                                                                TAS Folder
+                                                                Open TAS Folder
                                                             </ActionButton>
                                                             <ActionButton
                                                                 onPress={openChangelog}
@@ -4340,7 +4253,7 @@ const Main = () => {
                                             initial="initial"
                                             animate="animate"
                                             exit="exit"
-                                            
+
                                             style={{
                                                 width: '100%',
                                             }}
@@ -4443,13 +4356,13 @@ const Main = () => {
 
                                                             <Flex direction="row" gap={8}>
                                                                 <ActionButton
-                                                                    onPress={startAddNullLayerLogic}
+                                                                    onPress={() => { void startAddNullLayerLogic(); }}
                                                                     width="100%"
                                                                 >
                                                                     Null Layer
                                                                 </ActionButton>
                                                                 <ActionButton
-                                                                    onPress={startAddSolidLayerLogic}
+                                                                    onPress={() => { void startAddSolidLayerLogic(); }}
                                                                     width="100%"
                                                                 >
                                                                     Solid Layer
@@ -4533,10 +4446,10 @@ const Main = () => {
                                                                 </Item>
                                                             </Picker>
                                                             <ActionButton
-                                                                onPress={startSortLayersLogic}
+                                                                onPress={() => { void startDeduplicateLayerTimemapLogic(); }}
                                                                 width="100%"
                                                             >
-                                                                Sort Layers
+                                                                <Text>Remove Dead Frames</Text>
                                                             </ActionButton>
                                                         </Flex>
                                                     </Flex>
@@ -4602,10 +4515,10 @@ const Main = () => {
                                                         <Flex direction="column" gap={8}>
                                                             <Flex direction="row" gap={8}>
                                                                 <ActionButton
-                                                                    onPress={execClearCache}
+                                                                    onPress={() => { void startSortLayersLogic(); }}
                                                                     width="100%"
                                                                 >
-                                                                    <Text>Purge The Cache</Text>
+                                                                    Sort Layers
                                                                 </ActionButton>
                                                             </Flex>
 
@@ -4650,7 +4563,7 @@ const Main = () => {
                                             initial="initial"
                                             animate="animate"
                                             exit="exit"
-                                            
+
                                             style={{
                                                 width: '100%',
                                             }}
@@ -4665,7 +4578,7 @@ const Main = () => {
                                             initial="initial"
                                             animate="animate"
                                             exit="exit"
-                                            
+
                                             style={{
                                                 width: '100%',
                                             }}
@@ -4687,7 +4600,7 @@ const Main = () => {
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                
+
                                 style={{
                                     width: '100%',
                                 }}
@@ -4698,7 +4611,7 @@ const Main = () => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
-                                        
+
                                     >
                                         <View
                                             borderWidth="thin"
@@ -4724,7 +4637,7 @@ const Main = () => {
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     exit={{ opacity: 0 }}
-                                                    
+
                                                 >
                                                     <ProgressBar
                                                         value={downloadProgress}
@@ -4745,7 +4658,7 @@ const Main = () => {
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     exit={{ opacity: 0 }}
-                                                    
+
                                                 >
                                                     <Flex
                                                         direction="row"
@@ -4775,7 +4688,7 @@ const Main = () => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
-                                        
+
                                     >
                                         <View
                                             borderWidth="thin"
@@ -4786,92 +4699,92 @@ const Main = () => {
                                             marginStart={2}
                                         >
                                             <Flex direction="row" alignItems="center" gap="size-100">
-                                            <Flex direction="column" gap="size-100"  flex="1">
-                                                {/* Progress bar */}
-                                                <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    
-                                                >
-                                                    <Flex
-                                                        direction="row"
-                                                        alignItems="center"
+                                                <Flex direction="column" gap="size-100" flex="1">
+                                                    {/* Progress bar */}
+                                                    <motion.div
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+
                                                     >
-                                                        <View flex="1">
-                                                            <ProgressBar
-                                                                value={(currentFrame / totalFrames) * 100}
-                                                                minValue={0}
-                                                                maxValue={100}
-                                                                size="L"
-                                                                width={"100%"}
-                                                                showValueLabel={true}
-                                                                // label = "Status: + progressBarStatus"
-                                                                label={
-                                                                    progressBarStatus
-                                                                        ? `Status: ${progressBarStatus}`
-                                                                        : "Processing..."
-                                                                }
-                                                            />
-                                                        </View>
-                                             
-                                                    </Flex>
-                                                </motion.div>
-                                                {/* Processing info with fps and eta */}
-                                                <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    
-                                                >
-                                                    <Flex
-                                                        direction="row"
-                                                        justifyContent="space-between"
-                                                        alignItems="center"
-                                                    >
-                                                        <Text
-                                                            UNSAFE_style={{
-                                                                fontSize: "11px",
-                                                                opacity: 0.7,
-                                                                fontWeight: "medium",
-                                                            }}
+                                                        <Flex
+                                                            direction="row"
+                                                            alignItems="center"
                                                         >
-                                                            {currentFrame > 0 && totalFrames > 0
-                                                                ? `${currentFrame.toLocaleString()} / ${totalFrames.toLocaleString()} frames`
-                                                                : "0/0 frames"}
+                                                            <View flex="1">
+                                                                <ProgressBar
+                                                                    value={(currentFrame / totalFrames) * 100}
+                                                                    minValue={0}
+                                                                    maxValue={100}
+                                                                    size="L"
+                                                                    width={"100%"}
+                                                                    showValueLabel={true}
+                                                                    // label = "Status: + progressBarStatus"
+                                                                    label={
+                                                                        progressBarStatus
+                                                                            ? `Status: ${progressBarStatus}`
+                                                                            : "Processing..."
+                                                                    }
+                                                                />
+                                                            </View>
+
+                                                        </Flex>
+                                                    </motion.div>
+                                                    {/* Processing info with fps and eta */}
+                                                    <motion.div
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+
+                                                    >
+                                                        <Flex
+                                                            direction="row"
+                                                            justifyContent="space-between"
+                                                            alignItems="center"
+                                                        >
+                                                            <Text
+                                                                UNSAFE_style={{
+                                                                    fontSize: "11px",
+                                                                    opacity: 0.7,
+                                                                    fontWeight: "medium",
+                                                                }}
+                                                            >
+                                                                {currentFrame > 0 && totalFrames > 0
+                                                                    ? `${currentFrame.toLocaleString()} / ${totalFrames.toLocaleString()} frames`
+                                                                    : "0/0 frames"}
                                                                 {" • "}
-                                                            {estimatedTimeRemaining > 0
-                                                                ? formatETA(estimatedTimeRemaining)
-                                                                : "0s remaining"}
-                                                            {" • "}
-                                                            {processingFps > 0
-                                                                ? processingFps.toFixed(1)
-                                                                : "0.0"}
-                                                            fps
-                                                        </Text>
-                                                        <Text
-                                                            UNSAFE_style={{
-                                                                fontSize: "11px",
-                                                                opacity: 0.7,
-                                                            }}
-                                                        >
-                                                            See Logs tab for details
-                                                        </Text>
-                                                    </Flex>
-                                                </motion.div>
-                                            </Flex>
-                                            {/* Cancel button on far right */}
-                                            <TooltipTrigger delay={0}>
-                                                <ActionButton
-                                                    marginStart={5}
-                                                    isQuiet
-                                                    onPress={() => cancelProcessing()}
-                                                    aria-label="Cancel"
-                                                >
-                                                    <Cancel />
-                                                </ActionButton>
-                                                <Tooltip>Cancel Process</Tooltip>
-                                            </TooltipTrigger>
+                                                                {estimatedTimeRemaining > 0
+                                                                    ? formatETA(estimatedTimeRemaining)
+                                                                    : "0s remaining"}
+                                                                {" • "}
+                                                                {processingFps > 0
+                                                                    ? processingFps.toFixed(1)
+                                                                    : "0.0"}
+                                                                fps
+                                                            </Text>
+                                                            <Text
+                                                                UNSAFE_style={{
+                                                                    fontSize: "11px",
+                                                                    opacity: 0.7,
+                                                                }}
+                                                            >
+                                                                See Logs tab for details
+                                                            </Text>
+                                                        </Flex>
+                                                    </motion.div>
+                                                </Flex>
+                                                {/* Cancel button on far right */}
+                                                <TooltipTrigger delay={0}>
+                                                    <ActionButton
+                                                        marginStart={5}
+                                                        isQuiet
+                                                        onPress={() => cancelProcessing()}
+                                                        aria-label="Cancel"
+                                                    >
+                                                        <Cancel />
+                                                    </ActionButton>
+                                                    <Tooltip>Cancel Process</Tooltip>
+                                                </TooltipTrigger>
                                             </Flex>
                                         </View>
                                     </motion.div>

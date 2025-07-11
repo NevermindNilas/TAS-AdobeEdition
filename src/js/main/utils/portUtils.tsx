@@ -82,22 +82,17 @@ export async function testConnection(port: number, timeout: number = 3000): Prom
     });
 }
 
+import { getNumberItem, setNumberItem, removeItem } from "./storageUtils";
+
 /**
  * Gets the stored port from localStorage or returns default
  * @param defaultPort - Default port if none stored (default: 8080)
  * @returns number - The port number to use
  */
 export function getStoredPort(defaultPort: number = 8080): number {
-    try {
-        const stored = localStorage.getItem('tas_socket_port');
-        if (stored) {
-            const port = parseInt(stored, 10);
-            if (port >= 1024 && port <= 65535) {
-                return port;
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to get stored port:', error);
+    const port = getNumberItem('tas_socket_port', defaultPort);
+    if (port >= 1024 && port <= 65535) {
+        return port;
     }
     return defaultPort;
 }
@@ -107,20 +102,12 @@ export function getStoredPort(defaultPort: number = 8080): number {
  * @param port - The port number to store
  */
 export function storePort(port: number): void {
-    try {
-        localStorage.setItem('tas_socket_port', port.toString());
-    } catch (error) {
-        console.warn('Failed to store port:', error);
-    }
+    setNumberItem('tas_socket_port', port);
 }
 
 /**
  * Clears the stored port from localStorage
  */
 export function clearStoredPort(): void {
-    try {
-        localStorage.removeItem('tas_socket_port');
-    } catch (error) {
-        console.warn('Failed to clear stored port:', error);
-    }
+    removeItem('tas_socket_port');
 }

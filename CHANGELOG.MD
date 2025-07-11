@@ -16,3 +16,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated WebSocket to dynamically adjust the port based on if a port is already in use or not.
 - Updated the `main.tsx` file to include more detailed descriptions for depth map quality settings.
+- Removed unused functions and imports to clean up the codebase.

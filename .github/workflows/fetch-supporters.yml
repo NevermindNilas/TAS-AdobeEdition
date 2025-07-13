@@ -27,67 +27,76 @@ jobs:
         env:
           BUYMEACOFFEE_API_TOKEN: ${{ secrets.BUYMEACOFFEE_API_TOKEN }}
         run: |
-          set -e
-
-
-          # Helper to fetch all paginated results for a given endpoint
-          fetch_all_pages_raw() {
-            local url=$1
-            local page=1
-            local tmpfile="${2}_allpages.tmp"
-            : > "$tmpfile"
-            while :; do
-              http_status=$(curl -s -o resp.json -w "%{http_code} %{content_type}" -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
-              status_code=$(echo "$http_status" | awk '{print $1}')
-              content_type=$(echo "$http_status" | awk '{print $2}')
-              echo "Page $page: HTTP $status_code, Content-Type: $content_type"
-              resp=$(cat resp.json)
-              rm -f resp.json
-              # Check if response is valid JSON and contains .data
-              if ! echo "$resp" | jq -e .data > /dev/null 2>&1; then
-                echo "Invalid or empty API response on page $page"
-                break
-              fi
-              page_data=$(echo "$resp" | jq '.data')
-              if [ "$(echo "$page_data" | jq 'length')" -eq 0 ]; then
-                break
-              fi
-              echo "$page_data" >> "$tmpfile"
-              page=$((page + 1))
-            done
-            if [ ! -s "$tmpfile" ]; then
-              echo "[]"
-            else
-              jq -s 'add' "$tmpfile"
+          # Create empty supporters array
+          echo '[]' > supporters_temp.json
+          
+          # Fetch active members
+          page=1
+          while true; do
+            echo "Fetching page $page of active members..."
+            response=$(curl -s -w "%{http_code}" \
+              "https://developers.buymeacoffee.com/api/v1/subscriptions?status=active&page=$page" \
+              -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" \
+              -X GET)
+            
+            http_code="${response: -3}"
+            json_response="${response%???}"
+            
+            if [ "$http_code" != "200" ]; then
+              echo "Error fetching active members (page $page): HTTP $http_code"
+              echo "$json_response"
+              break
             fi
-            rm -f "$tmpfile"
-          }
-
-          # Fetch all one-time supporters (raw)
-          raw_supporters=$(fetch_all_pages_raw "https://developers.buymeacoffee.com/api/v1/supporters" "supporters")
-
-          # Fetch all members (raw)
-          raw_members=$(fetch_all_pages_raw "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all" "members")
-
-          # Validate and save data to temporary files
-          if ! echo "$raw_supporters" | jq . > /dev/null 2>&1; then
-            echo "Invalid JSON in raw_supporters, using empty array"
-            raw_supporters="[]"
+            
+            # Extract payer names and add to supporters array
+            echo "$json_response" | jq -r '.data[]?.payer_name // empty' | while read -r name; do
+              if [ -n "$name" ] && [ "$name" != "null" ]; then
+                echo "\"$name\""
+              fi
+            done >> names_temp.txt
+            
+            # Check if there's a next page
+            next_page=$(echo "$json_response" | jq -r '.next_page_url // empty')
+            if [ -z "$next_page" ] || [ "$next_page" == "null" ]; then
+              break
+            fi
+            
+            page=$((page + 1))
+          done
+          
+          # Fetch one-time supporters (if available)
+          echo "Fetching one-time supporters..."
+          response=$(curl -s -w "%{http_code}" \
+            "https://developers.buymeacoffee.com/api/v1/supporters" \
+            -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" \
+            -X GET)
+          
+          http_code="${response: -3}"
+          json_response="${response%???}"
+          
+          if [ "$http_code" == "200" ]; then
+            # Extract payer names from one-time supporters
+            echo "$json_response" | jq -r '.data[]?.payer_name // empty' | while read -r name; do
+              if [ -n "$name" ] && [ "$name" != "null" ]; then
+                echo "\"$name\""
+              fi
+            done >> names_temp.txt
+          else
+            echo "Note: One-time supporters endpoint returned HTTP $http_code (may not be available)"
           fi
-
-          if ! echo "$raw_members" | jq . > /dev/null 2>&1; then
-            echo "Invalid JSON in raw_members, using empty array"
-            raw_members="[]"
+          
+          # Create final JSON array with unique names
+          if [ -f names_temp.txt ]; then
+            # Remove duplicates, sort, and create JSON array
+            sort names_temp.txt | uniq | jq -s '.' > src/js/main/utils/supporters.json
+            rm names_temp.txt
+          else
+            echo '[]' > src/js/main/utils/supporters.json
           fi
+          
+          echo "Supporters data updated successfully"
+          echo "Total unique supporters: $(jq length src/js/main/utils/supporters.json)"
 
-          # Extract only payer_name from both arrays, merge, deduplicate, and save as usernames
-          jq -n \
-            --slurpfile supporters <(echo "$raw_supporters") \
-            --slurpfile members <(echo "$raw_members") \
-            '{usernames: ((($supporters[0][]?.payer_name // empty) + ($members[0][]?.payer_name // empty)) | unique | sort)}' > src/js/main/utils/supporters.json
-
-          echo "Usernames data updated successfully!"
-          cat src/js/main/utils/supporters.json
 
       - name: Check for changes
         id: git-check

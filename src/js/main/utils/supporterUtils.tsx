@@ -10,7 +10,6 @@ export interface Supporter {
 }
 
 export interface SupporterData {
-    lastUpdated: string;
     supporters: Supporter[];
 }
 
@@ -23,7 +22,6 @@ export const fetchSupporters = (): SupporterData => {
     // Validate the data structure
     if (!supportersData || !supportersData.supporters || !Array.isArray(supportersData.supporters)) {
         return {
-            lastUpdated: new Date().toISOString(),
             supporters: []
         };
     }
@@ -35,7 +33,6 @@ export const fetchSupporters = (): SupporterData => {
         type: s.type === "member" ? "member" : "one-time"
     }));
     return {
-        lastUpdated: supportersData.lastUpdated,
         supporters: normalizedSupporters
     };
 };
@@ -44,7 +41,7 @@ export const fetchSupporters = (): SupporterData => {
  * React hook to manage supporter data with loading state
  */
 export const useSupporters = () => {
-    const [supporters, setSupporters] = useState<SupporterData>({ lastUpdated: '', supporters: [] });
+    const [supporters, setSupporters] = useState<SupporterData>({ supporters: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +54,7 @@ export const useSupporters = () => {
         } catch (err) {
             console.error('Error loading supporters:', err);
             setError('Failed to load supporters');
-            setSupporters({ lastUpdated: '', supporters: [] });
+            setSupporters({ supporters: [] });
         } finally {
             setLoading(false);
         }
@@ -76,7 +73,3 @@ export const formatSupporterDisplay = (supporter: Supporter): string => {
         return `• ${supporter.name}`;
     }
 };
-
-/**
- * Gets the last updated timestamp in a readable format
- */

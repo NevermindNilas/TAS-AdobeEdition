@@ -36,6 +36,12 @@ jobs:
             local all_data="[]"
             while :; do
               resp=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
+              # Check if response is valid JSON and contains .data
+              if ! echo "$resp" | jq -e .data > /dev/null 2>&1; then
+                echo "Invalid or empty API response on page $page:"
+                echo "$resp"
+                break
+              fi
               page_data=$(echo "$resp" | jq '.data')
               if [ "$(echo "$page_data" | jq 'length')" -eq 0 ]; then
                 break
@@ -57,7 +63,6 @@ jobs:
             --argjson one_time "$one_time_supporters" \
             --argjson members "$members" '
             {
-              lastUpdated: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
               supporters: (
                 ($one_time[] | {
                   name: .payer_name,

@@ -34,7 +34,8 @@ jobs:
             local url=$1
             local prefix=$2
             local page=1
-            local files=()
+            local tmpfile="${prefix}_allpages.tmp"
+            : > "$tmpfile"
             while :; do
               resp=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
               # Check if response is valid JSON and contains .data
@@ -47,15 +48,13 @@ jobs:
               if [ "$(echo "$page_data" | jq 'length')" -eq 0 ]; then
                 break
               fi
-              file="${prefix}_page_${page}.json"
-              echo "$page_data" > "$file"
-              files+=("$file")
+              echo "$page_data" >> "$tmpfile"
               page=$((page + 1))
             done
-            # Merge all files into one array
-            jq -s 'add' "${files[@]}"
+            # Merge all arrays from the file into one array
+            jq -s 'add' "$tmpfile"
             # Clean up
-            rm -f "${files[@]}"
+            rm -f "$tmpfile"
           }
 
           # Fetch all one-time supporters

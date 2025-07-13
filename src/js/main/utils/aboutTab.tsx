@@ -66,32 +66,16 @@ const SupportersSection = () => {
                         UNSAFE_style={{
                             display: 'flex',
                             flexWrap: 'wrap',
-                            gap: '12px',
+                            gap: '8px',
                             width: '100%',
-                            maxWidth: '600px',
                             justifyContent: 'center'
                         }}
                     >
                         {usernames.map((username, index) => (
-                            <View
-                                key={index}
-                                backgroundColor="gray-50"
-                                padding="size-100"
-                                borderRadius="medium"
-                                borderWidth="thin"
-                                borderColor="gray-200"
-                                UNSAFE_style={{
-                                    minWidth: '120px',
-                                    maxWidth: '160px',
-                                    fontWeight: '600',
-                                    textAlign: 'center',
-                                    wordBreak: 'break-word',
-                                    lineHeight: '1.2'
-                                }}
-                            >
-                                <Text>{username}</Text>
-                            </View>
+                            
+                            <Text>{username}</Text>
                         ))}
+                        <Text UNSAFE_style={{ color: "gray" }}>Your Name?</Text>
                     </View>
                 )}
             </Flex>
@@ -109,13 +93,13 @@ export function aboutTab(tasVersion: string) {
             marginTop={8}
         >
             <Flex direction="column" gap="size-150" marginTop={-8}>
-                
+
                 {/* Adjusted gap */}
                 <Flex direction="column" justifyContent="space-between">
-                    
+
                     {/* Adjusted margin */}
                     <Flex direction="row" alignItems="center" justifyContent="space-between">
-                        
+
                         {/* Adjusted margin */}
                         <Heading level={3} margin={0}>
                             The Anime Scripter v{tasVersion}
@@ -125,17 +109,10 @@ export function aboutTab(tasVersion: string) {
                     </Flex>
                     <Divider size="S" /> {/* Use smaller divider */}
                 </Flex>
-         
+
                 <Well>
                     <Flex direction="column" alignItems="center" gap="size-100">
-                        <Flex direction="row" alignItems="center" gap="size-150">
-                            {/* Coffee mug icon */}
-                            <span style={{ fontSize: 28, color: "#6f4e37" }}>☕</span>
-                            <Heading level={4} margin={0}>
-                                Supporters
-                            </Heading>
-                        </Flex>
-                        <Text UNSAFE_style={{ fontWeight: "bold", color: "#6f4e37", fontSize: "15px", textAlign: "center" }}>
+                        <Text UNSAFE_style={{ fontWeight: "bold", color: "#ffffffff", fontSize: "18px", textAlign: "center" }}>
                             Thank you to everyone who supports TAS!
                         </Text>
                         <Button
@@ -154,11 +131,9 @@ export function aboutTab(tasVersion: string) {
                     borderRadius="medium"
                     marginY="size-50"
                 >
-                    
-                    {/* Adjusted padding/margin */}
+
                     <Flex direction="row" gap="size-100" alignItems="center">
-                        
-                        {/* Removed bottom margin */}
+
                         <Info color="notice" size="S" /> {/* Explicit size */}
                         <Text UNSAFE_style={{ fontWeight: "bold" }}>
                             Please adjust the settings to match your preferences and system before
@@ -177,7 +152,7 @@ export function aboutTab(tasVersion: string) {
                         </DisclosureTitle>
                         <DisclosurePanel>
                             <Flex direction="column" gap="size-75" marginStart="size-250">
-                                
+
                                 {/* Adjusted gap/margin */}
                                 <Text>
                                     • <strong>CPU:</strong> 4 cores minimum, 8 cores recommended.
@@ -204,7 +179,7 @@ export function aboutTab(tasVersion: string) {
                         </DisclosureTitle>
                         <DisclosurePanel>
                             <Flex direction="column" gap="size-75" marginStart="size-250">
-                                
+
                                 {/* Adjusted gap/margin */}
                                 <Text>
                                     • <strong>TensorRT models:</strong> NVIDIA RTX GPUs only.
@@ -265,7 +240,7 @@ export function aboutTab(tasVersion: string) {
                         </DisclosureTitle>
                         <DisclosurePanel>
                             <Flex direction="column" gap="size-75" marginStart="size-250">
-                                
+
                                 {/* Adjusted gap/margin */}
                                 <Text>• Save your project before processing videos.</Text>
                                 <Text>

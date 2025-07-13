@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 
 export interface Supporter {
     name: string;
-    tier: string;
     coffees: number;
     totalAmount: number;
     message: string;
-    supportedAt: string;
+    supportedAt: string | null;
+    type: "one-time" | "member";
 }
 
 export interface SupporterData {
@@ -14,40 +14,30 @@ export interface SupporterData {
     supporters: Supporter[];
 }
 
+import supportersData from './supporters.json';
+
 /**
- * Fetches supporter data from the local supporters.json file
+ * Gets supporter data from the local supporters.json file (no HTTP, direct import)
  */
-export const fetchSupporters = async (): Promise<SupporterData> => {
-    try {
-        const response = await fetch('./data/supporters.json', {
-            method: 'GET',
-            headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: SupporterData = await response.json();
-
-        
-        // Validate the data structure
-        if (!data || !data.supporters || !Array.isArray(data.supporters)) {
-            throw new Error('Invalid data structure received');
-        }
-
-        return data;
-    } catch (error) {
-        console.warn('Failed to fetch supporters from local file:', error);
-        // Return empty data structure on error
+export const fetchSupporters = (): SupporterData => {
+    // Validate the data structure
+    if (!supportersData || !supportersData.supporters || !Array.isArray(supportersData.supporters)) {
         return {
             lastUpdated: new Date().toISOString(),
             supporters: []
         };
     }
+    // Normalize data: convert totalAmount to number, supportedAt to string|null, ensure type is set
+    const normalizedSupporters: Supporter[] = supportersData.supporters.map((s: any) => ({
+        ...s,
+        totalAmount: typeof s.totalAmount === "string" ? parseFloat(s.totalAmount) : s.totalAmount,
+        supportedAt: s.supportedAt === undefined ? null : s.supportedAt,
+        type: s.type === "member" ? "member" : "one-time"
+    }));
+    return {
+        lastUpdated: supportersData.lastUpdated,
+        supporters: normalizedSupporters
+    };
 };
 
 /**
@@ -59,36 +49,31 @@ export const useSupporters = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const loadSupporters = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await fetchSupporters();
-                setSupporters(data);
-            } catch (err) {
-                console.error('Error loading supporters:', err);
-                setError('Failed to load supporters');
-                // Set empty supporters array on error
-                setSupporters({ lastUpdated: '', supporters: [] });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadSupporters();
+        try {
+            setLoading(true);
+            setError(null);
+            const data = fetchSupporters();
+            setSupporters(data);
+        } catch (err) {
+            console.error('Error loading supporters:', err);
+            setError('Failed to load supporters');
+            setSupporters({ lastUpdated: '', supporters: [] });
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     return { supporters, loading, error };
 };
 
 /**
- * Formats supporter display text based on tier
+ * Formats supporter display text based on supporter type
  */
 export const formatSupporterDisplay = (supporter: Supporter): string => {
-    if (supporter.tier === 'Supporter') {
-        return `• ${supporter.name}`;
+    if (supporter.type === "member") {
+        return `• ${supporter.name} (Member)`;
     } else {
-        return `• ${supporter.name} - ${supporter.tier} Tier`;
+        return `• ${supporter.name}`;
     }
 };
 

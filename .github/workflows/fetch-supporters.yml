@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '0 6 * * 0'
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/fetch-supporters.yml'
 
 jobs:
   fetch-supporters:
@@ -26,118 +23,70 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Fetch supporters from Buy Me a Coffee API
+      - name: Fetch all supporters and members from Buy Me a Coffee API
         env:
           BUYMEACOFFEE_API_TOKEN: ${{ secrets.BUYMEACOFFEE_API_TOKEN }}
         run: |
-          # Create the data directory if it doesn't exist
-          mkdir -p src/data
-          
-          # Fetch supporters from Buy Me a Coffee API
-          response=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" \
-            "https://developers.buymeacoffee.com/api/v1/supporters?page=1")
-          
-          # Check if the API call was successful
-          if [ $? -eq 0 ] && echo "$response" | jq -e '.data' > /dev/null 2>&1; then
-            echo "API call successful, processing data..."
-            
-            # Process the response and create JSON file
-            echo "$response" | jq '{
-              lastUpdated: now | strftime("%Y-%m-%dT%H:%M:%SZ"),
-              supporters: [
-                .data[] | {
+          set -e
+
+          # Helper to fetch all paginated results for a given endpoint
+          fetch_all_pages() {
+            local url=$1
+            local page=1
+            local all_data="[]"
+            while :; do
+              resp=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
+              page_data=$(echo "$resp" | jq '.data')
+              if [ "$(echo "$page_data" | jq 'length')" -eq 0 ]; then
+                break
+              fi
+              all_data=$(jq -s '.[0] + .[1]' <(echo "$all_data") <(echo "$page_data"))
+              page=$((page + 1))
+            done
+            echo "$all_data"
+          }
+
+          # Fetch all one-time supporters
+          one_time_supporters=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/supporters")
+
+          # Fetch all members (active and inactive)
+          members=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all")
+
+          # Normalize and merge both datasets
+          merged=$(jq -n \
+            --argjson one_time "$one_time_supporters" \
+            --argjson members "$members" '
+            {
+              lastUpdated: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
+              supporters: (
+                ($one_time[] | {
                   name: .payer_name,
-                  tier: (
-                    if .support_coffee_price >= 15 then "Gold"
-                    elif .support_coffee_price >= 10 then "Silver"
-                    elif .support_coffee_price >= 5 then "Bronze"
-                    else "Supporter"
-                    end
-                  ),
                   coffees: .support_coffees,
                   totalAmount: .support_coffee_price,
                   message: .support_note,
-                  supportedAt: .created_on
-                }
-              ] | sort_by(.totalAmount) | reverse
-            }' > src/js/main/utils/supporters.json
-            
-            echo "Supporters data updated successfully!"
-            cat src/js/main/utils/supporters.json
-          else
-            echo "API call failed or returned invalid data"
-            echo "Response: $response"
-            
-            # Create fallback data if file doesn't exist
-            if [ ! -f src/js/main/utils/supporters.json ]; then
-              echo "Creating fallback supporters file..."
-              cat > src/js/main/utils/supporters.json << 'FALLBACK_EOF'
-          {
-            "lastUpdated": "2025-01-13T15:36:00Z",
-            "supporters": [
-              {
-                "name": "Venn",
-                "tier": "Silver",
-                "coffees": 2,
-                "totalAmount": 10,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              },
-              {
-                "name": "fifoooo",
-                "tier": "Bronze", 
-                "coffees": 1,
-                "totalAmount": 5,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              },
-              {
-                "name": "djinn",
-                "tier": "Supporter",
-                "coffees": 1,
-                "totalAmount": 3,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              },
-              {
-                "name": "Palatinik",
-                "tier": "Supporter",
-                "coffees": 1,
-                "totalAmount": 3,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              },
-              {
-                "name": "apurujusu",
-                "tier": "Supporter",
-                "coffees": 1,
-                "totalAmount": 3,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              },
-              {
-                "name": "lørefen",
-                "tier": "Supporter",
-                "coffees": 1,
-                "totalAmount": 3,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              },
-              {
-                "name": "StMan",
-                "tier": "Supporter",
-                "coffees": 1,
-                "totalAmount": 3,
-                "message": "",
-                "supportedAt": "2024-12-01T00:00:00Z"
-              }
-            ]
-          }
-          FALLBACK_EOF
-            fi
-            exit 1
-          fi
-          
+                  supportedAt: .created_on,
+                  type: "one-time"
+                }) +
+                ($members[] | {
+                  name: .payer_name,
+                  coffees: .support_coffees,
+                  totalAmount: .support_coffee_price,
+                  message: .support_note,
+                  supportedAt: .created_on,
+                  type: "member"
+                })
+              )
+            }
+          ')
+
+          # Deduplicate supporters by name and supportedAt (if needed)
+          echo "$merged" | jq '
+            .supporters |= unique_by(.name, .supportedAt)
+          ' > src/js/main/utils/supporters.json
+
+          echo "Supporters data updated successfully!"
+          cat src/js/main/utils/supporters.json
+
       - name: Check for changes
         id: git-check
         run: |

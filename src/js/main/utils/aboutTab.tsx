@@ -23,7 +23,6 @@ import { PiGraphicsCardFill } from "react-icons/pi";
 import Gauge1 from "@spectrum-icons/workflow/Gauge1";
 import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
-import Refresh from "@spectrum-icons/workflow/Refresh";
 
 import { socialsPanel, openBuyMeACoffee, openReportIssue, openParameters } from "./Socials";
 import { useSupporters,  Supporter} from "./supporterUtils";
@@ -37,40 +36,6 @@ const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: s
 
 // Individual supporter card component
 const SupporterCard = ({ supporter }: { supporter: Supporter }) => {
-    const getTierStyles = (tier: string) => {
-        switch (tier) {
-            case 'Gold':
-                return {
-                    backgroundColor: '#ffd700',
-                    color: '#000',
-                    borderColor: '#ffed4e',
-                    icon: '🏆'
-                };
-            case 'Silver':
-                return {
-                    backgroundColor: '#c0c0c0',
-                    color: '#000',
-                    borderColor: '#d4d4d4',
-                    icon: '🥈'
-                };
-            case 'Bronze':
-                return {
-                    backgroundColor: '#cd7f32',
-                    color: '#fff',
-                    borderColor: '#d4913d',
-                    icon: '🥉'
-                };
-            default:
-                return {
-                    backgroundColor: '#6f4e37',
-                    color: '#fff',
-                    borderColor: '#8b6244',
-                    icon: '☕'
-                };
-        }
-    };
-
-    const styles = getTierStyles(supporter.tier);
 
     return (
         <View
@@ -88,27 +53,6 @@ const SupporterCard = ({ supporter }: { supporter: Supporter }) => {
             }}
         >
             <Flex direction="column" alignItems="center" gap="size-50">
-                {supporter.tier !== 'Supporter' && (
-                    <View
-                        UNSAFE_style={{
-                            position: 'absolute',
-                            top: '-8px',
-                            right: '-8px',
-                            width: '20px',
-                            height: '20px',
-                            backgroundColor: styles.backgroundColor,
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '10px',
-                            border: `2px solid ${styles.borderColor}`,
-                            zIndex: 1
-                        }}
-                    >
-                        <span>{styles.icon}</span>
-                    </View>
-                )}
                 <Text
                     UNSAFE_style={{
                         fontSize: '14px',
@@ -120,7 +64,7 @@ const SupporterCard = ({ supporter }: { supporter: Supporter }) => {
                 >
                     {supporter.name}
                 </Text>
-                {supporter.tier !== 'Supporter' && (
+                {supporter.type === "member" && (
                     <Text
                         UNSAFE_style={{
                             fontSize: '12px',
@@ -129,7 +73,7 @@ const SupporterCard = ({ supporter }: { supporter: Supporter }) => {
                             fontWeight: '500'
                         }}
                     >
-                        {supporter.tier}
+                        Member
                     </Text>
                 )}
             </Flex>

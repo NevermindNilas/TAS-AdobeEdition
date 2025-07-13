@@ -37,7 +37,12 @@ jobs:
             local tmpfile="${2}_allpages.tmp"
             : > "$tmpfile"
             while :; do
-              resp=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
+              http_status=$(curl -s -o resp.json -w "%{http_code} %{content_type}" -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
+              status_code=$(echo "$http_status" | awk '{print $1}')
+              content_type=$(echo "$http_status" | awk '{print $2}')
+              echo "Page $page: HTTP $status_code, Content-Type: $content_type"
+              resp=$(cat resp.json)
+              rm -f resp.json
               # Check if response is valid JSON and contains .data
               if ! echo "$resp" | jq -e .data > /dev/null 2>&1; then
                 echo "Invalid or empty API response on page $page"

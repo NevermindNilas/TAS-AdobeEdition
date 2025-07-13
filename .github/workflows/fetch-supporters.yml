@@ -12,6 +12,9 @@ on:
 jobs:
   fetch-supporters:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push commits back to repository
+      actions: read    # Required to read workflow metadata
     
     steps:
       - name: Checkout repository

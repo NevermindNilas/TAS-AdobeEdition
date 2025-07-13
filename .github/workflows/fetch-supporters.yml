@@ -63,13 +63,17 @@ jobs:
           # Fetch all members (active and inactive)
           members=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all" "members")
 
-          # Normalize and merge both datasets
-          merged=$(jq -n \
-            --argjson one_time "$one_time_supporters" \
-            --argjson members "$members" '
+          # Save data to temporary files to avoid argument list too long error
+          echo "$one_time_supporters" > one_time_supporters.tmp
+          echo "$members" > members.tmp
+          
+          # Normalize and merge both datasets using files instead of command line args
+          jq -n \
+            --slurpfile one_time one_time_supporters.tmp \
+            --slurpfile members members.tmp '
             {
               supporters: (
-                ($one_time[] | {
+                ($one_time[0][] | {
                   name: .payer_name,
                   coffees: .support_coffees,
                   totalAmount: .support_coffee_price,
@@ -77,7 +81,7 @@ jobs:
                   supportedAt: .created_on,
                   type: "one-time"
                 }) +
-                ($members[] | {
+                ($members[0][] | {
                   name: .payer_name,
                   coffees: .support_coffees,
                   totalAmount: .support_coffee_price,
@@ -87,12 +91,10 @@ jobs:
                 })
               )
             }
-          ')
-
-          # Deduplicate supporters by name and supportedAt (if needed)
-          echo "$merged" | jq '
-            .supporters |= unique_by(.name, .supportedAt)
-          ' > src/js/main/utils/supporters.json
+          ' | jq '.supporters |= unique_by(.name, .supportedAt)' > src/js/main/utils/supporters.json
+          
+          # Clean up temporary files
+          rm -f one_time_supporters.tmp members.tmp
 
           echo "Supporters data updated successfully!"
           cat src/js/main/utils/supporters.json

@@ -35,7 +35,7 @@ jobs:
           while true; do
             echo "Fetching page $page of active members..."
             response=$(curl -s -w "%{http_code}" \
-              "https://developers.buymeacoffee.com/api/v1/subscriptions?status=active&page=$page" \
+              "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all&page=$page" \
               -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" \
               -X GET)
             

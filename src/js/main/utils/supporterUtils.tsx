@@ -16,14 +16,18 @@ export interface SupporterData {
 import supportersJson from './supporters.json';
 
 /**
- * Gets the list of supporter usernames from the local supporters.json file (no HTTP, direct import)
- * supporters.json format: { "usernames": [ ... ] }
+ * Gets the list of supporter names from the local supporters.json file (no HTTP, direct import)
+ * supporters.json format: [ ... ]
  */
 export const fetchSupporterUsernames = (): string[] => {
-    if (!supportersJson || !Array.isArray((supportersJson as any).usernames)) {
+    try {
+        if (!supportersJson || !Array.isArray(supportersJson) || supportersJson.length === 0) {
+            return [];
+        }
+        return supportersJson as string[];
+    } catch (e) {
         return [];
     }
-    return (supportersJson as { usernames: string[] }).usernames;
 };
 
 /**

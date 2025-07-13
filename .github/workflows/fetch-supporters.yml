@@ -60,18 +60,18 @@ jobs:
                   supportedAt: .created_on
                 }
               ] | sort_by(.totalAmount) | reverse
-            }' > src/data/supporters.json
+            }' > src/js/main/utils/supporters.json
             
             echo "Supporters data updated successfully!"
-            cat src/data/supporters.json
+            cat src/js/main/utils/supporters.json
           else
             echo "API call failed or returned invalid data"
             echo "Response: $response"
             
             # Create fallback data if file doesn't exist
-            if [ ! -f src/data/supporters.json ]; then
+            if [ ! -f src/js/main/utils/supporters.json ]; then
               echo "Creating fallback supporters file..."
-              cat > src/data/supporters.json << 'FALLBACK_EOF'
+              cat > src/js/main/utils/supporters.json << 'FALLBACK_EOF'
           {
             "lastUpdated": "2025-01-13T15:36:00Z",
             "supporters": [

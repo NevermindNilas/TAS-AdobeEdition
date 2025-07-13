@@ -51,8 +51,13 @@ jobs:
               echo "$page_data" >> "$tmpfile"
               page=$((page + 1))
             done
-            # Merge all arrays from the file into one array
-            jq -s 'add' "$tmpfile"
+            # Check if we have any data at all
+            if [ ! -s "$tmpfile" ]; then
+              echo "[]"
+            else
+              # Merge all arrays from the file into one array
+              jq -s 'add' "$tmpfile"
+            fi
             # Clean up
             rm -f "$tmpfile"
           }
@@ -63,6 +68,17 @@ jobs:
           # Fetch all members (active and inactive)
           members=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all" "members")
 
+          # Validate and save data to temporary files
+          if ! echo "$one_time_supporters" | jq . > /dev/null 2>&1; then
+            echo "Invalid JSON in one_time_supporters, using empty array"
+            one_time_supporters="[]"
+          fi
+          
+          if ! echo "$members" | jq . > /dev/null 2>&1; then
+            echo "Invalid JSON in members, using empty array"
+            members="[]"
+          fi
+          
           # Save data to temporary files to avoid argument list too long error
           echo "$one_time_supporters" > one_time_supporters.tmp
           echo "$members" > members.tmp
@@ -73,7 +89,7 @@ jobs:
             --slurpfile members members.tmp '
             {
               supporters: (
-                ($one_time[0][] | {
+                (($one_time[0] // [])[] | {
                   name: .payer_name,
                   coffees: .support_coffees,
                   totalAmount: .support_coffee_price,
@@ -81,7 +97,7 @@ jobs:
                   supportedAt: .created_on,
                   type: "one-time"
                 }) +
-                ($members[0][] | {
+                (($members[0] // [])[] | {
                   name: .payer_name,
                   coffees: .support_coffees,
                   totalAmount: .support_coffee_price,

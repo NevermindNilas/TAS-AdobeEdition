@@ -13,35 +13,24 @@ export interface SupporterData {
     supporters: Supporter[];
 }
 
-import supportersData from './supporters.json';
+import supportersJson from './supporters.json';
 
 /**
- * Gets supporter data from the local supporters.json file (no HTTP, direct import)
+ * Gets the list of supporter usernames from the local supporters.json file (no HTTP, direct import)
+ * supporters.json format: { "usernames": [ ... ] }
  */
-export const fetchSupporters = (): SupporterData => {
-    // Validate the data structure
-    if (!supportersData || !supportersData.supporters || !Array.isArray(supportersData.supporters)) {
-        return {
-            supporters: []
-        };
+export const fetchSupporterUsernames = (): string[] => {
+    if (!supportersJson || !Array.isArray((supportersJson as any).usernames)) {
+        return [];
     }
-    // Normalize data: convert totalAmount to number, supportedAt to string|null, ensure type is set
-    const normalizedSupporters: Supporter[] = supportersData.supporters.map((s: any) => ({
-        ...s,
-        totalAmount: typeof s.totalAmount === "string" ? parseFloat(s.totalAmount) : s.totalAmount,
-        supportedAt: s.supportedAt === undefined ? null : s.supportedAt,
-        type: s.type === "member" ? "member" : "one-time"
-    }));
-    return {
-        supporters: normalizedSupporters
-    };
+    return (supportersJson as { usernames: string[] }).usernames;
 };
 
 /**
- * React hook to manage supporter data with loading state
+ * React hook to manage supporter usernames with loading state
  */
-export const useSupporters = () => {
-    const [supporters, setSupporters] = useState<SupporterData>({ supporters: [] });
+export const useSupporterUsernames = () => {
+    const [usernames, setUsernames] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -49,27 +38,16 @@ export const useSupporters = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = fetchSupporters();
-            setSupporters(data);
+            const data = fetchSupporterUsernames();
+            setUsernames(data);
         } catch (err) {
-            console.error('Error loading supporters:', err);
-            setError('Failed to load supporters');
-            setSupporters({ supporters: [] });
+            console.error('Error loading supporter usernames:', err);
+            setError('Failed to load supporter usernames');
+            setUsernames([]);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    return { supporters, loading, error };
-};
-
-/**
- * Formats supporter display text based on supporter type
- */
-export const formatSupporterDisplay = (supporter: Supporter): string => {
-    if (supporter.type === "member") {
-        return `• ${supporter.name} (Member)`;
-    } else {
-        return `• ${supporter.name}`;
-    }
+    return { usernames, loading, error };
 };

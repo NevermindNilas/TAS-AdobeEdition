@@ -25,7 +25,7 @@ import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
 
 import { socialsPanel, openBuyMeACoffee, openReportIssue, openParameters } from "./Socials";
-import { useSupporters,  Supporter} from "./supporterUtils";
+import { useSupporterUsernames } from "./supporterUtils";
 
 const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
     <Flex alignItems="center" gap="size-100">
@@ -34,55 +34,10 @@ const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: s
     </Flex>
 );
 
-// Individual supporter card component
-const SupporterCard = ({ supporter }: { supporter: Supporter }) => {
-
-    return (
-        <View
-            backgroundColor="gray-50"
-            padding="size-100"
-            borderRadius="medium"
-            borderWidth="thin"
-            borderColor="gray-200"
-            UNSAFE_style={{
-                minWidth: '120px',
-                maxWidth: '160px',
-                transition: 'all 0.2s ease',
-                cursor: 'default',
-                position: 'relative'
-            }}
-        >
-            <Flex direction="column" alignItems="center" gap="size-50">
-                <Text
-                    UNSAFE_style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        textAlign: 'center',
-                        wordBreak: 'break-word',
-                        lineHeight: '1.2'
-                    }}
-                >
-                    {supporter.name}
-                </Text>
-                {supporter.type === "member" && (
-                    <Text
-                        UNSAFE_style={{
-                            fontSize: '12px',
-                            color: '#666',
-                            textAlign: 'center',
-                            fontWeight: '500'
-                        }}
-                    >
-                        Member
-                    </Text>
-                )}
-            </Flex>
-        </View>
-    );
-};
+// No longer needed: SupporterCard
 
 const SupportersSection = () => {
-    const { supporters, loading, error } = useSupporters();
+    const { usernames, loading, error } = useSupporterUsernames();
     return (
         <View
             backgroundColor="gray-75"
@@ -92,7 +47,6 @@ const SupportersSection = () => {
             width="100%"
         >
             <Flex direction="column" alignItems="center" gap="size-100">
-                
                 {loading ? (
                     <Flex direction="row" alignItems="center" gap="size-100">
                         <ProgressCircle size="S" isIndeterminate />
@@ -103,34 +57,40 @@ const SupportersSection = () => {
                         <Text UNSAFE_style={{ color: "#d73502" }}>
                             Failed to load supporters (using cached data)
                         </Text>
-                        <View
-                            UNSAFE_style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                                gap: '12px',
-                                width: '100%',
-                                maxWidth: '600px',
-                                justifyItems: 'center'
-                            }}
-                        >
-                            {supporters.supporters.map((supporter, index) => (
-                                <SupporterCard key={index} supporter={supporter} />
-                            ))}
+                        <View>
+                            <Text>No supporter usernames available.</Text>
                         </View>
                     </Flex>
                 ) : (
                     <View
                         UNSAFE_style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                            display: 'flex',
+                            flexWrap: 'wrap',
                             gap: '12px',
                             width: '100%',
                             maxWidth: '600px',
-                            justifyItems: 'center'
+                            justifyContent: 'center'
                         }}
                     >
-                        {supporters.supporters.map((supporter, index) => (
-                            <SupporterCard key={index} supporter={supporter} />
+                        {usernames.map((username, index) => (
+                            <View
+                                key={index}
+                                backgroundColor="gray-50"
+                                padding="size-100"
+                                borderRadius="medium"
+                                borderWidth="thin"
+                                borderColor="gray-200"
+                                UNSAFE_style={{
+                                    minWidth: '120px',
+                                    maxWidth: '160px',
+                                    fontWeight: '600',
+                                    textAlign: 'center',
+                                    wordBreak: 'break-word',
+                                    lineHeight: '1.2'
+                                }}
+                            >
+                                <Text>{username}</Text>
+                            </View>
                         ))}
                     </View>
                 )}

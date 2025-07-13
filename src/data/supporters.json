@@ -1,0 +1,61 @@
+{
+  "lastUpdated": "2025-01-13T15:36:00Z",
+  "supporters": [
+    {
+      "name": "Venn",
+      "tier": "Silver",
+      "coffees": 2,
+      "totalAmount": 10,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    },
+    {
+      "name": "fifoooo",
+      "tier": "Bronze", 
+      "coffees": 1,
+      "totalAmount": 5,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    },
+    {
+      "name": "djinn",
+      "tier": "Supporter",
+      "coffees": 1,
+      "totalAmount": 3,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    },
+    {
+      "name": "Palatinik",
+      "tier": "Supporter",
+      "coffees": 1,
+      "totalAmount": 3,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    },
+    {
+      "name": "apurujusu",
+      "tier": "Supporter",
+      "coffees": 1,
+      "totalAmount": 3,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    },
+    {
+      "name": "lørefen",
+      "tier": "Supporter",
+      "coffees": 1,
+      "totalAmount": 3,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    },
+    {
+      "name": "StMan",
+      "tier": "Supporter",
+      "coffees": 1,
+      "totalAmount": 3,
+      "message": "",
+      "supportedAt": "2024-12-01T00:00:00Z"
+    }
+  ]
+}

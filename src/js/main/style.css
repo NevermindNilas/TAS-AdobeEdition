@@ -23,18 +23,13 @@ html {
 /* Touch-friendly interactions */
 .tab-content-container {
   user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   touch-action: pan-y; /* Allow vertical scrolling but capture horizontal swipes */
   overflow-x: hidden; /* Prevent horizontal scrolling during animations */
   
   /* Hardware acceleration for smooth blur animations */
   transform: translateZ(0);
-  -webkit-transform: translateZ(0);
   will-change: transform, filter, opacity;
   backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   position: relative;
   perspective: 1000px; /* Add perspective for 3D-like effects */
 }
@@ -43,14 +38,11 @@ html {
 [data-motion-component] {
   transform-origin: center center;
   backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   perspective: 1000px;
-  -webkit-perspective: 1000px;
   will-change: transform, opacity, filter;
   
   /* GPU acceleration */
   transform: translateZ(0);
-  -webkit-transform: translateZ(0);
 }
 
 /* Progress container enhancements */
@@ -58,7 +50,6 @@ html {
   transform-origin: center top;
   will-change: transform, opacity, filter;
   backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 
 /* Reduce layout shifts during animations */
@@ -80,13 +71,11 @@ html {
 .spectrum-Button:hover,
 .spectrum-ToggleButton:hover {
   transform: translateY(-1px);
-  transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .spectrum-Button:active,
 .spectrum-ToggleButton:active {
   transform: translateY(0px);
-  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Smooth dialog animations */
@@ -122,6 +111,12 @@ body.spectrum-modal-is-open {
   background: radial-gradient(circle, rgba(169, 169, 169, 0.8) 0%, rgba(169, 169, 169, 0) 100%);
 }
 
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #fff transparent;
+}
+
 /* UI Components */
 .alertDialogBorder {
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -141,7 +136,7 @@ body.spectrum-modal-is-open {
 }
 
 .imageStyling {
-  border-radius: 7px;
+  border-radius: var(--border-radius-md);
 }
 
 /* Animations */
@@ -173,10 +168,20 @@ body.spectrum-modal-is-open {
   border: none;
 }
 
+.actionButtonSocial:focus {
+  outline: 2px solid var(--color-white);
+  outline-offset: 2px;
+}
+
 .socialIcon {
   background-color: transparent;
   filter: brightness(var(--brightness-dim));
   transition: filter var(--transition-speed) ease-in-out;
+}
+
+.socialIcon:focus {
+  outline: 2px solid var(--color-white);
+  outline-offset: 2px;
 }
 
 .socialIcon:hover,
@@ -258,21 +263,4 @@ body.spectrum-modal-is-open {
   }
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  /* Faster animations on touch devices */
-  .tab-content-container {
-    transition-duration: 0.2s;
-  }
-}
 
-/* Reduce motion for users who prefer it */
-@media (prefers-reduced-motion: reduce) {
-  [data-motion-component],
-  .tab-content-container,
-  .progress-container {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}

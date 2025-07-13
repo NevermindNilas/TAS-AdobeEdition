@@ -11,10 +11,11 @@ import {
     Well,
     Link,
     Accordion,
+    ProgressCircle,
+    ActionButton,
 } from "@adobe/react-spectrum";
 
 // Icons
-import { BiSolidDonateHeart } from "react-icons/bi";
 import Info from "@spectrum-icons/workflow/Info";
 import DeviceDesktop from "@spectrum-icons/workflow/DeviceDesktop";
 import Help from "@spectrum-icons/workflow/Help";
@@ -22,17 +23,177 @@ import { PiGraphicsCardFill } from "react-icons/pi";
 import Gauge1 from "@spectrum-icons/workflow/Gauge1";
 import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
+import Refresh from "@spectrum-icons/workflow/Refresh";
 
-// Assuming these functions are available or imported from Socials.tsx
 import { socialsPanel, openBuyMeACoffee, openReportIssue, openParameters } from "./Socials";
+import { useSupporters,  Supporter} from "./supporterUtils";
 
-// Helper component for consistent Disclosure titles
 const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
     <Flex alignItems="center" gap="size-100">
         {icon}
         <Text>{text}</Text>
     </Flex>
 );
+
+// Individual supporter card component
+const SupporterCard = ({ supporter }: { supporter: Supporter }) => {
+    const getTierStyles = (tier: string) => {
+        switch (tier) {
+            case 'Gold':
+                return {
+                    backgroundColor: '#ffd700',
+                    color: '#000',
+                    borderColor: '#ffed4e',
+                    icon: '🏆'
+                };
+            case 'Silver':
+                return {
+                    backgroundColor: '#c0c0c0',
+                    color: '#000',
+                    borderColor: '#d4d4d4',
+                    icon: '🥈'
+                };
+            case 'Bronze':
+                return {
+                    backgroundColor: '#cd7f32',
+                    color: '#fff',
+                    borderColor: '#d4913d',
+                    icon: '🥉'
+                };
+            default:
+                return {
+                    backgroundColor: '#6f4e37',
+                    color: '#fff',
+                    borderColor: '#8b6244',
+                    icon: '☕'
+                };
+        }
+    };
+
+    const styles = getTierStyles(supporter.tier);
+
+    return (
+        <View
+            backgroundColor="gray-50"
+            padding="size-100"
+            borderRadius="medium"
+            borderWidth="thin"
+            borderColor="gray-200"
+            UNSAFE_style={{
+                minWidth: '120px',
+                maxWidth: '160px',
+                transition: 'all 0.2s ease',
+                cursor: 'default',
+                position: 'relative'
+            }}
+        >
+            <Flex direction="column" alignItems="center" gap="size-50">
+                {supporter.tier !== 'Supporter' && (
+                    <View
+                        UNSAFE_style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            width: '20px',
+                            height: '20px',
+                            backgroundColor: styles.backgroundColor,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '10px',
+                            border: `2px solid ${styles.borderColor}`,
+                            zIndex: 1
+                        }}
+                    >
+                        <span>{styles.icon}</span>
+                    </View>
+                )}
+                <Text
+                    UNSAFE_style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        textAlign: 'center',
+                        wordBreak: 'break-word',
+                        lineHeight: '1.2'
+                    }}
+                >
+                    {supporter.name}
+                </Text>
+                {supporter.tier !== 'Supporter' && (
+                    <Text
+                        UNSAFE_style={{
+                            fontSize: '12px',
+                            color: '#666',
+                            textAlign: 'center',
+                            fontWeight: '500'
+                        }}
+                    >
+                        {supporter.tier}
+                    </Text>
+                )}
+            </Flex>
+        </View>
+    );
+};
+
+const SupportersSection = () => {
+    const { supporters, loading, error } = useSupporters();
+    return (
+        <View
+            backgroundColor="gray-75"
+            padding="size-150"
+            borderRadius="medium"
+            marginY="size-50"
+            width="100%"
+        >
+            <Flex direction="column" alignItems="center" gap="size-100">
+                
+                {loading ? (
+                    <Flex direction="row" alignItems="center" gap="size-100">
+                        <ProgressCircle size="S" isIndeterminate />
+                        <Text>Loading supporters...</Text>
+                    </Flex>
+                ) : error ? (
+                    <Flex direction="column" alignItems="center" gap="size-100">
+                        <Text UNSAFE_style={{ color: "#d73502" }}>
+                            Failed to load supporters (using cached data)
+                        </Text>
+                        <View
+                            UNSAFE_style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                                gap: '12px',
+                                width: '100%',
+                                maxWidth: '600px',
+                                justifyItems: 'center'
+                            }}
+                        >
+                            {supporters.supporters.map((supporter, index) => (
+                                <SupporterCard key={index} supporter={supporter} />
+                            ))}
+                        </View>
+                    </Flex>
+                ) : (
+                    <View
+                        UNSAFE_style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                            gap: '12px',
+                            width: '100%',
+                            maxWidth: '600px',
+                            justifyItems: 'center'
+                        }}
+                    >
+                        {supporters.supporters.map((supporter, index) => (
+                            <SupporterCard key={index} supporter={supporter} />
+                        ))}
+                    </View>
+                )}
+            </Flex>
+        </View>
+    );
+};
 
 export function aboutTab(tasVersion: string) {
     return (
@@ -60,18 +221,27 @@ export function aboutTab(tasVersion: string) {
                     </Flex>
                     <Divider size="S" /> {/* Use smaller divider */}
                 </Flex>
+         
                 <Well>
                     <Flex direction="column" alignItems="center" gap="size-100">
-                        <Text UNSAFE_style={{ fontWeight: "bold", color: "#D83B01", fontSize: "15px", textAlign: "center" }}>
-                            ❤️ <strong>Please consider supporting TAS' development!</strong>
+                        <Flex direction="row" alignItems="center" gap="size-150">
+                            {/* Coffee mug icon */}
+                            <span style={{ fontSize: 28, color: "#6f4e37" }}>☕</span>
+                            <Heading level={4} margin={0}>
+                                Supporters
+                            </Heading>
+                        </Flex>
+                        <Text UNSAFE_style={{ fontWeight: "bold", color: "#6f4e37", fontSize: "15px", textAlign: "center" }}>
+                            Thank you to everyone who supports TAS!
                         </Text>
                         <Button
                             variant="primary"
                             onPress={openBuyMeACoffee}
-                            UNSAFE_style={{ background: "#D83B01" }}
+                            UNSAFE_style={{ background: "#6f4e37" }}
                         >
-                            <Text>Donate</Text>
+                            <Text>Buy Me a Coffee</Text>
                         </Button>
+                        <SupportersSection />
                     </Flex>
                 </Well>
                 <View

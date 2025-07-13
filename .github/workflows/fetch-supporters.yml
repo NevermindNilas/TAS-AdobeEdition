@@ -1,0 +1,151 @@
+name: Fetch Buy Me a Coffee Supporters
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/fetch-supporters.yml'
+
+jobs:
+  fetch-supporters:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Fetch supporters from Buy Me a Coffee API
+        env:
+          BUYMEACOFFEE_API_TOKEN: ${{ secrets.BUYMEACOFFEE_API_TOKEN }}
+        run: |
+          # Create the data directory if it doesn't exist
+          mkdir -p src/data
+          
+          # Fetch supporters from Buy Me a Coffee API
+          response=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" \
+            "https://developers.buymeacoffee.com/api/v1/supporters?page=1")
+          
+          # Check if the API call was successful
+          if [ $? -eq 0 ] && echo "$response" | jq -e '.data' > /dev/null 2>&1; then
+            echo "API call successful, processing data..."
+            
+            # Process the response and create JSON file
+            echo "$response" | jq '{
+              lastUpdated: now | strftime("%Y-%m-%dT%H:%M:%SZ"),
+              supporters: [
+                .data[] | {
+                  name: .payer_name,
+                  tier: (
+                    if .support_coffee_price >= 15 then "Gold"
+                    elif .support_coffee_price >= 10 then "Silver"
+                    elif .support_coffee_price >= 5 then "Bronze"
+                    else "Supporter"
+                    end
+                  ),
+                  coffees: .support_coffees,
+                  totalAmount: .support_coffee_price,
+                  message: .support_note,
+                  supportedAt: .created_on
+                }
+              ] | sort_by(.totalAmount) | reverse
+            }' > src/data/supporters.json
+            
+            echo "Supporters data updated successfully!"
+            cat src/data/supporters.json
+          else
+            echo "API call failed or returned invalid data"
+            echo "Response: $response"
+            
+            # Create fallback data if file doesn't exist
+            if [ ! -f src/data/supporters.json ]; then
+              echo "Creating fallback supporters file..."
+              cat > src/data/supporters.json << 'FALLBACK_EOF'
+          {
+            "lastUpdated": "2025-01-13T15:36:00Z",
+            "supporters": [
+              {
+                "name": "Venn",
+                "tier": "Silver",
+                "coffees": 2,
+                "totalAmount": 10,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              },
+              {
+                "name": "fifoooo",
+                "tier": "Bronze", 
+                "coffees": 1,
+                "totalAmount": 5,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              },
+              {
+                "name": "djinn",
+                "tier": "Supporter",
+                "coffees": 1,
+                "totalAmount": 3,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              },
+              {
+                "name": "Palatinik",
+                "tier": "Supporter",
+                "coffees": 1,
+                "totalAmount": 3,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              },
+              {
+                "name": "apurujusu",
+                "tier": "Supporter",
+                "coffees": 1,
+                "totalAmount": 3,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              },
+              {
+                "name": "lørefen",
+                "tier": "Supporter",
+                "coffees": 1,
+                "totalAmount": 3,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              },
+              {
+                "name": "StMan",
+                "tier": "Supporter",
+                "coffees": 1,
+                "totalAmount": 3,
+                "message": "",
+                "supportedAt": "2024-12-01T00:00:00Z"
+              }
+            ]
+          }
+          FALLBACK_EOF
+            fi
+            exit 1
+          fi
+          
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code src/data/supporters.json || echo "changes=true" >> $GITHUB_OUTPUT
+          
+      - name: Commit and push changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add src/data/supporters.json
+          git commit -m "Update supporters data - $(date '+%Y-%m-%d %H:%M:%S')"
+          git push

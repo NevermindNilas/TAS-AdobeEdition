@@ -32,8 +32,9 @@ jobs:
           # Helper to fetch all paginated results for a given endpoint
           fetch_all_pages() {
             local url=$1
+            local prefix=$2
             local page=1
-            local all_data="[]"
+            local files=()
             while :; do
               resp=$(curl -s -H "Authorization: Bearer $BUYMEACOFFEE_API_TOKEN" "${url}?page=${page}")
               # Check if response is valid JSON and contains .data
@@ -46,17 +47,22 @@ jobs:
               if [ "$(echo "$page_data" | jq 'length')" -eq 0 ]; then
                 break
               fi
-              all_data=$(jq -s '.[0] + .[1]' <(echo "$all_data") <(echo "$page_data"))
+              file="${prefix}_page_${page}.json"
+              echo "$page_data" > "$file"
+              files+=("$file")
               page=$((page + 1))
             done
-            echo "$all_data"
+            # Merge all files into one array
+            jq -s 'add' "${files[@]}"
+            # Clean up
+            rm -f "${files[@]}"
           }
 
           # Fetch all one-time supporters
-          one_time_supporters=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/supporters")
-
+          one_time_supporters=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/supporters" "supporters")
+          
           # Fetch all members (active and inactive)
-          members=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all")
+          members=$(fetch_all_pages "https://developers.buymeacoffee.com/api/v1/subscriptions?status=all" "members")
 
           # Normalize and merge both datasets
           merged=$(jq -n \

@@ -291,9 +291,7 @@ const Main = () => {
         socketManager.getSocket();
 
         const unsubscribeProgress = socketManager.onProgressUpdate((data) => {
-            console.log("Socket progress update received:", data);
-
-            setIsProcessing(true); // Assume processing if we get progress updates
+            setIsProcessing(true);
             setTotalFrames(data.totalFrames);
             setCurrentFrame(data.currentFrame);
             setProcessingFps(data.fps);
@@ -303,8 +301,6 @@ const Main = () => {
         });
 
         const unsubscribeComplete = socketManager.onProcessComplete((success) => {
-            console.log(`Socket Process completed with success: ${success}`);
-            console.log("Socket cleanup: Resetting processing state");
             setIsProcessing(false);
             setCurrentFrame(0);
             setTotalFrames(100);
@@ -313,23 +309,20 @@ const Main = () => {
             setProgressBarStatus("Progress complete!");
         });
 
-        // Cleanup function
         return () => {
             unsubscribeProgress();
             unsubscribeComplete();
-            setIsProcessing(false); // Reset processing state on unmount
+            setIsProcessing(false);
             setCurrentFrame(0);
             setTotalFrames(100);
             setProcessingFps(0);
             setEstimatedTimeRemaining(0);
             setProgressBarStatus("Initializing...");
         };
-    }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+    }, []);
 
     useEffect(() => {
-        // initial on render function to check for updates and download TAS dependencies
         const initialize = async () => {
-            // Check for updates
             if (haveICheckedForUpdates === false) {
                 const res = await checkForUpdates(tasVersion);
                 if (res.isUpdateAvailable && haveICheckedForUpdates === false) {
@@ -337,23 +330,16 @@ const Main = () => {
                     generateToast(4, `Update ${res.latestVersion} is available!`);
                 }
             }
-            // Fetch GPU Status
             if (!isGPUCheckDone) {
                 const result = await checkForGPU();
                 setIsNvidia(result);
                 setIsGPUCheckDone(true);
-                console.log(`TASFULLORLITE is set to: ${result}`);
+                // TASFULLORLITE is set to: ${result}
             }
 
-            // Check for TAS Backend
             if (!isTASCheckDone) {
                 checkIfBackendExists();
             }
-            /*
-            if (!disableDonatePopup) {
-                generateToast(16);
-            }
-            */
         };
 
         initialize();
@@ -376,7 +362,6 @@ const Main = () => {
                     setShowDownloadDialog(true);
                 }
 
-                console.log("Current version when checking:", currentVersion);
                 setLatestVersion(latestVersion);
             }
         }
@@ -489,11 +474,8 @@ const Main = () => {
                 inpoint,
                 outpoint
             );
-            console.log("Command before port addition:", command);
-
             // Add the current socket port to the command
             command = addPortToCommand(command);
-            console.log("Command after port addition:", command);
 
             setIsProcessing(true);
             executeProcess(command, "Auto Cutting Clip", () => {
@@ -542,7 +524,6 @@ const Main = () => {
 
         var path = await evalTS("getPath"); // gets the path to the project file
         var path = path.replace(/[^\\]+$/, "");
-        console.log(path);
 
         if (mode === "depth") {
             var toast = "Depth map extraction";
@@ -597,11 +578,8 @@ const Main = () => {
                 depthres,
                 half
             );
-            console.log("Command before port addition:", command);
-
             // Add the current socket port to the command
             command = addPortToCommand(command);
-            console.log("Command after port addition:", command);
 
         } else if (mode === "background") {
             var toast = "Background removal";
@@ -636,11 +614,8 @@ const Main = () => {
                 half
             );
 
-            console.log("Command before port addition:", command);
-
             // Add the current socket port to the command
             command = addPortToCommand(command);
-            console.log("Command after port addition:", command);
         }
 
         else {
@@ -662,7 +637,6 @@ const Main = () => {
 
     const startOfflineMode = async () => {
         var command = offlineModeLogic(pythonExePath, mainPyPath);
-        console.log("Command: ", command);
 
         executeProcess(command, "Offline mode", () => {
             generateToast(1, "TAS is now fully operational offline.");
@@ -819,11 +793,9 @@ const Main = () => {
         }
 
         var command = attempt.join(" ");
-        console.log("Command before port addition:", command);
 
         // Add the current socket port to the command
         command = addPortToCommand(command);
-        console.log("Command after port addition:", command);
 
         setIsProcessing(true);
         executeProcess(

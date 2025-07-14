@@ -907,6 +907,7 @@ const Main = () => {
         }
     };
 
+   
     const executeProcess = (
         command: any,
         toastMessage: string,
@@ -914,34 +915,22 @@ const Main = () => {
         inputFile?: any,
         outputFile?: any
     ) => {
-        processCancelledRef.current = false; // Reset ref at start
+        processCancelledRef.current = false;
         setIsProcessCancelled(false);
-        var hasFailed = false;
-        // --- Begin log isolation fix ---
-        setFullLogs([]); // Always clear logs at process start
-        let localLogs: string[] = []; // Always reset localLogs per process
-        let lastLogSize = 0; // Always reset lastLogSize per process
-        // --- End log isolation fix ---
-        const process = child_process.exec(command);
-        generateToast(3, `${toastMessage} initiated...`);
-
-        // let localLogs: string[] = [];
-        // let lastLogSize = 0;
-        // let logPollingInterval: NodeJS.Timeout | null = null;
+        let hasFailed = false;
+        setFullLogs([]);
+        let localLogs: string[] = [];
+        let lastLogSize = 0;
         let logPollingInterval: NodeJS.Timeout | null = null;
+        let exited = false;
 
-        // Optimized log reading function
         const readNewLogs = () => {
             const logTxtPath = path.join(tasFolder, "TAS-Log.log");
             if (fs.existsSync(logTxtPath)) {
                 try {
                     const stats = fs.statSync(logTxtPath);
-                    // If the log file was truncated, reset lastLogSize
-                    if (stats.size < lastLogSize) {
-                        lastLogSize = 0;
-                    }
+                    if (stats.size < lastLogSize) lastLogSize = 0;
                     if (stats.size > lastLogSize) {
-                        // Read only the new content, not the entire file
                         const fd = fs.openSync(logTxtPath, "r");
                         const buffer = Buffer.alloc(stats.size - lastLogSize);
                         fs.readSync(fd, buffer, 0, buffer.length, lastLogSize);
@@ -949,7 +938,6 @@ const Main = () => {
 
                         const newContent = buffer.toString("utf8");
                         if (newContent.trim()) {
-                            // Split by lines and filter out empty lines
                             const newLines = newContent.split("\n").filter(line => line.trim());
                             if (newLines.length > 0) {
                                 localLogs.push(...newLines);
@@ -963,26 +951,86 @@ const Main = () => {
                 }
             }
         };
+
         // Start log polling with optimized interval
-        logPollingInterval = setInterval(readNewLogs, 1000); // Reduced from 2000ms to 1000ms
+        logPollingInterval = setInterval(readNewLogs, 1000);
 
-        process.on("exit", code => {
-            console.log(`Child process exited with code ${code}`);
-
-            // Clear polling interval first
+        let process: any;
+        try {
+            process = child_process.exec(command, (error: any) => {
+                if (error) {
+                    hasFailed = true;
+                    if (logPollingInterval) {
+                        clearInterval(logPollingInterval);
+                        logPollingInterval = null;
+                    }
+                    setIsProcessing(false);
+                    setCurrentFrame(0);
+                    setTotalFrames(100);
+                    setProcessingFps(0);
+                    setEstimatedTimeRemaining(0);
+                    setProgressBarStatus("Process failed!");
+                    generateToast(
+                        2,
+                        `Error: ${toastMessage} failed to start or crashed. Check the logs & contact Nilas on Discord.`
+                    );
+                }
+            });
+        } catch (err) {
+            hasFailed = true;
             if (logPollingInterval) {
                 clearInterval(logPollingInterval);
                 logPollingInterval = null;
             }
+            setIsProcessing(false);
+            setCurrentFrame(0);
+            setTotalFrames(100);
+            setProcessingFps(0);
+            setEstimatedTimeRemaining(0);
+            setProgressBarStatus("Process failed!");
+            generateToast(
+                2,
+                `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
+            );
+            return;
+        }
 
-            // Read any remaining logs one final time
+        generateToast(3, `${toastMessage} initiated...`);
+
+        process.on("error", (err: any) => {
+            hasFailed = true;
+            if (logPollingInterval) {
+                clearInterval(logPollingInterval);
+                logPollingInterval = null;
+            }
+            setIsProcessing(false);
+            setCurrentFrame(0);
+            setTotalFrames(100);
+            setProcessingFps(0);
+            setEstimatedTimeRemaining(0);
+            setProgressBarStatus("Process failed!");
+            generateToast(
+                2,
+                `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
+            );
+        });
+
+        process.on("exit", (code: any) => {
+            if (exited) return;
+            exited = true;
+            if (logPollingInterval) {
+                clearInterval(logPollingInterval);
+                logPollingInterval = null;
+            }
             readNewLogs();
 
             try {
                 if (!processCancelledRef.current) {
                     if (outputFile) {
                         if (fs.existsSync(outputFile)) {
-                            onSuccess();
+                            if (typeof onSuccess === "function") {
+                                onSuccess();
+                            }
                         } else {
                             hasFailed = true;
                             generateToast(
@@ -991,32 +1039,27 @@ const Main = () => {
                             );
                         }
                     } else {
-                        onSuccess();
+                        if (typeof onSuccess === "function") {
+                            onSuccess();
+                        }
                     }
                 }
             } catch (error) {
                 console.error(`Error: ${error}`);
             } finally {
-                // Always reset processing state when process exits
-                console.log("Process exit cleanup: Resetting processing state");
+                setIsProcessing(false);
+                setCurrentFrame(0);
+                setTotalFrames(100);
+                setProcessingFps(0);
+                setEstimatedTimeRemaining(0);
+                setProgressBarStatus("Progress complete!");
 
-                // Add a small delay to ensure any final socket messages are processed
-                setTimeout(() => {
-                    setIsProcessing(false);
-                    setCurrentFrame(0);
-                    setTotalFrames(100);
-                    setProcessingFps(0);
-                    setEstimatedTimeRemaining(0);
-                }, 500); // 500ms delay
-
-                // Check the ref here too
                 if (!processCancelledRef.current && !hasFailed) {
                     generateToast(1, `${toastMessage} completed.`);
                 }
                 setIsProcessCancelled(false);
                 processCancelledRef.current = false;
                 if (!deletePreRender) {
-                    // delete the pre-rendered files
                     if (inputFile) {
                         try {
                             if (fs.existsSync(inputFile)) {
@@ -1037,7 +1080,7 @@ const Main = () => {
             if (logPollingInterval) {
                 clearInterval(logPollingInterval);
             }
-        };
+    };
     };
 
     useEffect(() => {

@@ -52,6 +52,6 @@ const config: CEP_Config = {
   },
   installModules: [],
   copyAssets: [],
-  copyZipAssets: ["/LICENSE.txt", "/README.txt"],
+  copyZipAssets: ["/LICENSE.md", "/README.txt"],
 };
 export default config;

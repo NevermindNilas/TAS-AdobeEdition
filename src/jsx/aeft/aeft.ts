@@ -201,6 +201,13 @@ function renderActiveComp(renderMethod: string) {
         var outputName: string;
         if (comp.selectedLayers.length === 1) {
             var layerName = comp.selectedLayers[0].name;
+
+            // if layer name ends with a .mp4 or alike extension, remove it
+            if (layerName.match(/\.(mp4|mov|avi|mkv)$/i)) {
+                layerName = layerName.replace(/\.(mp4|mov|avi|mkv)$/i, "");
+            }
+            
+            // make sure it its utf-8 safe
             var cleanLayerName = layerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
             outputName = cleanLayerName + "_" + randomId + outputContainer;
         } else {
@@ -578,6 +585,8 @@ function parseInputAsFrame(input: string | number, comp: CompItem): number {
     }
     return input;
 }
+
+
 
 export const removeDuplicateFrames = (
     samplingAccuracy: number = 4,

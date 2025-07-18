@@ -1,199 +1,83 @@
-import { io, Socket } from 'socket.io-client';
-import { findAvailablePort, testConnection, getStoredPort, storePort, clearStoredPort } from './portUtils';
+// socket.tsx (SSE version, no socket.io)
+// Handles progress updates and process completion via EventSource (SSE)
 
 interface ProgressData {
-    fps: number;
-    currentFrame: number;
-    totalFrames: number;
-    eta: number;
-    status: string;
-}
-
-interface ServerShutdownData {
-    message: string;
+  fps: number;
+  currentFrame: number;
+  totalFrames: number;
+  eta: number;
+  status: string;
 }
 
 type ProgressUpdateCallback = (data: ProgressData) => void;
 type ProcessCompleteCallback = (success: boolean) => void;
 
-class SocketManager {
-    private socket: Socket | null = null;
-    private static instance: SocketManager;
-    private progressCallbacks: ProgressUpdateCallback[] = [];
-    private completeCallbacks: ProcessCompleteCallback[] = [];
-    private currentPort: number = 8080;
-    private isConnecting: boolean = false;
-    private connectionRetries: number = 0;
-    private maxRetries: number = 3;
+class SSEManager {
+  private static instance: SSEManager;
+  private eventSource: EventSource | null = null;
+  private progressCallbacks = new Set<ProgressUpdateCallback>();
+  private completeCallbacks = new Set<ProcessCompleteCallback>();
+  private destroyed = false;
+  private lastStatus: string | null = null;
 
-    private constructor() {
-        this.initializeSocket();
+  private constructor() {}
+
+  public static getInstance(): SSEManager {
+    if (!SSEManager.instance) {
+      SSEManager.instance = new SSEManager();
     }
+    return SSEManager.instance;
+  }
 
-    private async initializeSocket() {
-        try {
-            this.isConnecting = true;
-            const port = await this.findWorkingPort();
-            this.currentPort = port;
-            this.createSocket(port);
-        } catch (error) {
-            console.error('Failed to initialize socket:', error);
-            this.currentPort = 8080;
-            this.createSocket(8080);
-        } finally {
-            this.isConnecting = false;
-        }
+  public init(): void {
+    if (this.eventSource || this.destroyed) return;
+    // Hardcoded port 8080 as per backend
+    this.eventSource = new window.EventSource("http://127.0.0.1:8080/progress/stream");
+    this.eventSource.onmessage = (event: MessageEvent) => {
+      try {
+        const data: ProgressData = JSON.parse(event.data);
+        this.handleProgressUpdate(data);
+      } catch (e) {
+        // Ignore parse errors
+      }
+    };
+    this.eventSource.onerror = () => {
+      // Optionally handle errors (e.g., reconnect logic)
+    };
+  }
+
+  private handleProgressUpdate(data: ProgressData) {
+    for (const cb of this.progressCallbacks) cb(data);
+    // Detect process completion (status === 'completed' or 'failed')
+    if (data.status === "completed" || data.status === "failed") {
+      if (this.lastStatus !== data.status) {
+        for (const cb of this.completeCallbacks) cb(data.status === "completed");
+        this.lastStatus = data.status;
+      }
+    } else {
+      this.lastStatus = null;
     }
+  }
 
-    private async findWorkingPort(): Promise<number> {
-        // First try the stored port
-        const storedPort = getStoredPort();
-        
-        if (await testConnection(storedPort)) {
-            console.log(`Using stored port ${storedPort} (server is running)`);
-            return storedPort;
-        }
+  public onProgressUpdate(cb: ProgressUpdateCallback): () => void {
+    this.progressCallbacks.add(cb);
+    return () => this.progressCallbacks.delete(cb);
+  }
 
-        try {
-            const availablePort = await findAvailablePort();
-            console.log(`Found available port: ${availablePort}`);
-            storePort(availablePort);
-            return availablePort;
-        } catch (error) {
-            console.warn('Could not find available port, using default 8080:', error);
-            clearStoredPort();
-            return 8080;
-        }
+  public onProcessComplete(cb: ProcessCompleteCallback): () => void {
+    this.completeCallbacks.add(cb);
+    return () => this.completeCallbacks.delete(cb);
+  }
+
+  public destroy(): void {
+    this.destroyed = true;
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
     }
-
-    private createSocket(port: number) {
-        if (this.socket) {
-            this.socket.disconnect();
-        }
-
-        this.socket = io(`http://127.0.0.1:${port}`, {
-            timeout: 3000,
-            reconnection: true,
-            reconnectionAttempts: this.maxRetries,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 3000,
-        });
-
-        this.setupSocketListeners();
-    }
-
-    private setupSocketListeners() {
-        if (!this.socket) return;
-
-        this.socket.on('connect', () => {
-            console.log(`Connected to server on port ${this.currentPort}!`);
-            if (this.socket) {
-                this.socket.emit('get_progress');
-            }
-        });
-
-        this.socket.on('progress_update', (data: ProgressData) => {
-            console.log('Progress Update:', data);
-            this.progressCallbacks.forEach(callback => callback(data));
-            
-            if (data.status === 'completed' || data.status === 'failed') {
-                this.completeCallbacks.forEach(callback => callback(data.status === 'completed'));
-            }
-        });
-
-        this.socket.on('process_complete', (data: { success: boolean }) => {
-            console.log('Process Complete:', data);
-            this.completeCallbacks.forEach(callback => callback(data.success));
-        });
-
-        this.socket.on('server_shutdown', (data: ServerShutdownData) => {
-            console.log('Server Shutdown:', data.message);
-        });
-
-        this.socket.on('disconnect', () => {
-            console.log('Disconnected from server.');
-        });
-
-        this.socket.on('connect_error', (error: Error) => {
-            console.error(`Connection error on port ${this.currentPort}:`, error);
-            this.handleConnectionError();
-        });
-    }
-
-    private async handleConnectionError() {
-        if (this.connectionRetries < this.maxRetries && !this.isConnecting) {
-            this.connectionRetries++;
-            console.log(`Retrying connection (attempt ${this.connectionRetries}/${this.maxRetries})`);
-            
-            try {
-                this.isConnecting = true;
-                const newPort = await this.findWorkingPort();
-                if (newPort !== this.currentPort) {
-                    this.currentPort = newPort;
-                    this.createSocket(newPort);
-                }
-            } catch (error) {
-                console.error('Failed to find working port during retry:', error);
-            } finally {
-                this.isConnecting = false;
-            }
-        }
-    }
-
-    public static getInstance(): SocketManager {
-        if (!SocketManager.instance) {
-            SocketManager.instance = new SocketManager();
-        }
-        return SocketManager.instance;
-    }
-
-    public getSocket(): Socket | null {
-        return this.socket;
-    }
-
-    public getCurrentPort(): number {
-        return this.currentPort;
-    }
-
-    public isConnected(): boolean {
-        return this.socket ? this.socket.connected : false;
-    }
-
-    public async reconnect(): Promise<void> {
-        try {
-            this.connectionRetries = 0;
-            this.isConnecting = true;
-            const port = await this.findWorkingPort();
-            this.currentPort = port;
-            this.createSocket(port);
-        } catch (error) {
-            console.error('Failed to reconnect:', error);
-        } finally {
-            this.isConnecting = false;
-        }
-    }
-
-    public requestProgress(): void {
-        if (this.socket && this.socket.connected) {
-            this.socket.emit('get_progress');
-        } else {
-            console.warn('Cannot request progress: socket not connected');
-        }
-    }
-
-    public onProgressUpdate(callback: ProgressUpdateCallback): () => void {
-        this.progressCallbacks.push(callback);
-        return () => {
-            this.progressCallbacks = this.progressCallbacks.filter(cb => cb !== callback);
-        };
-    }
-
-    public onProcessComplete(callback: ProcessCompleteCallback): () => void {
-        this.completeCallbacks.push(callback);
-        return () => {
-            this.completeCallbacks = this.completeCallbacks.filter(cb => cb !== callback);
-        };
-    }
+    this.progressCallbacks.clear();
+    this.completeCallbacks.clear();
+  }
 }
 
-export const socketManager = SocketManager.getInstance();
+export const socketManager = SSEManager.getInstance();

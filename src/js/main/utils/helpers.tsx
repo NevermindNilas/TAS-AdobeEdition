@@ -61,30 +61,6 @@ export async function getAEProjectFolderPath(): Promise<string | null> {
     return require("path").dirname(projectPath);
 }
 
-/**
- * Gets the current socket port being used by the socket manager.
- * This port should be passed to the backend when starting processes.
- * @returns The current port number
- */
-export function getCurrentSocketPort(): number {
-    return socketManager.getCurrentPort();
-}
-
-/**
- * Checks if the socket is currently connected.
- * @returns True if connected, false otherwise
- */
-export function isSocketConnected(): boolean {
-    return socketManager.isConnected();
-}
-
-/**
- * Reconnects the socket with dynamic port detection.
- * @returns Promise that resolves when reconnection attempt is complete
- */
-export async function reconnectSocket(): Promise<void> {
-    return socketManager.reconnect();
-}
 
 /**
  * Modifies a TAS backend command to include the WebSocket URL in the --ae flag.

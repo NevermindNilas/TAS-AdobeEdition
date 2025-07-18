@@ -203,6 +203,13 @@ const Main = () => {
         "Not Available"
     );
 
+    const currentFrameRef = useRef(0);
+    const totalFramesRef = useRef(100);
+    const processingFpsRef = useRef<number>(0);
+    const estimatedTimeRemainingRef = useRef<number>(0);
+    const progressBarStatusRef = useRef<string>("Initializing...");
+    const isProcessingRef = useRef(false);
+
     const [isNvidia, setIsNvidia] = useState(DEFAULT.TASFULLORLITE);
     const [isGPUCheckDone, setIsGPUCheckDone] = useState(false);
     const [isTASCheckDone, setIsTASCheckDone] = useState(false);
@@ -276,50 +283,88 @@ const Main = () => {
         }
     };
 
-    // Progress Bar Inference
-    const [progressBarStatus, setProgressBarStatus] = useState<string>();
-    const [currentFrame, setCurrentFrame] = useState(0);
-    const [totalFrames, setTotalFrames] = useState(100);
-    const [processingFps, setProcessingFps] = useState<number>(0);
-    const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number>(0);
+
+
+    // Single state object for UI updates
+    const [progressState, setProgressState] = useState({
+        currentFrame: 0,
+        totalFrames: 100,
+        processingFps: 0,
+        estimatedTimeRemaining: 0,
+        progressBarStatus: "Initializing...",
+        isProcessing: false
+    });
+
+    // Stable callback functions to avoid race conditions
+    const updateProgress = useCallback((data: any) => {
+        // Update refs immediately
+        currentFrameRef.current = data.currentFrame;
+        totalFramesRef.current = data.totalFrames;
+        processingFpsRef.current = data.fps;
+        estimatedTimeRemainingRef.current = data.eta;
+        progressBarStatusRef.current = data.status;
+        isProcessingRef.current = true;
+
+        // Batch state update for UI
+        setProgressState({
+            currentFrame: data.currentFrame,
+            totalFrames: data.totalFrames,
+            processingFps: data.fps,
+            estimatedTimeRemaining: data.eta,
+            progressBarStatus: data.status,
+            isProcessing: true
+        });
+        setIsProcessing(true);
+    }, []);
+
+    const resetProgress = useCallback((status: string = "Progress complete!") => {
+        // Reset refs
+        currentFrameRef.current = 0;
+        totalFramesRef.current = 100;
+        processingFpsRef.current = 0;
+        estimatedTimeRemainingRef.current = 0;
+        progressBarStatusRef.current = status;
+        isProcessingRef.current = false;
+
+        // Reset state
+        setProgressState({
+            currentFrame: 0,
+            totalFrames: 100,
+            processingFps: 0,
+            estimatedTimeRemaining: 0,
+            progressBarStatus: status,
+            isProcessing: false
+        });
+        setIsProcessing(false);
+    }, []);
 
     // Logs
     const [fullLogs, setFullLogs] = useState<string[]>([]);
 
 
     useEffect(() => {
-        socketManager.getSocket();
+        let unsubProgress: (() => void) | null = null;
+        let unsubComplete: (() => void) | null = null;
+        let cancelled = false;
 
-        const unsubscribeProgress = socketManager.onProgressUpdate((data) => {
-            setIsProcessing(true);
-            setTotalFrames(data.totalFrames);
-            setCurrentFrame(data.currentFrame);
-            setProcessingFps(data.fps);
-            setEstimatedTimeRemaining(data.eta);
+        const initializeSocket = async () => {
+            await socketManager.init();
+            if (cancelled) return;
+            unsubProgress = socketManager.onProgressUpdate(updateProgress);
+            unsubComplete = socketManager.onProcessComplete((success) => {
+                resetProgress("Progress complete!");
+            });
+        };
 
-            setProgressBarStatus(data.status)
-        });
-
-        const unsubscribeComplete = socketManager.onProcessComplete((success) => {
-            setIsProcessing(false);
-            setCurrentFrame(0);
-            setTotalFrames(100);
-            setProcessingFps(0);
-            setEstimatedTimeRemaining(0);
-            setProgressBarStatus("Progress complete!");
-        });
+        initializeSocket();
 
         return () => {
-            unsubscribeProgress();
-            unsubscribeComplete();
-            setIsProcessing(false);
-            setCurrentFrame(0);
-            setTotalFrames(100);
-            setProcessingFps(0);
-            setEstimatedTimeRemaining(0);
-            setProgressBarStatus("Initializing...");
+            cancelled = true;
+            if (unsubProgress) unsubProgress();
+            if (unsubComplete) unsubComplete();
+            resetProgress("Initializing...");
         };
-    }, []);
+    }, [updateProgress, resetProgress]);
 
     useEffect(() => {
         const initialize = async () => {
@@ -431,15 +476,11 @@ const Main = () => {
             "taskkill /f /im python.exe & taskkill /f /im ffmpeg.exe & taskkill /f /im ffprobe.exe";
         child_process.exec(killCommand);
 
-        // Ensure all processing states are reset
-        setIsProcessing(false);
-        setCurrentFrame(0);
-        setTotalFrames(100);
-        setProcessingFps(0);
-        setEstimatedTimeRemaining(0);
+        // Use the resetProgress callback instead of individual setters
+        resetProgress("Processing cancelled");
 
         generateToast(toastState || 2, toastMessage || "Processing cancelled.");
-    }, []);
+    }, [resetProgress]);
 
     const handleCloseDialog = () => {
         if (!isBackendAvailable) {
@@ -453,8 +494,8 @@ const Main = () => {
 
             var info: any | null = null;
             info = await evalTS("start"); // gets the inpoint, outpoint, input, and name of the video
-            const isSaved = await checkIfProjectIsSaved();
-            if (!isSaved) {
+
+            if (!checkIfProjectIsSaved()) {
                 return;
             }
 
@@ -644,10 +685,10 @@ const Main = () => {
     };
 
     const startChain = async () => {
-        const isSaved = await checkIfProjectIsSaved();
-        if (!isSaved) {
+        if (!checkIfProjectIsSaved()) {
             return;
         }
+        
         const layerInfo = await getAELayerInfo();
         if (!layerInfo) {
             return;
@@ -936,12 +977,7 @@ const Main = () => {
                         clearInterval(logPollingInterval);
                         logPollingInterval = null;
                     }
-                    setIsProcessing(false);
-                    setCurrentFrame(0);
-                    setTotalFrames(100);
-                    setProcessingFps(0);
-                    setEstimatedTimeRemaining(0);
-                    setProgressBarStatus("Process failed!");
+                    resetProgress("Process failed!");
                     generateToast(
                         2,
                         `Error: ${toastMessage} failed to start or crashed. Check the logs & contact Nilas on Discord.`
@@ -954,12 +990,7 @@ const Main = () => {
                 clearInterval(logPollingInterval);
                 logPollingInterval = null;
             }
-            setIsProcessing(false);
-            setCurrentFrame(0);
-            setTotalFrames(100);
-            setProcessingFps(0);
-            setEstimatedTimeRemaining(0);
-            setProgressBarStatus("Process failed!");
+            resetProgress("Process failed!");
             generateToast(
                 2,
                 `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
@@ -975,12 +1006,7 @@ const Main = () => {
                 clearInterval(logPollingInterval);
                 logPollingInterval = null;
             }
-            setIsProcessing(false);
-            setCurrentFrame(0);
-            setTotalFrames(100);
-            setProcessingFps(0);
-            setEstimatedTimeRemaining(0);
-            setProgressBarStatus("Process failed!");
+            resetProgress("Process failed!");
             generateToast(
                 2,
                 `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
@@ -1019,12 +1045,7 @@ const Main = () => {
             } catch (error) {
                 console.error(`Error: ${error}`);
             } finally {
-                setIsProcessing(false);
-                setCurrentFrame(0);
-                setTotalFrames(100);
-                setProcessingFps(0);
-                setEstimatedTimeRemaining(0);
-                setProgressBarStatus("Progress complete!");
+                resetProgress("Progress complete!");
 
                 if (!processCancelledRef.current && !hasFailed) {
                     generateToast(1, `${toastMessage} completed.`);
@@ -4728,7 +4749,7 @@ const Main = () => {
                                                         >
                                                             <View flex="1">
                                                                 <ProgressBar
-                                                                    value={(currentFrame / totalFrames) * 100}
+                                                                    value={(progressState.currentFrame / progressState.totalFrames) * 100}
                                                                     minValue={0}
                                                                     maxValue={100}
                                                                     size="L"
@@ -4736,8 +4757,8 @@ const Main = () => {
                                                                     showValueLabel={true}
                                                                     // label = "Status: + progressBarStatus"
                                                                     label={
-                                                                        progressBarStatus
-                                                                            ? `Status: ${progressBarStatus}`
+                                                                        progressState.progressBarStatus
+                                                                            ? `Status: ${progressState.progressBarStatus}`
                                                                             : "Processing..."
                                                                     }
                                                                 />
@@ -4764,16 +4785,16 @@ const Main = () => {
                                                                     fontWeight: "medium",
                                                                 }}
                                                             >
-                                                                {currentFrame > 0 && totalFrames > 0
-                                                                    ? `${currentFrame.toLocaleString()} / ${totalFrames.toLocaleString()} frames`
+                                                                {progressState.currentFrame > 0 && progressState.totalFrames > 0
+                                                                    ? `${progressState.currentFrame.toLocaleString()} / ${progressState.totalFrames.toLocaleString()} frames`
                                                                     : "0/0 frames"}
                                                                 {" • "}
-                                                                {estimatedTimeRemaining > 0
-                                                                    ? formatETA(estimatedTimeRemaining)
+                                                                {progressState.estimatedTimeRemaining > 0
+                                                                    ? formatETA(progressState.estimatedTimeRemaining)
                                                                     : "0s remaining"}
                                                                 {" • "}
-                                                                {processingFps > 0
-                                                                    ? processingFps.toFixed(1)
+                                                                {progressState.processingFps > 0
+                                                                    ? progressState.processingFps.toFixed(1)
                                                                     : "0.0"}
                                                                 fps
                                                             </Text>

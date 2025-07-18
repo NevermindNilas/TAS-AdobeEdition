@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Better I/O handling if the pre-render input file is a video file.
+- Removed `socket.io-client` dependency and replaced with flask.
 
+### Fixed
+- Fixed an issue where the naming scheme for pre-rendered files was not consistent.
+- Fixed an issue wehre the progress bar was not updating correctly during processing.
 
 ## [2.3.0] - 2025-07-16
 ### New

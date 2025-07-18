@@ -1,6 +1,6 @@
 {
     "name": "the-anime-scripter",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "scripts": {
         "dev": "vite",
         "watch": "tsc && vite build --watch true",

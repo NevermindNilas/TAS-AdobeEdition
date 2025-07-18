@@ -69,7 +69,7 @@ import DEFAULT from "./utils/DEFAULTS";
 import downloadTASCLI from "./utils/downloadTAS";
 import { generateToast } from "./utils/generateToast";
 import getCurrentVersion from "./utils/getCurrentVersion";
-import { getAELayerInfo, getAEProjectFolderPath } from "./utils/helpers";
+import { getAELayerInfo, getAEProjectFolderPath, ensureProjectIsSaved, createLayer, runProcess, executeProcessHelper, getValidatedAEContext } from "./utils/helpers";
 import { offlineModeLogic } from "./utils/offlineMode";
 import OpenTASFolder from "./utils/openTASFolder";
 import execPrecompose from "./utils/precompose";
@@ -419,17 +419,6 @@ const Main = () => {
         setIsTASCheckDone(true);
     };
 
-    const checkIfProjectIsSaved = async () => {
-        // Check if the project is saved
-        // If not, show a toast and return false
-        // else return the path
-        var path = await evalTS("getPath");
-        if (path === "undefined") {
-            generateToast(2, "Error: Please save or load a project before proceeding.");
-            return false;
-        }
-        return true;
-    };
 
     const handleDownloadTAS = () => {
         setisBackendAvailable(true);
@@ -495,7 +484,7 @@ const Main = () => {
             var info: any | null = null;
             info = await evalTS("start"); // gets the inpoint, outpoint, input, and name of the video
 
-            if (!checkIfProjectIsSaved()) {
+            if (!(await ensureProjectIsSaved())) {
                 return;
             }
 
@@ -519,7 +508,7 @@ const Main = () => {
             command = addPortToCommand(command);
 
             setIsProcessing(true);
-            executeProcess(command, "Auto Cutting Clip", () => {
+            runProcess(executeProcess, command, "Auto Cutting Clip", () => {
                 evalTS("autoClip", tasRoamingPath);
             });
         } catch (error) {
@@ -528,43 +517,35 @@ const Main = () => {
     };
 
     const startYoutubeDownload = async () => {
-        var isSaved = await checkIfProjectIsSaved();
+        var isSaved = await ensureProjectIsSaved();
         if (!isSaved) {
             return;
         }
 
-        let path = await evalTS("getPath");
-        // Use Node.js path module to get the directory name
-        path = require("path").dirname(path);
+        let projectFolderPath = await getAEProjectFolderPath();
+        if (!projectFolderPath) {
+            return; // Error toast already shown by helper
+        }
         var { command, outputPath } = youtubeDownloadLogic(
             youtubeUrl,
             mainPyPath,
             pythonExePath,
-            path
+            projectFolderPath
         );
 
         command = `start /wait cmd /c "${command}"`;
 
         generateToast(3, "Youtube download initiated...");
 
-        executeProcess(command, "Youtube download", () => {
+        runProcess(executeProcess, command, "Youtube download", () => {
             evalTS("importVideo", outputPath);
         });
     };
 
     const startExtraTabLogic = async (mode: string) => {
-        var isSaved = await checkIfProjectIsSaved();
-        if (!isSaved) {
-            return;
-        }
-
-        const layerInfo = await getAELayerInfo();
-        if (!layerInfo) {
-            return;
-        }
-
-        var path = await evalTS("getPath"); // gets the path to the project file
-        var path = path.replace(/[^\\]+$/, "");
+        const aeContext = await getValidatedAEContext();
+        if (!aeContext) return;
+        const { layerInfo, projectFolderPath } = aeContext;
 
         if (mode === "depth") {
             var toast = "Depth map extraction";
@@ -613,7 +594,7 @@ const Main = () => {
                 pythonExePath,
                 mainPyPath,
                 input,
-                path,
+                projectFolderPath,
                 depthMethod,
                 workflowBitDepth,
                 depthres,
@@ -650,7 +631,7 @@ const Main = () => {
                 pythonExePath,
                 mainPyPath,
                 input,
-                path,
+                projectFolderPath,
                 backgroundMethod,
                 half
             );
@@ -665,7 +646,8 @@ const Main = () => {
         }
 
         setIsProcessing(true);
-        executeProcess(
+        runProcess(
+            executeProcess,
             command,
             toast,
             () => {
@@ -679,25 +661,15 @@ const Main = () => {
     const startOfflineMode = async () => {
         var command = offlineModeLogic(pythonExePath, mainPyPath);
 
-        executeProcess(command, "Offline mode", () => {
+        runProcess(executeProcess, command, "Offline mode", () => {
             generateToast(1, "TAS is now fully operational offline.");
         });
     };
 
     const startChain = async () => {
-        if (!checkIfProjectIsSaved()) {
-            return;
-        }
-        
-        const layerInfo = await getAELayerInfo();
-        if (!layerInfo) {
-            return;
-        }
-
-        const projectFolderPath = await getAEProjectFolderPath();
-        if (!projectFolderPath) {
-            return; // Error toast already shown by helper
-        }
+        const aeContext = await getValidatedAEContext();
+        if (!aeContext) return;
+        const { layerInfo, projectFolderPath } = aeContext;
 
         var renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
         generateToast(3, "Initiating the pre-render step...");
@@ -721,8 +693,10 @@ const Main = () => {
             evalTS("importVideo", input);
             return;
         }
-        var output = await evalTS("getPath"); // path will be to the project file, so we will need to remove the project file name
-        var outputFolder = output.replace(/[^\\]+$/, "");
+        var outputFolder = await getAEProjectFolderPath();
+        if (!outputFolder) {
+            return; // Error toast already shown by helper
+        }
         var randomNumbers = Math.floor(Math.random() * 100000);
 
         var outName = `Chain_${randomNumbers}.mp4`;
@@ -839,7 +813,8 @@ const Main = () => {
         command = addPortToCommand(command);
 
         setIsProcessing(true);
-        executeProcess(
+        runProcess(
+            executeProcess,
             command,
             "Chained Process",
             () => {
@@ -851,39 +826,19 @@ const Main = () => {
     };
 
     const startAddAdjustmentLayerLogic = async () => {
-        const isSaved = await checkIfProjectIsSaved();
-        if (isSaved) {
-            const result = await evalTS(
-                "addAdjustmentLayer",
-                toolboxLayerLength || DEFAULT.toolboxLayerLength
-            );
-            if (result) {
-                generateToast(3, "Creating an adjustment layer...");
-            } else {
-                generateToast(2, "Error: Please select a layer first.");
-            }
+        if (await ensureProjectIsSaved()) {
+            await createLayer("adjustment", toolboxLayerLength || DEFAULT.toolboxLayerLength);
         }
     };
 
     const startAddSolidLayerLogic = async () => {
-        const isSaved = await checkIfProjectIsSaved();
-        if (isSaved) {
-            const result = await evalTS(
-                "addSolidLayer",
-                toolboxLayerLength || DEFAULT.toolboxLayerLength,
-                solidLayerColor || DEFAULT.solidLayerColor
-            );
-            if (result) {
-                generateToast(3, "Creating a solid layer...");
-            } else {
-                generateToast(2, "Error: Please select a layer first.");
-            }
+        if (await ensureProjectIsSaved()) {
+            await createLayer("solid", toolboxLayerLength || DEFAULT.toolboxLayerLength, solidLayerColor || DEFAULT.solidLayerColor);
         }
     };
 
     const startDeduplicateLayerTimemapLogic = async () => {
-        const isSaved = await checkIfProjectIsSaved();
-        if (isSaved) {
+        if (await ensureProjectIsSaved()) {
             const result = await evalTS("removeDuplicates");
             if (result) {
                 generateToast(3, "Removing dead frames...");
@@ -894,22 +849,13 @@ const Main = () => {
     };
 
     const startAddNullLayerLogic = async () => {
-        const isSaved = await checkIfProjectIsSaved();
-        if (isSaved) {
-            const result = await evalTS(
-                "addNullLayer",
-                toolboxLayerLength || DEFAULT.toolboxLayerLength
-            );
-            if (result) {
-                generateToast(3, "Creating a null layer...");
-            } else {
-                generateToast(2, "Error: Please select a layer first.");
-            }
+        if (await ensureProjectIsSaved()) {
+            await createLayer("null", toolboxLayerLength || DEFAULT.toolboxLayerLength);
         }
     };
 
     const startSortLayersLogic = async () => {
-        const isSaved = await checkIfProjectIsSaved();
+        const isSaved = await ensureProjectIsSaved();
         if (isSaved) {
             const result = await evalTS("sortLayers", sortLayerMethod || DEFAULT.sortLayerMethod);
             if (result) {
@@ -920,7 +866,7 @@ const Main = () => {
         }
     };
 
-   
+    // Wrapper for process execution using helpers
     const executeProcess = (
         command: any,
         toastMessage: string,
@@ -928,152 +874,22 @@ const Main = () => {
         inputFile?: any,
         outputFile?: any
     ) => {
-        processCancelledRef.current = false;
-        setIsProcessCancelled(false);
-        let hasFailed = false;
-        setFullLogs([]);
-        let localLogs: string[] = [];
-        let lastLogSize = 0;
-        let logPollingInterval: NodeJS.Timeout | null = null;
-        let exited = false;
-
-        const readNewLogs = () => {
-            const logTxtPath = path.join(tasFolder, "TAS-Log.log");
-            if (fs.existsSync(logTxtPath)) {
-                try {
-                    const stats = fs.statSync(logTxtPath);
-                    if (stats.size < lastLogSize) lastLogSize = 0;
-                    if (stats.size > lastLogSize) {
-                        const fd = fs.openSync(logTxtPath, "r");
-                        const buffer = Buffer.alloc(stats.size - lastLogSize);
-                        fs.readSync(fd, buffer, 0, buffer.length, lastLogSize);
-                        fs.closeSync(fd);
-
-                        const newContent = buffer.toString("utf8");
-                        if (newContent.trim()) {
-                            const newLines = newContent.split("\n").filter(line => line.trim());
-                            if (newLines.length > 0) {
-                                localLogs.push(...newLines);
-                                setFullLogs([...localLogs]);
-                            }
-                        }
-                        lastLogSize = stats.size;
-                    }
-                } catch (error) {
-                    console.error("Error reading log file:", error);
-                }
-            }
-        };
-
-        // Start log polling with optimized interval
-        logPollingInterval = setInterval(readNewLogs, 1000);
-
-        let process: any;
-        try {
-            process = child_process.exec(command, (error: any) => {
-                if (error) {
-                    hasFailed = true;
-                    if (logPollingInterval) {
-                        clearInterval(logPollingInterval);
-                        logPollingInterval = null;
-                    }
-                    resetProgress("Process failed!");
-                    generateToast(
-                        2,
-                        `Error: ${toastMessage} failed to start or crashed. Check the logs & contact Nilas on Discord.`
-                    );
-                }
-            });
-        } catch (err) {
-            hasFailed = true;
-            if (logPollingInterval) {
-                clearInterval(logPollingInterval);
-                logPollingInterval = null;
-            }
-            resetProgress("Process failed!");
-            generateToast(
-                2,
-                `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
-            );
-            return;
-        }
-
-        generateToast(3, `${toastMessage} initiated...`);
-
-        process.on("error", (err: any) => {
-            hasFailed = true;
-            if (logPollingInterval) {
-                clearInterval(logPollingInterval);
-                logPollingInterval = null;
-            }
-            resetProgress("Process failed!");
-            generateToast(
-                2,
-                `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
-            );
+        return executeProcessHelper({
+            child_process,
+            fs,
+            path,
+            tasFolder,
+            command,
+            toastMessage,
+            resetProgress,
+            setFullLogs,
+            setIsProcessCancelled,
+            processCancelledRef,
+            deletePreRender,
+            onSuccess,
+            inputFile,
+            outputFile
         });
-
-        process.on("exit", (code: any) => {
-            if (exited) return;
-            exited = true;
-            if (logPollingInterval) {
-                clearInterval(logPollingInterval);
-                logPollingInterval = null;
-            }
-            readNewLogs();
-
-            try {
-                if (!processCancelledRef.current) {
-                    if (outputFile) {
-                        if (fs.existsSync(outputFile)) {
-                            if (typeof onSuccess === "function") {
-                                onSuccess();
-                            }
-                        } else {
-                            hasFailed = true;
-                            generateToast(
-                                2,
-                                `Error: ${toastMessage} failed, check the logs & contact Nilas on Discord.`
-                            );
-                        }
-                    } else {
-                        if (typeof onSuccess === "function") {
-                            onSuccess();
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error(`Error: ${error}`);
-            } finally {
-                resetProgress("Progress complete!");
-
-                if (!processCancelledRef.current && !hasFailed) {
-                    generateToast(1, `${toastMessage} completed.`);
-                }
-                setIsProcessCancelled(false);
-                processCancelledRef.current = false;
-                if (!deletePreRender) {
-                    if (inputFile) {
-                        try {
-                            if (fs.existsSync(inputFile)) {
-                                fs.unlinkSync(inputFile);
-                            }
-                        } catch (error) {
-                            generateToast(
-                                2,
-                                `Error: ${toastMessage} failed, check the logs & contact Nilas on Discord.`
-                            );
-                        }
-                    }
-                }
-            }
-        });
-
-        return () => {
-            if (logPollingInterval) {
-                clearInterval(logPollingInterval);
-            }
-    };
     };
 
     useEffect(() => {
@@ -4482,10 +4298,10 @@ const Main = () => {
                                                                 </Item>
                                                             </Picker>
                                                             <ActionButton
-                                                                onPress={() => { void startDeduplicateLayerTimemapLogic(); }}
+                                                                onPress={() => { void startSortLayersLogic(); }}
                                                                 width="100%"
                                                             >
-                                                                <Text>Remove Dead Frames</Text>
+                                                                <Text>Sort Layers</Text>
                                                             </ActionButton>
                                                         </Flex>
                                                     </Flex>
@@ -4549,34 +4365,31 @@ const Main = () => {
                                                         </Flex>
                                                         <Divider size="S" />
                                                         <Flex direction="column" gap={8}>
-                                                            <Flex direction="row" gap={8}>
-                                                                <ActionButton
-                                                                    onPress={() => { void startSortLayersLogic(); }}
-                                                                    width="100%"
-                                                                >
-                                                                    Sort Layers
-                                                                </ActionButton>
-                                                            </Flex>
+                                                            <Flex direction={"row"} gap={8} width={"100%"}>
 
-                                                            <Flex direction="row" gap={8}>
                                                                 <ActionButton
                                                                     onPress={execTakeScreenshot}
                                                                     width="100%"
-                                                                >
+                                                                    >
                                                                     <Text>Take Screenshot</Text>
                                                                 </ActionButton>
-                                                            </Flex>
 
-                                                            <Flex direction="row" gap={8}>
                                                                 <ActionButton
                                                                     onPress={execPrecompose}
                                                                     width="100%"
-                                                                >
+                                                                    >
                                                                     <Text>PreCompose</Text>
                                                                 </ActionButton>
                                                             </Flex>
+                                                            <Flex direction={"row"} gap={8} width={"100%"}>
 
-                                                            <Flex direction="row" gap={8}>
+                                                                <ActionButton
+                                                                    onPress={execClearCache}
+                                                                    width="100%"
+                                                                >
+                                                                    <Text>Purge Cache</Text>
+                                                                </ActionButton>
+
                                                                 <ActionButton
                                                                     onPress={
                                                                         startDeduplicateLayerTimemapLogic
@@ -4658,16 +4471,6 @@ const Main = () => {
                                             marginStart={2}
                                         >
                                             <Flex direction="column" gap="size-100" marginTop={-8}>
-                                                {/* Header row with title and cancel button */}
-                                                <Flex
-                                                    direction="row"
-                                                    justifyContent="space-between"
-                                                    alignItems="center"
-                                                >
-                                                    <Heading level={4} margin={0}>
-                                                        Downloading TAS
-                                                    </Heading>
-                                                </Flex>
                                                 {/* Progress bar */}
                                                 <motion.div
                                                     initial={{ opacity: 0 }}
@@ -4709,7 +4512,7 @@ const Main = () => {
                                                             }}
                                                         >
                                                             {downloadProgress > 0
-                                                                ? `${Math.round(downloadProgress)}% complete • Check logs for details`
+                                                                ? `Check logs for details`
                                                                 : "Please wait, this will take a moment..."}
                                                         </Text>
                                                     </Flex>
@@ -4809,7 +4612,6 @@ const Main = () => {
                                                         </Flex>
                                                     </motion.div>
                                                 </Flex>
-                                                {/* Cancel button on far right */}
                                                 <TooltipTrigger delay={0}>
                                                     <ActionButton
                                                         marginStart={5}

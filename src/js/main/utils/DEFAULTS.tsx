@@ -1,5 +1,5 @@
 const DEFAULT = {
-    tasVersion: "2.3.1",
+    tasVersion: "2.3.2",
     preRenderAlgorithm: "high",
     deduplicate: false,
     restore: false,

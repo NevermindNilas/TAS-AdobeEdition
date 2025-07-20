@@ -130,7 +130,18 @@ const DEPTHMODELEXAMPLES = {
     og_distill_small_v2: "https://files.catbox.moe/kkujv9.png",
     og_large_v2: "https://files.catbox.moe/bitvfy.png",
     og_small_v2: "https://files.catbox.moe/28i39s.png",
-    // TensorRT variants use the same examples as their base models
+    // TensorRT and DirectML variants use the same examples as their base models or null if not available
+    "distill_small_v2-tensorrt": null,
+    "distill_base_v2-tensorrt": null,
+    "distill_large_v2-tensorrt": null,
+    "distill_small_v2-directml": null,
+    "distill_base_v2-directml": null,
+    "distill_large_v2-directml": null,
+    "og_small_v2-tensorrt": null,
+    "og_base_v2-tensorrt": null,
+    "og_large_v2-tensorrt": null,
+    "og_distill_small_v2-tensorrt": null,
+    "og_distill_base_v2-tensorrt": null,
     "small_v2-tensorrt": null,
     "base_v2-tensorrt": null,
     "large_v2-tensorrt": null,
@@ -3145,6 +3156,78 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
+                                                                                        <Item key="distill_small_v2-tensorrt">
+                                                                                            <Gauge4 />
+                                                                                            <Text>
+                                                                                                Distilled Small V2 TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Optimized for speed / TensorRT / 5-10x Faster / Mediocre Quality
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="distill_base_v2-tensorrt">
+                                                                                            <Gauge3 />
+                                                                                            <Text>
+                                                                                                Distilled Base V2 TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Optimized for speed / TensorRT / 5-10x Faster / Mediocre Quality
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="distill_large_v2-tensorrt">
+                                                                                            <Gauge2 />
+                                                                                            <Text>
+                                                                                                Distilled Large V2 TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Optimized for speed / TensorRT / 5-10x Faster / Mediocre Quality
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="og_small_v2-tensorrt">
+                                                                                            <Gauge2 />
+                                                                                            <Text>
+                                                                                                OG Depth Anything V2 Small TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Original Paper implementation / TensorRT / Better model accuracy
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="og_base_v2-tensorrt">
+                                                                                            <Gauge1 />
+                                                                                            <Text>
+                                                                                                OG Depth Anything V2 Base TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Original Paper implementation / TensorRT / Better model accuracy
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="og_large_v2-tensorrt">
+                                                                                            <Gauge1 />
+                                                                                            <Text>
+                                                                                                OG Depth Anything V2 Large TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Original Paper implementation / TensorRT / Better model accuracy
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="og_distill_small_v2-tensorrt">
+                                                                                            <Gauge3 />
+                                                                                            <Text>
+                                                                                                OG Distilled Small V2 TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Original Paper implementation / TensorRT / Better model accuracy
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="og_distill_base_v2-tensorrt">
+                                                                                            <Gauge2 />
+                                                                                            <Text>
+                                                                                                OG Distilled Base V2 TensorRT
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Original Paper implementation / TensorRT / Better model accuracy
+                                                                                            </Text>
+                                                                                        </Item>
                                                                                     </Section>
                                                                                     <Section title="ALL GPUS">
                                                                                         <Item key="small_v2-directml">
@@ -3191,6 +3274,33 @@ const Main = () => {
                                                                                                 /
                                                                                                 Mediocre
                                                                                                 Quality
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="distill_small_v2-directml">
+                                                                                            <Gauge4 />
+                                                                                            <Text>
+                                                                                                Distilled Small V2 DirectML
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Optimized for speed / DirectML / Mediocre Quality
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="distill_base_v2-directml">
+                                                                                            <Gauge3 />
+                                                                                            <Text>
+                                                                                                Distilled Base V2 DirectML
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Optimized for speed / DirectML / Mediocre Quality
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="distill_large_v2-directml">
+                                                                                            <Gauge2 />
+                                                                                            <Text>
+                                                                                                Distilled Large V2 DirectML
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Optimized for speed / DirectML / Mediocre Quality
                                                                                             </Text>
                                                                                         </Item>
                                                                                     </Section>

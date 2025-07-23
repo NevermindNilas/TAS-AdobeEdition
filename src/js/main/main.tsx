@@ -187,9 +187,11 @@ const Main = () => {
     const [latestVersion, setLatestVersion] = useState("unknown");
     const [bitDepth, setBitDepth] = useState<string | null>("8bit");
     const handleSelectionChange =
-        (setter: React.Dispatch<React.SetStateAction<string | null>>) => (key: Key) => {
-            setter(key as string);
+    (setter: React.Dispatch<React.SetStateAction<string | null>>) =>
+        (key: Key | null) => {
+        setter(key as string | null);
         };
+
     const [youtubeUrl, setYoutubeUrl] = useState("");
 
     // Interpolation

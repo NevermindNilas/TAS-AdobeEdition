@@ -31,10 +31,13 @@ function Vulcan() {}
  * @return The array of all available application SAPCode-Specifiers.
  */
 Vulcan.prototype.getTargetSpecifiersEx = function () {
-    var params = {};
-    return JSON.parse(
-        window.__adobe_cep__.invokeSync("vulcanGetTargetSpecifiersEx", JSON.stringify(params))
-    );
+  var params = {};
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanGetTargetSpecifiersEx",
+      JSON.stringify(params)
+    )
+  );
 };
 
 /**
@@ -48,18 +51,23 @@ Vulcan.prototype.getTargetSpecifiersEx = function () {
  * @param cmdLine         Optional, command-line parameters to supply to the launch command.
  * @return True if the app can be launched, false otherwise.
  */
-Vulcan.prototype.launchAppEx = function (productSAPCodeSpecifier, focus, cmdLine) {
-    if (!requiredParamsValid(productSAPCodeSpecifier)) {
-        return false;
-    }
+Vulcan.prototype.launchAppEx = function (
+  productSAPCodeSpecifier,
+  focus,
+  cmdLine
+) {
+  if (!requiredParamsValid(productSAPCodeSpecifier)) {
+    return false;
+  }
 
-    var params = {};
-    params.productSAPCodeSpecifier = productSAPCodeSpecifier;
-    params.focus = focus ? "true" : "false";
-    params.cmdLine = requiredParamsValid(cmdLine) ? cmdLine : "";
+  var params = {};
+  params.productSAPCodeSpecifier = productSAPCodeSpecifier;
+  params.focus = focus ? "true" : "false";
+  params.cmdLine = requiredParamsValid(cmdLine) ? cmdLine : "";
 
-    return JSON.parse(window.__adobe_cep__.invokeSync("vulcanLaunchAppEx", JSON.stringify(params)))
-        .result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync("vulcanLaunchAppEx", JSON.stringify(params))
+  ).result;
 };
 
 /**
@@ -72,16 +80,19 @@ Vulcan.prototype.launchAppEx = function (productSAPCodeSpecifier, focus, cmdLine
  * @return True if the app is running, false otherwise.
  */
 Vulcan.prototype.isAppRunningEx = function (productSAPCodeSpecifier) {
-    if (!requiredParamsValid(productSAPCodeSpecifier)) {
-        return false;
-    }
+  if (!requiredParamsValid(productSAPCodeSpecifier)) {
+    return false;
+  }
 
-    var params = {};
-    params.productSAPCodeSpecifier = productSAPCodeSpecifier;
+  var params = {};
+  params.productSAPCodeSpecifier = productSAPCodeSpecifier;
 
-    return JSON.parse(
-        window.__adobe_cep__.invokeSync("vulcanIsAppRunningEx", JSON.stringify(params))
-    ).result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanIsAppRunningEx",
+      JSON.stringify(params)
+    )
+  ).result;
 };
 
 /**
@@ -94,16 +105,19 @@ Vulcan.prototype.isAppRunningEx = function (productSAPCodeSpecifier) {
  * @return True if the app is installed, false otherwise.
  */
 Vulcan.prototype.isAppInstalledEx = function (productSAPCodeSpecifier) {
-    if (!requiredParamsValid(productSAPCodeSpecifier)) {
-        return false;
-    }
+  if (!requiredParamsValid(productSAPCodeSpecifier)) {
+    return false;
+  }
 
-    var params = {};
-    params.productSAPCodeSpecifier = productSAPCodeSpecifier;
+  var params = {};
+  params.productSAPCodeSpecifier = productSAPCodeSpecifier;
 
-    return JSON.parse(
-        window.__adobe_cep__.invokeSync("vulcanIsAppInstalledEx", JSON.stringify(params))
-    ).result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanIsAppInstalledEx",
+      JSON.stringify(params)
+    )
+  ).result;
 };
 
 /**s
@@ -116,15 +130,19 @@ Vulcan.prototype.isAppInstalledEx = function (productSAPCodeSpecifier) {
  * @return The path string if the application is found, "" otherwise.
  */
 Vulcan.prototype.getAppPathEx = function (productSAPCodeSpecifier) {
-    if (!requiredParamsValid(productSAPCodeSpecifier)) {
-        return "";
-    }
+  if (!requiredParamsValid(productSAPCodeSpecifier)) {
+    return "";
+  }
 
-    var params = {};
-    params.productSAPCodeSpecifier = productSAPCodeSpecifier;
+  var params = {};
+  params.productSAPCodeSpecifier = productSAPCodeSpecifier;
 
-    return JSON.parse(window.__adobe_cep__.invokeSync("vulcanGetAppPathEx", JSON.stringify(params)))
-        .result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanGetAppPathEx",
+      JSON.stringify(params)
+    )
+  ).result;
 };
 
 /**
@@ -134,13 +152,16 @@ Vulcan.prototype.getAppPathEx = function (productSAPCodeSpecifier) {
  * @return The array of all available application specifiers.
  */
 Vulcan.prototype.getTargetSpecifiers = function () {
-    console.warn(
-        "WARNING! Function 'getTargetSpecifiers' has been deprecated, please use the new 'getTargetSpecifiersEx' function instead!"
-    );
-    var params = {};
-    return JSON.parse(
-        window.__adobe_cep__.invokeSync("vulcanGetTargetSpecifiers", JSON.stringify(params))
-    );
+  console.warn(
+    "WARNING! Function 'getTargetSpecifiers' has been deprecated, please use the new 'getTargetSpecifiersEx' function instead!"
+  );
+  var params = {};
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanGetTargetSpecifiers",
+      JSON.stringify(params)
+    )
+  );
 };
 
 /**
@@ -161,20 +182,21 @@ Vulcan.prototype.getTargetSpecifiers = function () {
  * @return True if the app can be launched, false otherwise.
  */
 Vulcan.prototype.launchApp = function (targetSpecifier, focus, cmdLine) {
-    console.warn(
-        "WARNING! Function 'launchApp' has been deprecated, please use the new 'launchAppEx' function instead!"
-    );
-    if (!requiredParamsValid(targetSpecifier)) {
-        return false;
-    }
+  console.warn(
+    "WARNING! Function 'launchApp' has been deprecated, please use the new 'launchAppEx' function instead!"
+  );
+  if (!requiredParamsValid(targetSpecifier)) {
+    return false;
+  }
 
-    var params = {};
-    params.targetSpecifier = targetSpecifier;
-    params.focus = focus ? "true" : "false";
-    params.cmdLine = requiredParamsValid(cmdLine) ? cmdLine : "";
+  var params = {};
+  params.targetSpecifier = targetSpecifier;
+  params.focus = focus ? "true" : "false";
+  params.cmdLine = requiredParamsValid(cmdLine) ? cmdLine : "";
 
-    return JSON.parse(window.__adobe_cep__.invokeSync("vulcanLaunchApp", JSON.stringify(params)))
-        .result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync("vulcanLaunchApp", JSON.stringify(params))
+  ).result;
 };
 
 /**
@@ -193,18 +215,22 @@ Vulcan.prototype.launchApp = function (targetSpecifier, focus, cmdLine) {
  * @return True if the app is running, false otherwise.
  */
 Vulcan.prototype.isAppRunning = function (targetSpecifier) {
-    console.warn(
-        "WARNING! Function 'isAppRunning' has been deprecated, please use the new 'isAppRunningEx' function instead!"
-    );
-    if (!requiredParamsValid(targetSpecifier)) {
-        return false;
-    }
+  console.warn(
+    "WARNING! Function 'isAppRunning' has been deprecated, please use the new 'isAppRunningEx' function instead!"
+  );
+  if (!requiredParamsValid(targetSpecifier)) {
+    return false;
+  }
 
-    var params = {};
-    params.targetSpecifier = targetSpecifier;
+  var params = {};
+  params.targetSpecifier = targetSpecifier;
 
-    return JSON.parse(window.__adobe_cep__.invokeSync("vulcanIsAppRunning", JSON.stringify(params)))
-        .result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanIsAppRunning",
+      JSON.stringify(params)
+    )
+  ).result;
 };
 
 /**
@@ -223,19 +249,22 @@ Vulcan.prototype.isAppRunning = function (targetSpecifier) {
  * @return True if the app is installed, false otherwise.
  */
 Vulcan.prototype.isAppInstalled = function (targetSpecifier) {
-    console.warn(
-        "WARNING! Function 'isAppInstalled' has been deprecated, please use the new 'isAppInstalledEx' function instead!"
-    );
-    if (!requiredParamsValid(targetSpecifier)) {
-        return false;
-    }
+  console.warn(
+    "WARNING! Function 'isAppInstalled' has been deprecated, please use the new 'isAppInstalledEx' function instead!"
+  );
+  if (!requiredParamsValid(targetSpecifier)) {
+    return false;
+  }
 
-    var params = {};
-    params.targetSpecifier = targetSpecifier;
+  var params = {};
+  params.targetSpecifier = targetSpecifier;
 
-    return JSON.parse(
-        window.__adobe_cep__.invokeSync("vulcanIsAppInstalled", JSON.stringify(params))
-    ).result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanIsAppInstalled",
+      JSON.stringify(params)
+    )
+  ).result;
 };
 
 /**
@@ -254,18 +283,19 @@ Vulcan.prototype.isAppInstalled = function (targetSpecifier) {
  * @return The path string if the application is found, "" otherwise.
  */
 Vulcan.prototype.getAppPath = function (targetSpecifier) {
-    console.warn(
-        "WARNING! Function 'getAppPath' has been deprecated, please use the new 'getAppPathEx' function instead!"
-    );
-    if (!requiredParamsValid(targetSpecifier)) {
-        return "";
-    }
+  console.warn(
+    "WARNING! Function 'getAppPath' has been deprecated, please use the new 'getAppPathEx' function instead!"
+  );
+  if (!requiredParamsValid(targetSpecifier)) {
+    return "";
+  }
 
-    var params = {};
-    params.targetSpecifier = targetSpecifier;
+  var params = {};
+  params.targetSpecifier = targetSpecifier;
 
-    return JSON.parse(window.__adobe_cep__.invokeSync("vulcanGetAppPath", JSON.stringify(params)))
-        .result;
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync("vulcanGetAppPath", JSON.stringify(params))
+  ).result;
 };
 
 /**
@@ -278,19 +308,22 @@ Vulcan.prototype.getAppPath = function (targetSpecifier) {
  *                        Default is null.
  */
 Vulcan.prototype.addMessageListener = function (type, callback, obj) {
-    if (!requiredParamsValid(type, callback) || !strStartsWith(type, VulcanMessage.TYPE_PREFIX)) {
-        return;
-    }
+  if (
+    !requiredParamsValid(type, callback) ||
+    !strStartsWith(type, VulcanMessage.TYPE_PREFIX)
+  ) {
+    return;
+  }
 
-    var params = {};
-    params.type = type;
+  var params = {};
+  params.type = type;
 
-    window.__adobe_cep__.invokeAsync(
-        "vulcanAddMessageListener",
-        JSON.stringify(params),
-        callback,
-        obj
-    );
+  window.__adobe_cep__.invokeAsync(
+    "vulcanAddMessageListener",
+    JSON.stringify(params),
+    callback,
+    obj
+  );
 };
 
 /**
@@ -303,19 +336,22 @@ Vulcan.prototype.addMessageListener = function (type, callback, obj) {
  *                        Default is null.
  */
 Vulcan.prototype.removeMessageListener = function (type, callback, obj) {
-    if (!requiredParamsValid(type, callback) || !strStartsWith(type, VulcanMessage.TYPE_PREFIX)) {
-        return;
-    }
+  if (
+    !requiredParamsValid(type, callback) ||
+    !strStartsWith(type, VulcanMessage.TYPE_PREFIX)
+  ) {
+    return;
+  }
 
-    var params = {};
-    params.type = type;
+  var params = {};
+  params.type = type;
 
-    window.__adobe_cep__.invokeAsync(
-        "vulcanRemoveMessageListener",
-        JSON.stringify(params),
-        callback,
-        obj
-    );
+  window.__adobe_cep__.invokeAsync(
+    "vulcanRemoveMessageListener",
+    JSON.stringify(params),
+    callback,
+    obj
+  );
 };
 
 /**
@@ -324,19 +360,22 @@ Vulcan.prototype.removeMessageListener = function (type, callback, obj) {
  * @param vulcanMessage   The message object.
  */
 Vulcan.prototype.dispatchMessage = function (vulcanMessage) {
-    if (
-        !requiredParamsValid(vulcanMessage) ||
-        !strStartsWith(vulcanMessage.type, VulcanMessage.TYPE_PREFIX)
-    ) {
-        return;
-    }
+  if (
+    !requiredParamsValid(vulcanMessage) ||
+    !strStartsWith(vulcanMessage.type, VulcanMessage.TYPE_PREFIX)
+  ) {
+    return;
+  }
 
-    var params = {};
-    var message = new VulcanMessage(vulcanMessage.type);
-    message.initialize(vulcanMessage);
-    params.vulcanMessage = message;
+  var params = {};
+  var message = new VulcanMessage(vulcanMessage.type);
+  message.initialize(vulcanMessage);
+  params.vulcanMessage = message;
 
-    window.__adobe_cep__.invokeSync("vulcanDispatchMessage", JSON.stringify(params));
+  window.__adobe_cep__.invokeSync(
+    "vulcanDispatchMessage",
+    JSON.stringify(params)
+  );
 };
 
 /**
@@ -346,16 +385,16 @@ Vulcan.prototype.dispatchMessage = function (vulcanMessage) {
  * @return                A string containing the message payload.
  */
 Vulcan.prototype.getPayload = function (vulcanMessage) {
-    if (
-        !requiredParamsValid(vulcanMessage) ||
-        !strStartsWith(vulcanMessage.type, VulcanMessage.TYPE_PREFIX)
-    ) {
-        return null;
-    }
+  if (
+    !requiredParamsValid(vulcanMessage) ||
+    !strStartsWith(vulcanMessage.type, VulcanMessage.TYPE_PREFIX)
+  ) {
+    return null;
+  }
 
-    var message = new VulcanMessage(vulcanMessage.type);
-    message.initialize(vulcanMessage);
-    return message.getPayload();
+  var message = new VulcanMessage(vulcanMessage.type);
+  message.initialize(vulcanMessage);
+  return message.getPayload();
 };
 
 /**
@@ -371,10 +410,13 @@ Vulcan.prototype.getPayload = function (vulcanMessage) {
  * </endPoint>
  */
 Vulcan.prototype.getEndPoints = function () {
-    var params = {};
-    return JSON.parse(
-        window.__adobe_cep__.invokeSync("vulcanGetEndPoints", JSON.stringify(params))
-    );
+  var params = {};
+  return JSON.parse(
+    window.__adobe_cep__.invokeSync(
+      "vulcanGetEndPoints",
+      JSON.stringify(params)
+    )
+  );
 };
 
 /**
@@ -385,8 +427,11 @@ Vulcan.prototype.getEndPoints = function () {
  * @return                The endpoint string for itself.
  */
 Vulcan.prototype.getSelfEndPoint = function () {
-    var params = {};
-    return window.__adobe_cep__.invokeSync("vulcanGetSelfEndPoint", JSON.stringify(params));
+  var params = {};
+  return window.__adobe_cep__.invokeSync(
+    "vulcanGetSelfEndPoint",
+    JSON.stringify(params)
+  );
 };
 
 /** Singleton instance of Vulcan **/
@@ -410,13 +455,15 @@ var VulcanInterface = new Vulcan();
  *
  */
 function VulcanMessage(type, appId, appVersion) {
-    this.type = type;
-    this.scope = VulcanMessage.SCOPE_SUITE;
-    this.appId = requiredParamsValid(appId) ? appId : VulcanMessage.DEFAULT_APP_ID;
-    this.appVersion = requiredParamsValid(appVersion)
-        ? appVersion
-        : VulcanMessage.DEFAULT_APP_VERSION;
-    this.data = VulcanMessage.DEFAULT_DATA;
+  this.type = type;
+  this.scope = VulcanMessage.SCOPE_SUITE;
+  this.appId = requiredParamsValid(appId)
+    ? appId
+    : VulcanMessage.DEFAULT_APP_ID;
+  this.appVersion = requiredParamsValid(appVersion)
+    ? appVersion
+    : VulcanMessage.DEFAULT_APP_VERSION;
+  this.data = VulcanMessage.DEFAULT_DATA;
 }
 
 VulcanMessage.TYPE_PREFIX = "vulcan.SuiteMessage.";
@@ -433,11 +480,11 @@ VulcanMessage.payloadTemplate = "<payload>{0}</payload>";
  * @param message         A \c message instance to use for initialization.
  */
 VulcanMessage.prototype.initialize = function (message) {
-    this.type = message.type;
-    this.scope = message.scope;
-    this.appId = message.appId;
-    this.appVersion = message.appVersion;
-    this.data = message.data;
+  this.type = message.type;
+  this.scope = message.scope;
+  this.appId = message.appId;
+  this.appVersion = message.appVersion;
+  this.data = message.data;
 };
 
 /**
@@ -446,12 +493,12 @@ VulcanMessage.prototype.initialize = function (message) {
  * @return A data string in XML format.
  */
 VulcanMessage.prototype.xmlData = function () {
-    if (this.data === undefined) {
-        var str = "";
-        str = String.format(VulcanMessage.payloadTemplate, str);
-        this.data = String.format(VulcanMessage.dataTemplate, str);
-    }
-    return this.data;
+  if (this.data === undefined) {
+    var str = "";
+    str = String.format(VulcanMessage.payloadTemplate, str);
+    this.data = String.format(VulcanMessage.dataTemplate, str);
+  }
+  return this.data;
 };
 
 /**
@@ -460,9 +507,9 @@ VulcanMessage.prototype.xmlData = function () {
  * @param payload         A string containing the message payload.
  */
 VulcanMessage.prototype.setPayload = function (payload) {
-    var str = cep.encoding.convertion.utf8_to_b64(payload);
-    str = String.format(VulcanMessage.payloadTemplate, str);
-    this.data = String.format(VulcanMessage.dataTemplate, str);
+  var str = cep.encoding.convertion.utf8_to_b64(payload);
+  str = String.format(VulcanMessage.payloadTemplate, str);
+  this.data = String.format(VulcanMessage.dataTemplate, str);
 };
 
 /**
@@ -471,11 +518,11 @@ VulcanMessage.prototype.setPayload = function (payload) {
  * @return                A string containing the message payload.
  */
 VulcanMessage.prototype.getPayload = function () {
-    var str = GetValueByKey(this.data, "payload");
-    if (str !== null) {
-        return cep.encoding.convertion.b64_to_utf8(str);
-    }
-    return null;
+  var str = GetValueByKey(this.data, "payload");
+  if (str !== null) {
+    return cep.encoding.convertion.b64_to_utf8(str);
+  }
+  return null;
 };
 
 /**
@@ -484,12 +531,12 @@ VulcanMessage.prototype.getPayload = function () {
  * @return The string version of this instance.
  */
 VulcanMessage.prototype.toString = function () {
-    var str = "type=" + this.type;
-    str += ", scope=" + this.scope;
-    str += ", appId=" + this.appId;
-    str += ", appVersion=" + this.appVersion;
-    str += ", data=" + this.xmlData();
-    return str;
+  var str = "type=" + this.type;
+  str += ", scope=" + this.scope;
+  str += ", appId=" + this.appId;
+  str += ", appVersion=" + this.appVersion;
+  str += ", data=" + this.xmlData();
+  return str;
 };
 
 //--------------------------------------- Util --------------------------------
@@ -502,14 +549,14 @@ VulcanMessage.prototype.toString = function () {
  * @return The formatted string
  */
 String.format = function (src) {
-    if (arguments.length === 0) {
-        return null;
-    }
+  if (arguments.length === 0) {
+    return null;
+  }
 
-    var args = Array.prototype.slice.call(arguments, 1);
-    return src.replace(/\{(\d+)\}/g, function (m, i) {
-        return args[i];
-    });
+  var args = Array.prototype.slice.call(arguments, 1);
+  return src.replace(/\{(\d+)\}/g, function (m, i) {
+    return args[i];
+  });
 };
 
 /**
@@ -522,19 +569,19 @@ String.format = function (src) {
  *                  if such tag is not found or the tag has no content.
  */
 function GetValueByKey(xmlStr, key) {
-    if (window.DOMParser) {
-        var parser = new window.DOMParser();
-        try {
-            var xmlDoc = parser.parseFromString(xmlStr, "text/xml");
-            var node = xmlDoc.getElementsByTagName(key)[0];
-            if (node && node.childNodes[0]) {
-                return node.childNodes[0].nodeValue;
-            }
-        } catch (e) {
-            //log the error
-        }
+  if (window.DOMParser) {
+    var parser = new window.DOMParser();
+    try {
+      var xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+      var node = xmlDoc.getElementsByTagName(key)[0];
+      if (node && node.childNodes[0]) {
+        return node.childNodes[0].nodeValue;
+      }
+    } catch (e) {
+      //log the error
     }
-    return "";
+  }
+  return "";
 }
 
 /**
@@ -544,13 +591,13 @@ function GetValueByKey(xmlStr, key) {
  *            false if any of the required parameters are invalid.
  */
 function requiredParamsValid() {
-    for (var i = 0; i < arguments.length; i++) {
-        var argument = arguments[i];
-        if (argument === undefined || argument === null) {
-            return false;
-        }
+  for (var i = 0; i < arguments.length; i++) {
+    var argument = arguments[i];
+    if (argument === undefined || argument === null) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
 /**
@@ -562,10 +609,10 @@ function requiredParamsValid() {
  * @return          True if the string has the prefix, false if not.
  */
 function strStartsWith(str, prefix) {
-    if (typeof str != "string") {
-        return false;
-    }
-    return str.indexOf(prefix) === 0;
+  if (typeof str != "string") {
+    return false;
+  }
+  return str.indexOf(prefix) === 0;
 }
 
 // Boilerplate Added Export

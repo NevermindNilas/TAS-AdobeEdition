@@ -1,6 +1,0 @@
-# Ignore all files in this directory
-TAS/
-
-
-# Optional: Unignore this .gitignore file so it is tracked by git
-!.gitignore

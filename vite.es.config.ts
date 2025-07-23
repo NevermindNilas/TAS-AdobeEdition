@@ -6,8 +6,6 @@ import { jsxInclude, jsxBin, jsxPonyfill } from "vite-cep-plugin";
 import { CEP_Config } from "vite-cep-plugin";
 import json from "@rollup/plugin-json";
 import path from "path";
-import rollupPluginObfuscator from 'rollup-plugin-obfuscator';
-
 
 const GLOBAL_THIS = "thisObj";
 
@@ -17,7 +15,7 @@ export const extendscriptConfig = (
   cepConfig: CEP_Config,
   extensions: string[],
   isProduction: boolean,
-  isPackage: boolean
+  isPackage: boolean,
 ) => {
   console.log(outPath);
   const config: RollupOptions = {
@@ -51,17 +49,6 @@ export const extendscriptConfig = (
         globalThis: GLOBAL_THIS,
       }),
       jsxBin(isPackage ? cepConfig.zxp.jsxBin : cepConfig.build?.jsxBin),
-      rollupPluginObfuscator({
-        global: true,
-        options: {
-          stringArray: true,
-          stringArrayRotate: false,
-          stringArrayCallsTransform: true,
-          // stringArrayShuffle: false,
-          target: "node"
-        }
-      })
-      
     ],
   };
 

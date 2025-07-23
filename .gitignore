@@ -1,4 +1,8 @@
 node_modules
-dist
 .DS_Store
-node_modules
+dist
+dist-ssr
+*.local
+dist
+yarn-error.log
+.media

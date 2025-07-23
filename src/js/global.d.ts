@@ -6,9 +6,9 @@ declare module "*.jpg";
 declare module "*.svg";
 
 declare global {
-    interface Window {
-        cep_node: cep_node;
-        cep: cep;
-        __adobe_cep__: __adobe_cep__;
-    }
+  interface Window {
+    cep_node: cep_node;
+    cep: cep;
+    __adobe_cep__: __adobe_cep__;
+  }
 }

@@ -3,7 +3,7 @@ import { version } from "./package.json";
 
 const config: CEP_Config = {
   version,
-  id: "the.anime.scripter", 
+  id: "TheAnimeScripter", 
   displayName: "The Anime Scripter", 
   symlink: "local",
   port: 3000,
@@ -50,7 +50,7 @@ const config: CEP_Config = {
     ],
     allowSkipTSA: false,
     sourceMap: false,
-    jsxBin: "off",
+    jsxBin: "replace",
   },
   installModules: [],
   copyAssets: [],

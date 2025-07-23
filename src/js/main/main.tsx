@@ -1048,10 +1048,10 @@ const Main = () => {
             theme={darkTheme}
             colorScheme="dark"
             UNSAFE_style={{
-                backgroundColor: "transparent",
                 overflowX: "hidden",
                 width: "100%",
-                boxSizing: "border-box"
+                boxSizing: "border-box",
+                padding: "4px",
             }}
         >
             <View

@@ -1051,18 +1051,10 @@ const Main = () => {
                 overflowX: "hidden",
                 width: "100%",
                 boxSizing: "border-box",
-                padding: "4px",
+                padding: "2px",
             }}
         >
-            <View
-                backgroundColor="transparent"
-                UNSAFE_style={{
-                    overflowX: "hidden",
-                    width: "100%",
-                    maxWidth: "100vw",
-                    boxSizing: "border-box"
-                }}
-            >
+            <View>
                 <ToastContainer />
                 <DialogTrigger isOpen={showDownloadDialog}>
                     <ActionButton isHidden>Open Dialog</ActionButton>

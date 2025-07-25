@@ -57,6 +57,7 @@ import Settings from "@spectrum-icons/workflow/Settings";
 import SortOrderDown from "@spectrum-icons/workflow/SortOrderDown";
 import SortOrderUp from "@spectrum-icons/workflow/SortOrderUp";
 import Wrench from "@spectrum-icons/workflow/Wrench";
+import Asterisk from "@spectrum-icons/workflow/Asterisk";
 
 import { child_process, fs, path } from "../lib/cep/node";
 import { evalTS } from "../lib/utils/bolt";
@@ -84,6 +85,7 @@ import { removeBackgroundLogic } from "./utils/removeBackground";
 // Tab Components
 import { aboutTab } from "./utils/aboutTab";
 import { logTab } from "./utils/logTab";
+import KeyframeGraphEditor from "./utils/KeyframeGraphEditor";
 
 // Contextual Help Utilities
 import {
@@ -247,6 +249,9 @@ const Main = () => {
 
     const [disableProgressBar, setDisableProgressBar] = useState(false);
 
+    // Viewport Zoom for Toolbox tab
+    const [viewportZoom, setViewportZoom] = useState(100);
+
     // UI Settings
     const [tabListOrientation, setTabListOrientation] = useState<string>(
         DEFAULT.tabListOrientation
@@ -255,7 +260,7 @@ const Main = () => {
     const [percentangeFree, setPercentageFree] = useState<number | undefined>(0);
 
     // Tab management for swipe gestures
-    const tabKeys = ["Chain", "Extra", "Toolbox", "Logs", "About"];
+    const tabKeys = ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"];
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
 
     // Tab selection change (no direction logic)
@@ -1116,6 +1121,10 @@ const Main = () => {
                             <Item key="Toolbox">
                                 <Beaker />
                                 <Text>Toolbox</Text>
+                            </Item>
+                            <Item key="Graph">
+                                <Asterisk />
+                                <Text>Graph</Text>
                             </Item>
                             <Item key="Logs">
                                 <Inbox />
@@ -2639,7 +2648,6 @@ const Main = () => {
 
                                                                         <Divider />
                                                                         <Content UNSAFE_className="dialog">
-
                                                                             <Slider
                                                                                 label="Sensitivity"
                                                                                 maxValue={1}
@@ -4221,6 +4229,58 @@ const Main = () => {
                                                 justifyContent="space-between"
                                                 marginTop={8}
                                             >
+                                                {/* Viewport Zoom */}
+                                                <View
+                                                    borderWidth="thin"
+                                                    borderColor="dark"
+                                                    borderRadius="medium"
+                                                    padding="size-200"
+                                                >
+                                                    <Flex direction="column" gap={12}>
+                                                        <Flex
+                                                            direction="row"
+                                                            gap={8}
+                                                            alignItems="center"
+                                                        >
+                                                            <Gauge2 size="S" />
+                                                            <Heading level={4} margin={0}>
+                                                                Work Area Zoom
+                                                            </Heading>
+                                                            {createGeneralContextualHelp(
+                                                                "Work Area Zoom",
+                                                                <Text>
+                                                                    <p>
+                                                                        Adjust the zoom level of the
+                                                                        After Effects viewport.
+                                                                    </p>
+                                                                    <p>
+                                                                        This does not affect the actual
+                                                                        video output, only the editor's
+                                                                        view.
+                                                                    </p>
+                                                                    <p>
+                                                                        <strong>Note:</strong> Only Tested with After Effects 2025!
+                                                                    </p>
+                                                                </Text>
+                                                            )}
+                                                        </Flex>
+                                                        <Divider size="S" />
+                                                        <Slider
+                                                            label="Viewport Zoom"
+                                                            minValue={0.01}
+                                                            maxValue={3}
+                                                            step={0.01}
+                                                            isFilled
+                                                            value={viewportZoom}
+                                                            formatOptions={{style: 'percent'}}
+                                                            onChange={async (val) => {
+                                                                setViewportZoom(val);
+                                                                await evalTS("setViewportZoom", val);
+                                                            }}
+                                                            width="100%"
+                                                        />
+                                                    </Flex>
+                                                </View>
                                                 {/* Layer Creation Tools */}
                                                 <View
                                                     borderWidth="thin"
@@ -4537,6 +4597,20 @@ const Main = () => {
                                             }}
                                         >
                                             {aboutTab(tasVersion)}
+                                        </motion.div>
+                                    </Item>
+                                    <Item key="Graph">
+                                        <motion.div
+                                            key={`Graph-${selectedTab}`}
+                                            variants={slideAnimationVariants}
+                                            initial="initial"
+                                            animate="animate"
+                                            exit="exit"
+                                            style={{
+                                                width: '100%',
+                                            }}
+                                        >
+                                            <KeyframeGraphEditor />
                                         </motion.div>
                                     </Item>
                                 </TabPanels>

@@ -70,6 +70,23 @@ function autoclip(tasAppdataPath: string) {
     }
 }
 
+export const setViewportZoom = (zoom: number) => {
+  try {
+    if (
+      app.activeViewer &&
+      app.activeViewer.views &&
+      app.activeViewer.views.length > 0 &&
+      typeof zoom === "number"
+    ) {
+      app.activeViewer.views[0].options.zoom = zoom;
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+};
+
 function importOutput(outPath: string) {
     try {
         if (!app) {
@@ -587,6 +604,354 @@ function parseInputAsFrame(input: string | number, comp: CompItem): number {
 }
 
 
+
+export function getSelectedKeyframeBezier() {
+    try {
+        if (
+            !app.project ||
+            !app.project.activeItem ||
+            !(app.project.activeItem instanceof CompItem)
+        ) {
+            return "Error: No comp (app.project.activeItem is not a CompItem)";
+        }
+        var comp = app.project.activeItem as CompItem;
+        if (comp.selectedLayers.length === 0) return "Error: No layer selected";
+        var layer = comp.selectedLayers[0];
+        var selectedProps = layer.selectedProperties;
+        if (!selectedProps || selectedProps.length === 0) return "Error: No property selected";
+        var prop = null;
+        for (var i = 0; i < selectedProps.length; i++) {
+            if (
+                selectedProps[i].numKeys &&
+                selectedProps[i].selectedKeys &&
+                selectedProps[i].selectedKeys.length > 1
+            ) {
+                prop = selectedProps[i];
+                break;
+            }
+        }
+        if (!prop) return "Error: No property with 2 selected keyframes (numKeys/selectedKeys)";
+        // @ts-ignore
+        var keys = prop.selectedKeys;
+        if (!keys || keys.length < 2) return "Error: Select 2 keyframes (keys.length=" + (keys ? keys.length : "null") + ")";
+        // Use the first two selected keyframes
+        var key1 = keys[0];
+        var key2 = keys[1];
+        // @ts-ignore
+        var interpType1 = prop.keyOutInterpolationType(key1);
+        // @ts-ignore
+        var interpType2 = prop.keyInInterpolationType(key2);
+        if (
+            interpType1 !== KeyframeInterpolationType.BEZIER ||
+            interpType2 !== KeyframeInterpolationType.BEZIER
+        )
+            return "Error: Selected keyframes are not bezier (interpType1=" + interpType1 + ", interpType2=" + interpType2 + ")";
+        // @ts-ignore
+        var outTemp = prop.keyOutTemporalEase(key1);
+        // @ts-ignore
+        var inTemp = prop.keyInTemporalEase(key2);
+        if (!outTemp || !inTemp) return "Error: Could not get temporal ease (outTemp=" + outTemp + ", inTemp=" + inTemp + ")";
+        var outInfluence = outTemp[0].influence / 100.0;
+        var inInfluence = inTemp[0].influence / 100.0;
+        var outSpeed = outTemp[0].speed;
+        var inSpeed = inTemp[0].speed;
+
+        // AE's cubic-bezier is not directly accessible, but we can estimate
+        // We'll use a common approximation: x1 = outInfluence, y1 = outSpeed, x2 = inInfluence, y2 = inSpeed
+        // This is not 100% accurate but gives a usable curve for most cases
+        if (outInfluence < 0 || outInfluence > 1 || inInfluence < 0 || inInfluence > 1) {
+            return "Error: Influence values must be between 0 and 1 (outInfluence=" + outInfluence + ", inInfluence=" + inInfluence + ")";
+        }
+        var x1 = Math.max(0, Math.min(1, outInfluence));
+        var y1 = Math.max(-1, Math.min(2, outSpeed / 10));
+        var x2 = Math.max(0, Math.min(1, inInfluence));
+        var y2 = Math.max(-1, Math.min(2, inSpeed / 10));
+        return x1.toFixed(3) + "," + y1.toFixed(3) + "," + x2.toFixed(3) + "," + y2.toFixed(3);
+    } catch (e) {
+        return "Error (exception): " + e;
+    }
+}
+
+export function getSelectedKeyframeCount() {
+    if (
+        !app.project ||
+        !app.project.activeItem ||
+        !(app.project.activeItem instanceof CompItem)
+    ) {
+        return 0;
+    }
+    var comp = app.project.activeItem as CompItem;
+    if (comp.selectedLayers.length === 0) return 0;
+    var layer = comp.selectedLayers[0];
+    var selectedProps = layer.selectedProperties;
+    if (!selectedProps || selectedProps.length === 0) return 0;
+    var prop = selectedProps[0];
+    // @ts-ignore
+    if (!prop || !prop.selectedKeys || prop.selectedKeys.length === 0) return 0;
+    // @ts-ignore
+    return prop.selectedKeys.length;
+}
+
+export function getSelectedKeyframeValues() {
+    if (
+        !app.project ||
+        !app.project.activeItem ||
+        !(app.project.activeItem instanceof CompItem)
+    ) {
+        return null;
+    }
+    var comp = app.project.activeItem as CompItem;
+    if (comp.selectedLayers.length === 0) return null;
+    var layer = comp.selectedLayers[0];
+    var selectedProps = layer.selectedProperties;
+    if (!selectedProps || selectedProps.length === 0) return null;
+    var prop = selectedProps[0];
+    // @ts-ignore
+    if (!prop || !prop.selectedKeys || prop.selectedKeys.length < 2) return null;
+    
+    try {
+        // @ts-ignore
+        var keys = prop.selectedKeys.sort(function(a, b) { return a - b; });
+        // @ts-ignore
+        var val1 = prop.keyValue(keys[0]);
+        // @ts-ignore
+        var val2 = prop.keyValue(keys[1]);
+        
+        // Handle both scalar and vector properties
+        if (typeof val1 === "number") {
+            return { val1: val1, val2: val2 };
+        } else if (val1.length > 0) {
+            // For vector properties, use the first dimension
+            return { val1: val1[0], val2: val2[0] };
+        }
+    } catch (e) {
+        return null;
+    }
+    return null;
+}
+
+/*
+Thanks to Grishka for the original implementation:
+
+    https://gist.github.com/grishka/83755b852a1968b8a98e2153eb5c060f
+*/
+
+export function applyBezierToSelected(a: number, b: number, c: number, d: number) {
+    if (
+        !app.project ||
+        !app.project.activeItem ||
+        !(app.project.activeItem instanceof CompItem)
+    ) {
+        return "No comp";
+    }
+    var comp = app.project.activeItem as CompItem;
+    if (comp.selectedLayers.length === 0) return "No layer";
+    var layer = comp.selectedLayers[0];
+    var selectedProps = layer.selectedProperties;
+    if (!selectedProps || selectedProps.length === 0) return "No property";
+    var prop = selectedProps[0];
+    // @ts-ignore
+    if (!prop || !prop.selectedKeys || prop.selectedKeys.length < 2) return "Select 2 keyframes";
+    // @ts-ignore
+    var keys = prop.selectedKeys;
+    try {
+        for (var i = 0; i < keys.length - 1; i++) {
+            // @ts-ignore
+            prop.setInterpolationTypeAtKey(keys[i], KeyframeInterpolationType.BEZIER);
+            // @ts-ignore
+            prop.setInterpolationTypeAtKey(keys[i + 1], KeyframeInterpolationType.BEZIER);
+            var outEase = new KeyframeEase(0, b * 100);
+            var inEase = new KeyframeEase(0, d * 100);
+            // @ts-ignore
+            prop.setTemporalEaseAtKey(keys[i], [outEase]);
+            // @ts-ignore
+            prop.setTemporalEaseAtKey(keys[i + 1], [inEase]);
+        }
+        return "OK";
+    } catch (e) {
+        // @ts-ignore
+        return "Failed: " + e.toString();
+    }
+}
+
+export function applyRobustBezierToSelected(a: number, b: number, c: number, d: number) {
+    a = Math.max(0.001, Math.min(1, a));
+    c = Math.min(0.999, c); // these clamps the values to the range [0.001, 1] for a and [0, 0.999] for c
+    // The reason why we clamp a to [0.001, 1] is to avoid division by zero in the speed calculations.
+    // If a is 0, it would cause a division by zero when calculating speed1
+
+    var comp = app.project.activeItem;
+    if (comp && comp instanceof CompItem) {
+        var props = comp.selectedProperties;
+        if (props.length > 0) {
+            app.beginUndoGroup("Apply Dynamic Eases");
+            var noSelectedKeyframes = true;
+            
+            for (var p = 0; p < props.length; p++) {
+                var prop = props[p];
+                // @ts-ignore
+                if (prop.numKeys > 0 && prop.selectedKeys.length > 1) {
+                    noSelectedKeyframes = false;
+                    // @ts-ignore
+                    var selectedKeys = prop.selectedKeys.sort(function (keyA, keyB) {
+                        return keyA - keyB;
+                    });
+                    
+                    for (var i = 0; i < selectedKeys.length - 1; i++) {
+                        var keyIndex1 = selectedKeys[i];
+                        var keyIndex2 = selectedKeys[i + 1];
+                        // @ts-ignore
+                        var keyValue1 = prop.keyValue(keyIndex1);
+                        // @ts-ignore
+                        var keyValue2 = prop.keyValue(keyIndex2);
+                        // @ts-ignore
+                        var keyTime1 = prop.keyTime(keyIndex1);
+                        // @ts-ignore
+                        var keyTime2 = prop.keyTime(keyIndex2);
+                        var timeDiff = Math.abs(keyTime2 - keyTime1);
+                        
+                        var dim = typeof keyValue1 === "number" ? 1 : keyValue1.length;
+                        var inEase = [];
+                        var outEase = [];
+                        
+                        for (var j = 0; j < dim; j++) {
+                            var val1 = dim === 1 ? keyValue1 : keyValue1[j];
+                            var val2 = dim === 1 ? keyValue2 : keyValue2[j];
+                            var avSpeed = timeDiff !== 0 ? Math.abs(val1 - val2) / timeDiff : 0;
+                            
+                            // Correct conversion from cubic-bezier to After Effects based on grishka's implementation
+                            // For cubic-bezier(a, b, c, d) where a=x1, b=y1, c=x2, d=y2
+                            var speed1, speed2, influence1, influence2;
+                            
+                            if (val1 <= val2) {
+                                // Ascending values - use grishka's forward equations
+                                influence1 = a * 100;  // x1 * 100
+                                speed1 = a !== 0 ? (b * avSpeed) / a : 0;  // (y1 * avSpeed) / x1
+                                influence2 = (1 - c) * 100;  // (1 - x2) * 100
+                                speed2 = (1 - c) !== 0 ? ((1 - d) * avSpeed) / (1 - c) : 0;  // ((1 - y2) * avSpeed) / (1 - x2)
+                            } else {
+                                // Descending values - use grishka's reverse equations
+                                influence1 = a * 100;  // x1 * 100
+                                speed1 = a !== 0 ? (-b * avSpeed) / a : 0;  // (-y1 * avSpeed) / x1
+                                influence2 = c * 100;  // x2 * 100 (before the 1-x2 transformation)
+                                speed2 = c !== 0 ? ((d - 1) * avSpeed) / c : 0;  // ((y2 - 1) * avSpeed) / x2
+                            }
+                            
+                            // Debug logging (can be removed in production)
+                            // $.writeln("Bezier: " + a + "," + b + "," + c + "," + d + 
+                            //          " -> Speed1: " + speed1 + ", Influence1: " + influence1 + 
+                            //          ", Speed2: " + speed2 + ", Influence2: " + influence2);
+                            
+                            outEase.push(new KeyframeEase(speed1, influence1));
+                            inEase.push(new KeyframeEase(speed2, influence2));
+                        }
+                        
+                        // Apply the easing
+                        // @ts-ignore
+                        prop.setTemporalEaseAtKey(
+                            keyIndex1,
+                            // @ts-ignore
+                            prop.keyInTemporalEase(keyIndex1),
+                            outEase
+                        );
+                        // @ts-ignore
+                        prop.setTemporalEaseAtKey(
+                            keyIndex2,
+                            inEase,
+                            // @ts-ignore
+                            prop.keyOutTemporalEase(keyIndex2)
+                        );
+                    }
+                }
+            }
+            app.endUndoGroup();
+            
+            if (noSelectedKeyframes) {
+                return "Please select at least two keyframes in the chosen properties.";
+            }
+        } else {
+            return "Please select at least one property.";
+        }
+    } else {
+        return "Please open a composition.";
+    }
+    return "";
+}
+
+export function applyBezier(a: number, b: number, c: number, d: number): string {
+    a = Math.max(0.001, Math.min(1, a));
+    c = Math.min(0.999, c);
+
+    var comp = app.project.activeItem;
+    if (comp && comp instanceof CompItem) {
+        var props = comp.selectedProperties;
+        if (props.length > 0) {
+            app.beginUndoGroup("Apply Dynamic Eases");
+            var noSelectedKeyframes = true;
+            for (var p = 0; p < props.length; p++) {
+                var prop = props[p];
+                // @ts-ignore
+                if (prop.numKeys > 0 && prop.selectedKeys.length > 1) {
+                    noSelectedKeyframes = false;
+                    // @ts-ignore
+                    var selectedKeys = prop.selectedKeys.sort(function (keyA: number, keyB: number) {
+                        return keyA - keyB;
+                    });
+                    for (var i = 0; i < selectedKeys.length - 1; i++) {
+                        var keyIndex1 = selectedKeys[i];
+                        var keyIndex2 = selectedKeys[i + 1];
+                        // @ts-ignore
+                        var keyValue1 = prop.keyValue(keyIndex1);
+                        // @ts-ignore
+                        var keyValue2 = prop.keyValue(keyIndex2);
+                        // @ts-ignore
+                        var keyTime1 = prop.keyTime(keyIndex1);
+                        // @ts-ignore
+                        var keyTime2 = prop.keyTime(keyIndex2);
+                        var timeDiff = Math.abs(keyTime2 - keyTime1);
+                        var dim = typeof keyValue1 === "number" ? 1 : keyValue1.length;
+                        var inEase = [];
+                        var outEase = [];
+                        for (var j = 0; j < dim; j++) {
+                            var val1 = dim === 1 ? keyValue1 : keyValue1[j];
+                            var val2 = dim === 1 ? keyValue2 : keyValue2[j];
+                            var avSpeed = timeDiff !== 0 ? Math.abs(val1 - val2) / timeDiff : 0;
+                            var speed1 = (avSpeed * b) / a;
+                            var speed2 = (avSpeed * (1 - d)) / (1 - c);
+                            var influence1 = a * 100;
+                            var influence2 = (1 - c) * 100;
+                            outEase.push(new KeyframeEase(speed1, influence1));
+                            inEase.push(new KeyframeEase(speed2, influence2));
+                        }
+                        // @ts-ignore
+                        prop.setTemporalEaseAtKey(
+                            keyIndex1,
+                            // @ts-ignore
+                            prop.keyInTemporalEase(keyIndex1),
+                            outEase
+                        );
+                        // @ts-ignore
+                        prop.setTemporalEaseAtKey(
+                            keyIndex2,
+                            inEase,
+                            // @ts-ignore
+                            prop.keyOutTemporalEase(keyIndex2)
+                        );
+                    }
+                }
+            }
+            app.endUndoGroup();
+            if (noSelectedKeyframes) {
+                return "Please select at least two keyframes in the chosen properties.";
+            }
+        } else {
+            return "Please select at least one property.";
+        }
+    } else {
+        return "Please open a composition.";
+    }
+    return "";
+}
 
 export const removeDuplicateFrames = (
     samplingAccuracy: number = 4,

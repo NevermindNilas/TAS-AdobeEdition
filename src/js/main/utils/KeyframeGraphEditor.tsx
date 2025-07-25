@@ -612,7 +612,7 @@ export default function KeyframeGraphEditor() {
     const c = parseFloat(values[2]);
     const d = parseFloat(values[3]);
 
-    const errors = [];
+    const errors: string[] = [];
     if (isNaN(a) || a < 0 || a > 1) {
       errors.push("a must be between 0 and 1");
     }

@@ -264,3 +264,11 @@ body.spectrum-modal-is-open {
 }
 
 
+
+.left {
+  left: 10px !important;
+}
+
+.right {
+  left: calc(100% - 30px) !important;
+}

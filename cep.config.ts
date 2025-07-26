@@ -17,11 +17,11 @@ const config: CEP_Config = {
   ],
 
   type: "Panel",
-  iconDarkNormal: "./src/assets/light-icon.png",
-  iconNormal: "./src/assets/dark-icon.png",
-  iconDarkNormalRollOver: "./src/assets/light-icon.png",
-  iconNormalRollOver: "./src/assets/dark-icon.png",
-  parameters: ["--v=0", "--enable-nodejs", "--mixed-context"],
+  iconDarkNormal: "./src/assets/icon.png",
+  iconNormal: "./src/assets/icon.png",
+  iconDarkNormalRollOver: "./src/assets/icon.png",
+  iconNormalRollOver: "./src/assets/icon.png",
+  parameters: ["--enable-nodejs", "--mixed-context"],
   width: 500,
   height: 550,
 

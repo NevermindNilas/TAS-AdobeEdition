@@ -622,8 +622,11 @@ export function getSelectedKeyframeBezier() {
         var prop = null;
         for (var i = 0; i < selectedProps.length; i++) {
             if (
+                //@ts-ignore
                 selectedProps[i].numKeys &&
+                //@ts-ignore
                 selectedProps[i].selectedKeys &&
+                //@ts-ignore
                 selectedProps[i].selectedKeys.length > 1
             ) {
                 prop = selectedProps[i];

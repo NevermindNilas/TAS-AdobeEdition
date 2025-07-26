@@ -86,7 +86,9 @@ import { removeBackgroundLogic } from "./utils/removeBackground";
 import { aboutTab } from "./utils/aboutTab";
 import { logTab } from "./utils/logTab";
 import KeyframeGraphEditor from "./utils/KeyframeGraphEditor";
-import ProgressDisplay from "./components/ProgressDisplay";
+import ProgressDisplay from "./utils/ProgressDisplay";
+import QueueDisplay from "./utils/QueueDisplay";
+import { QueueManager, QueueItem, ProcessingOptions } from "./utils/QueueManager";
 
 // Contextual Help Utilities
 import {
@@ -368,6 +370,15 @@ const Main = memo(() => {
         progressBarStatusRef.current = data.status;
         isProcessingRef.current = true;
 
+        // Update queue manager with progress data
+        console.log("updateProgress received data:", data);
+        if (queueManagerRef.current) {
+            console.log("Updating queue manager with progress data");
+            queueManagerRef.current.updateCurrentItemProgress(data);
+        } else {
+            console.log("No queue manager ref available");
+        }
+
         // Batch state update for UI
         setProgressState({
             currentFrame: data.currentFrame,
@@ -404,16 +415,72 @@ const Main = memo(() => {
     // Logs
     const [fullLogs, setFullLogs] = useState<string[]>([]);
 
+    // Queue Management
+    const [queue, setQueue] = useState<QueueItem[]>([]);
+    const [queueManager, setQueueManager] = useState<QueueManager | null>(null);
+    const queueManagerRef = useRef<QueueManager | null>(null);
+
+    // Wrapper for process execution using helpers
+    const executeProcess = useCallback((
+        command: any,
+        toastMessage: string,
+        onSuccess?: any,
+        inputFile?: any,
+        outputFile?: any
+    ) => {
+        return executeProcessHelper({
+            child_process,
+            fs,
+            path,
+            tasFolder,
+            command,
+            toastMessage,
+            resetProgress,
+            setFullLogs,
+            setIsProcessCancelled,
+            processCancelledRef,
+            deletePreRender,
+            onSuccess,
+            inputFile,
+            outputFile
+        });
+    }, [resetProgress, setFullLogs, setIsProcessCancelled, deletePreRender]);
 
     useEffect(() => {
         let unsubProgress: (() => void) | null = null;
         let unsubComplete: (() => void) | null = null;
         let cancelled = false;
 
+        // Initialize queue manager first
+        const queueMgr = new QueueManager({
+            onQueueUpdate: setQueue,
+            onProgressUpdate: updateProgress,
+            resetProgress,
+            setFullLogs,
+            setIsProcessCancelled,
+            processCancelledRef,
+            executeProcess
+        });
+        console.log("Queue manager created:", queueMgr);
+        setQueueManager(queueMgr);
+        queueManagerRef.current = queueMgr;
+        console.log("Queue manager ref set:", queueManagerRef.current);
+
         const initializeSocket = async () => {
             await socketManager.init();
             if (cancelled) return;
-            unsubProgress = socketManager.onProgressUpdate(updateProgress);
+            
+            // Create a combined progress update function
+            const combinedProgressUpdate = (data: any) => {
+                console.log("Socket manager received progress data:", data);
+                updateProgress(data);
+                // Also directly update queue manager
+                if (queueManagerRef.current) {
+                    queueManagerRef.current.updateCurrentItemProgress(data);
+                }
+            };
+            
+            unsubProgress = socketManager.onProgressUpdate(combinedProgressUpdate);
             unsubComplete = socketManager.onProcessComplete((success) => {
                 resetProgress("Progress complete!");
             });
@@ -427,7 +494,9 @@ const Main = memo(() => {
             if (unsubComplete) unsubComplete();
             resetProgress("Initializing...");
         };
-    }, [updateProgress, resetProgress]);
+    }, [updateProgress, resetProgress, executeProcess]);
+
+
 
     useEffect(() => {
         const initialize = async () => {
@@ -538,31 +607,7 @@ const Main = memo(() => {
         generateToast(toastState || 2, toastMessage || "Processing cancelled.");
     }, [resetProgress]);
 
-    // Wrapper for process execution using helpers
-    const executeProcess = useCallback((
-        command: any,
-        toastMessage: string,
-        onSuccess?: any,
-        inputFile?: any,
-        outputFile?: any
-    ) => {
-        return executeProcessHelper({
-            child_process,
-            fs,
-            path,
-            tasFolder,
-            command,
-            toastMessage,
-            resetProgress,
-            setFullLogs,
-            setIsProcessCancelled,
-            processCancelledRef,
-            deletePreRender,
-            onSuccess,
-            inputFile,
-            outputFile
-        });
-    }, [resetProgress, setFullLogs, setIsProcessCancelled, deletePreRender]);
+
 
     const handleCloseDialog = useCallback(() => {
         if (!isBackendAvailable) {
@@ -899,6 +944,36 @@ const Main = memo(() => {
         }
     }, [sortLayerMethod]);
 
+    const handleAddLayersToQueue = useCallback(async () => {
+        if (queueManager) {
+            await queueManager.addSelectedLayersToQueue();
+        }
+    }, [queueManager]);
+
+    const handleStartQueue = useCallback(async () => {
+        if (queueManager) {
+            await queueManager.startQueue();
+        }
+    }, [queueManager]);
+
+    const handleCancelQueue = useCallback(() => {
+        if (queueManager) {
+            queueManager.cancelProcessing();
+        }
+    }, [queueManager]);
+
+    const handleClearQueue = useCallback(() => {
+        if (queueManager) {
+            queueManager.clearQueue();
+        }
+    }, [queueManager]);
+
+    const handleRemoveFromQueue = useCallback((itemId: string) => {
+        if (queueManager) {
+            queueManager.removeFromQueue(itemId);
+        }
+    }, [queueManager]);
+
 
 
     useEffect(() => {
@@ -1037,7 +1112,41 @@ const Main = memo(() => {
 
     useEffect(() => {
         debouncedSaveSettings(settings);
-    }, [settings, debouncedSaveSettings]);
+        
+        // Update queue manager with current processing options
+        if (queueManager) {
+            const processingOptions: ProcessingOptions = {
+                preRenderAlgorithm: preRenderAlgorithm || DEFAULT.preRenderAlgorithm,
+                resize,
+                resizeFactor: resizeFactor || DEFAULT.resizeFactor,
+                interpolate,
+                interpolateFactor: interpolateFactor || DEFAULT.interpolateFactor,
+                interpolationModel: interpolationModel || DEFAULT.interpolationModel,
+                upscale,
+                upscaleModel: upscaleModel || DEFAULT.upscaleModel,
+                deduplicate,
+                deduplicateMethod: deduplicateMethod || DEFAULT.deduplicateMethod,
+                deduplicateSensitivity: deduplicateSensitivity || DEFAULT.deduplicateSensitivity,
+                restore,
+                restoreModel: restoreModel || DEFAULT.restoreModel,
+                sharpening,
+                sharpeningSensitivity: sharpeningSensitivity || DEFAULT.sharpeningSensitivity,
+                encodeAlgorithm: encodeAlgorithm || DEFAULT.encodeAlgorithm,
+                bitDepth: bitDepth || DEFAULT.bitDepth,
+                aiPrecision: aiPrecision || DEFAULT.aiPrecision,
+                enablePreview,
+                slowMotion,
+                rifeensemble,
+                dynamicScale,
+                forceStatic
+            };
+            queueManager.setProcessingOptions(processingOptions);
+        }
+    }, [settings, debouncedSaveSettings, queueManager, preRenderAlgorithm, resize, resizeFactor, 
+        interpolate, interpolateFactor, interpolationModel, upscale, upscaleModel, deduplicate, 
+        deduplicateMethod, deduplicateSensitivity, restore, restoreModel, sharpening, 
+        sharpeningSensitivity, encodeAlgorithm, bitDepth, aiPrecision, enablePreview, 
+        slowMotion, rifeensemble, dynamicScale, forceStatic]);
 
     return (
         <Provider
@@ -1152,6 +1261,7 @@ const Main = memo(() => {
                                                 width={"100%"}
                                                 marginTop={8}
                                             >
+                                               
                                                 <View
                                                     borderWidth="thin"
                                                     borderColor="dark"
@@ -2863,6 +2973,16 @@ const Main = memo(() => {
                                                         </Flex>
                                                     </Flex>
                                                 </View>
+                                            <QueueDisplay
+                                                    queue={queue}
+                                                    isProcessing={queueManager?.isQueueProcessing() || false}
+                                                    currentItem={queueManager?.getCurrentItem() || null}
+                                                    onAddLayers={handleAddLayersToQueue}
+                                                    onStartQueue={handleStartQueue}
+                                                    onCancelProcessing={handleCancelQueue}
+                                                    onClearQueue={handleClearQueue}
+                                                    onRemoveItem={handleRemoveFromQueue}
+                                                />
                                             </Flex>
                                         </motion.div>
                                     </Item>

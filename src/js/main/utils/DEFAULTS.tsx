@@ -61,6 +61,7 @@ const DEFAULT = {
     resizeFactor: "2",
     uiScale: "medium",
     aiPrecision: "true",
+    slowMotion: false,
 };
 
 export default DEFAULT;

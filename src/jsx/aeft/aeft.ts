@@ -1,4 +1,4 @@
-export const example = () => {};
+export const example = () => { };
 
 export const getPath = () => {
     if (app.project.file !== null) {
@@ -71,20 +71,20 @@ function autoclip(tasAppdataPath: string) {
 }
 
 export const setViewportZoom = (zoom: number) => {
-  try {
-    if (
-      app.activeViewer &&
-      app.activeViewer.views &&
-      app.activeViewer.views.length > 0 &&
-      typeof zoom === "number"
-    ) {
-      app.activeViewer.views[0].options.zoom = zoom;
-      return true;
+    try {
+        if (
+            app.activeViewer &&
+            app.activeViewer.views &&
+            app.activeViewer.views.length > 0 &&
+            typeof zoom === "number"
+        ) {
+            app.activeViewer.views[0].options.zoom = zoom;
+            return true;
+        }
+        return false;
+    } catch (e) {
+        return false;
     }
-    return false;
-  } catch (e) {
-    return false;
-  }
 };
 
 function importOutput(outPath: string) {
@@ -223,7 +223,7 @@ function renderActiveComp(renderMethod: string) {
             if (layerName.match(/\.(mp4|mov|avi|mkv)$/i)) {
                 layerName = layerName.replace(/\.(mp4|mov|avi|mkv)$/i, "");
             }
-            
+
             // make sure it its utf-8 safe
             var cleanLayerName = layerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
             outputName = cleanLayerName + "_" + randomId + outputContainer;
@@ -585,6 +585,59 @@ export const removeDuplicates = () => {
     return removeDuplicateFrames();
 };
 
+export const getSelectedLayers = () => {
+    if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+        return [];
+    }
+
+    const comp = app.project.activeItem as CompItem;
+    const selectedLayers = comp.selectedLayers;
+
+    if (selectedLayers.length === 0) {
+        return [];
+    }
+
+    const layerInfo = [];
+    for (let i = 0; i < selectedLayers.length; i++) {
+        const layer = selectedLayers[i];
+        layerInfo.push({
+            name: layer.name,
+            index: layer.index,
+            inPoint: layer.inPoint,
+            outPoint: layer.outPoint
+        });
+    }
+
+    return layerInfo;
+};
+
+export const selectLayerByIndex = (layerIndex: number) => {
+    if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+        return false;
+    }
+
+    const comp = app.project.activeItem as CompItem;
+
+    try {
+        // Deselect all layers first
+        for (let i = 1; i <= comp.numLayers; i++) {
+            comp.layer(i).selected = false;
+        }
+
+        // Select the target layer
+        const targetLayer = comp.layer(layerIndex);
+        if (targetLayer) {
+            targetLayer.selected = true;
+            currentLayer = targetLayer as AVLayer;
+            currentComp = comp;
+            return true;
+        }
+        return false;
+    } catch (error) {
+        return false;
+    }
+};
+
 
 function frameToTime(frameNumber: number, comp: CompItem): number {
     return frameNumber / comp.frameRate;
@@ -710,15 +763,15 @@ export function getSelectedKeyframeValues() {
     var prop = selectedProps[0];
     // @ts-ignore
     if (!prop || !prop.selectedKeys || prop.selectedKeys.length < 2) return null;
-    
+
     try {
         // @ts-ignore
-        var keys = prop.selectedKeys.sort(function(a, b) { return a - b; });
+        var keys = prop.selectedKeys.sort(function (a, b) { return a - b; });
         // @ts-ignore
         var val1 = prop.keyValue(keys[0]);
         // @ts-ignore
         var val2 = prop.keyValue(keys[1]);
-        
+
         // Handle both scalar and vector properties
         if (typeof val1 === "number") {
             return { val1: val1, val2: val2 };
@@ -788,7 +841,7 @@ export function applyRobustBezierToSelected(a: number, b: number, c: number, d: 
         if (props.length > 0) {
             app.beginUndoGroup("Apply Dynamic Eases");
             var noSelectedKeyframes = true;
-            
+
             for (var p = 0; p < props.length; p++) {
                 var prop = props[p];
                 // @ts-ignore
@@ -798,7 +851,7 @@ export function applyRobustBezierToSelected(a: number, b: number, c: number, d: 
                     var selectedKeys = prop.selectedKeys.sort(function (keyA, keyB) {
                         return keyA - keyB;
                     });
-                    
+
                     for (var i = 0; i < selectedKeys.length - 1; i++) {
                         var keyIndex1 = selectedKeys[i];
                         var keyIndex2 = selectedKeys[i + 1];
@@ -811,20 +864,20 @@ export function applyRobustBezierToSelected(a: number, b: number, c: number, d: 
                         // @ts-ignore
                         var keyTime2 = prop.keyTime(keyIndex2);
                         var timeDiff = Math.abs(keyTime2 - keyTime1);
-                        
+
                         var dim = typeof keyValue1 === "number" ? 1 : keyValue1.length;
                         var inEase = [];
                         var outEase = [];
-                        
+
                         for (var j = 0; j < dim; j++) {
                             var val1 = dim === 1 ? keyValue1 : keyValue1[j];
                             var val2 = dim === 1 ? keyValue2 : keyValue2[j];
                             var avSpeed = timeDiff !== 0 ? Math.abs(val1 - val2) / timeDiff : 0;
-                            
+
                             // Correct conversion from cubic-bezier to After Effects based on grishka's implementation
                             // For cubic-bezier(a, b, c, d) where a=x1, b=y1, c=x2, d=y2
                             var speed1, speed2, influence1, influence2;
-                            
+
                             if (val1 <= val2) {
                                 // Ascending values - use grishka's forward equations
                                 influence1 = a * 100;  // x1 * 100
@@ -838,16 +891,16 @@ export function applyRobustBezierToSelected(a: number, b: number, c: number, d: 
                                 influence2 = c * 100;  // x2 * 100 (before the 1-x2 transformation)
                                 speed2 = c !== 0 ? ((d - 1) * avSpeed) / c : 0;  // ((y2 - 1) * avSpeed) / x2
                             }
-                            
+
                             // Debug logging (can be removed in production)
                             // $.writeln("Bezier: " + a + "," + b + "," + c + "," + d + 
                             //          " -> Speed1: " + speed1 + ", Influence1: " + influence1 + 
                             //          ", Speed2: " + speed2 + ", Influence2: " + influence2);
-                            
+
                             outEase.push(new KeyframeEase(speed1, influence1));
                             inEase.push(new KeyframeEase(speed2, influence2));
                         }
-                        
+
                         // Apply the easing
                         // @ts-ignore
                         prop.setTemporalEaseAtKey(
@@ -867,7 +920,7 @@ export function applyRobustBezierToSelected(a: number, b: number, c: number, d: 
                 }
             }
             app.endUndoGroup();
-            
+
             if (noSelectedKeyframes) {
                 return "Please select at least two keyframes in the chosen properties.";
             }
@@ -1021,7 +1074,7 @@ export const removeDuplicateFrames = (
                     const identicalPixels = countIdenticalPixels(curFrame, prevFrame);
                     const allPixelsIdentical = identicalPixels === samplingAccuracy;
 
-                    const shouldKeepFrame = 
+                    const shouldKeepFrame =
                         (!allPixelsIdentical && colorDifference >= primaryThreshold) ||
                         (allPixelsIdentical && colorDifference >= primaryThreshold) ||
                         (consecutiveSkips >= maxConsecutiveSkips && colorDifference >= secondaryThreshold);
@@ -1070,7 +1123,7 @@ function sampleFrameColors(
 
         colorSourceText.expression = `
             var layer = thisComp.layer("${layer.name}");
-            var color = layer.sampleImage([${sampleX}, ${sampleY}], [${sampleWidth/2}, ${sampleHeight/2}]);
+            var color = layer.sampleImage([${sampleX}, ${sampleY}], [${sampleWidth / 2}, ${sampleHeight / 2}]);
             var r = Math.round(color[0] * 255);
             var g = Math.round(color[1] * 255);
             var b = Math.round(color[2] * 255);
@@ -1091,7 +1144,7 @@ function sampleFrameColors(
 
 function calculateFrameDifference(curFrame: number[][], prevFrame: number[][]): number {
     let totalDifference = 0;
-    
+
     for (let i = 0; i < curFrame.length; i++) {
         if (curFrame[i] && prevFrame[i]) {
             const rDiff = Math.abs(curFrame[i][0] - prevFrame[i][0]);
@@ -1100,25 +1153,25 @@ function calculateFrameDifference(curFrame: number[][], prevFrame: number[][]): 
             totalDifference += rDiff + gDiff + bDiff;
         }
     }
-    
+
     return totalDifference;
 }
 
 function countIdenticalPixels(curFrame: number[][], prevFrame: number[][]): number {
     let identicalCount = 0;
-    
+
     for (let i = 0; i < curFrame.length; i++) {
         if (curFrame[i] && prevFrame[i]) {
             const rDiff = Math.abs(curFrame[i][0] - prevFrame[i][0]);
             const gDiff = Math.abs(curFrame[i][1] - prevFrame[i][1]);
             const bDiff = Math.abs(curFrame[i][2] - prevFrame[i][2]);
-            
+
             if (rDiff + gDiff + bDiff === 0) {
                 identicalCount++;
             }
         }
     }
-    
+
     return identicalCount;
 }
 
@@ -1128,7 +1181,7 @@ function cleanupTimeRemapKeyframes(
     frameDuration: number
 ): void {
     const numKeys = timeRemapProperty.numKeys;
-    
+
     if (numKeys <= 1) return;
 
     if (timeRemapProperty.keyTime(numKeys) === layer.outPoint) {
@@ -1137,7 +1190,7 @@ function cleanupTimeRemapKeyframes(
 
     const finalNumKeys = timeRemapProperty.numKeys;
     let timeOffset = frameDuration;
-    
+
     for (let keyIndex = 2; keyIndex <= finalNumKeys; keyIndex++) {
         if (keyIndex <= timeRemapProperty.numKeys) {
             const keyValue = timeRemapProperty.keyValue(keyIndex);

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Untitled] - YYYY-MM-DD
+### New
+- Added resolution preview in upscale settings dialog - now you can see input dimensions (like 1920×1080) and output dimensions (3840×2160) before processing
+- Added FPS preview in interpolation settings dialog - shows current composition FPS and what FPS you will get after interpolation (example: 24.000 FPS → 48.000 FPS for 2x)
+- New functions getCompDimensions() and getCompFPS() in After Effects script to get composition information
+Viewport zoom slider was added to `ToolBox`
+- Added a brand new Graph Editor ( Alpha )
+
+### Changed
+- Made big performance improvements to main interface - now it renders much faster and uses less memory
+- Converted many functions to use useCallback and useMemo for better React performance
+- Moved progress bar display to separate component file for cleaner code organization
+- Resolution and FPS previews automatically fetch data when you open the settings dialogs
+
+### Fixed
+- Fixed issue where executeProcess function was used before it was declared (TypeScript error)
+- Loading states now show properly when fetching composition information
+
+## [2.3.2] - 2025-07-19
+- N/A
+
 ## [2.3.1] - 2025-07-18
 ### New
 - N/A

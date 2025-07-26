@@ -33,7 +33,7 @@ import {
 } from "@adobe/react-spectrum";
 import { ToastContainer } from "@react-spectrum/toast";
 import { Key } from "@react-types/shared";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import "./style.css";
 
@@ -86,6 +86,7 @@ import { removeBackgroundLogic } from "./utils/removeBackground";
 import { aboutTab } from "./utils/aboutTab";
 import { logTab } from "./utils/logTab";
 import KeyframeGraphEditor from "./utils/KeyframeGraphEditor";
+import ProgressDisplay from "./components/ProgressDisplay";
 
 // Contextual Help Utilities
 import {
@@ -162,7 +163,7 @@ const {
 } = getTASPaths();
 
 
-const Main = () => {
+const Main = memo(() => {
     const [tasVersion, setVersion] = useState(DEFAULT.tasVersion);
 
 
@@ -188,11 +189,13 @@ const Main = () => {
     const [autoCutSensitivity, setAutoCutSensitivity] = useState(0.5);
     const [latestVersion, setLatestVersion] = useState("unknown");
     const [bitDepth, setBitDepth] = useState<string | null>("8bit");
-    const handleSelectionChange =
-    (setter: React.Dispatch<React.SetStateAction<string | null>>) =>
-        (key: Key | null) => {
-        setter(key as string | null);
-        };
+    const handleSelectionChange = useCallback(
+        (setter: React.Dispatch<React.SetStateAction<string | null>>) =>
+            (key: Key | null) => {
+                setter(key as string | null);
+            },
+        []
+    );
 
     const [youtubeUrl, setYoutubeUrl] = useState("");
 
@@ -252,6 +255,14 @@ const Main = () => {
     // Viewport Zoom for Toolbox tab
     const [viewportZoom, setViewportZoom] = useState(100);
 
+    // Composition dimensions for upscale preview
+    const [compDimensions, setCompDimensions] = useState<{width: number, height: number} | null>(null);
+    const [isDimensionsLoading, setIsDimensionsLoading] = useState(false);
+
+    // Composition FPS for interpolation preview
+    const [compFPS, setCompFPS] = useState<number | null>(null);
+    const [isFPSLoading, setIsFPSLoading] = useState(false);
+
     // UI Settings
     const [tabListOrientation, setTabListOrientation] = useState<string>(
         DEFAULT.tabListOrientation
@@ -260,15 +271,49 @@ const Main = () => {
     const [percentangeFree, setPercentageFree] = useState<number | undefined>(0);
 
     // Tab management for swipe gestures
-    const tabKeys = ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"];
+    const tabKeys = useMemo(() => ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"], []);
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
 
     // Tab selection change (no direction logic)
-    const handleTabSelectionChange = (key: Key) => {
+    const handleTabSelectionChange = useCallback((key: Key) => {
         setSelectedTab(key);
-    };
+    }, []);
 
-    const slideAnimationVariants = {
+    const getCompositionDimensions = useCallback(async () => {
+        setIsDimensionsLoading(true);
+        try {
+            const dimensions = await evalTS("getCompDimensions");
+            if (dimensions && dimensions.width && dimensions.height) {
+                setCompDimensions(dimensions);
+            } else {
+                setCompDimensions(null);
+            }
+        } catch (error) {
+            console.error("Error getting composition dimensions:", error);
+            setCompDimensions(null);
+        } finally {
+            setIsDimensionsLoading(false);
+        }
+    }, []);
+
+    const getCompositionFPS = useCallback(async () => {
+        setIsFPSLoading(true);
+        try {
+            const fps = await evalTS("getCompFPS");
+            if (fps && typeof fps === 'number' && fps > 0) {
+                setCompFPS(fps);
+            } else {
+                setCompFPS(null);
+            }
+        } catch (error) {
+            console.error("Error getting composition FPS:", error);
+            setCompFPS(null);
+        } finally {
+            setIsFPSLoading(false);
+        }
+    }, []);
+
+    const slideAnimationVariants = useMemo(() => ({
         initial: {
             opacity: 0,
         },
@@ -278,10 +323,10 @@ const Main = () => {
         exit: {
             opacity: 0,
         },
-    };
+    }), []);
 
 
-    const formatETA = (seconds: number): string => {
+    const formatETA = useCallback((seconds: number): string => {
         if (seconds <= 0) return "";
 
         const hours = Math.floor(seconds / 3600);
@@ -299,7 +344,7 @@ const Main = () => {
         } else {
             return "Processing...";
         }
-    };
+    }, []);
 
 
 
@@ -403,12 +448,16 @@ const Main = () => {
             if (!isTASCheckDone) {
                 checkIfBackendExists();
             }
+
+            // Try to get composition dimensions and FPS on startup
+            getCompositionDimensions();
+            getCompositionFPS();
         };
 
         initialize();
-    }, []);
+    }, [getCompositionDimensions]);
 
-    const checkIfBackendExists = async () => {
+    const checkIfBackendExists = useCallback(async () => {
         let isEmpty = true;
 
         const tasExists = fs.existsSync(tasAppDataPath);
@@ -419,7 +468,7 @@ const Main = () => {
             if (!exeExists) {
                 setShowDownloadDialog(true);
             } else {
-                const currentVersion = await getCurrentVersion(tasAppDataPath, pythonExePath); // Fetches the version of main.py
+                const currentVersion = await getCurrentVersion(tasAppDataPath, pythonExePath);
                 if (currentVersion !== tasVersion) {
                     setCurrentVersionOfExe(currentVersion);
                     setShowDownloadDialog(true);
@@ -435,10 +484,10 @@ const Main = () => {
         }
 
         setIsTASCheckDone(true);
-    };
+    }, [tasAppDataPath, pythonExePath, tasVersion, latestVersion]);
 
 
-    const handleDownloadTAS = () => {
+    const handleDownloadTAS = useCallback(() => {
         setisBackendAvailable(true);
         setShowDownloadDialog(false);
         setIsDownloading(true);
@@ -447,7 +496,7 @@ const Main = () => {
             setProgressBarState(progressBarState);
             setIsDownloading(!isDone);
         });
-    };
+    }, [tasAppDataPath, pythonExePath]);
 
     // Modify the useEffect to only attach the event listener when downloading
     useEffect(() => {
@@ -489,18 +538,43 @@ const Main = () => {
         generateToast(toastState || 2, toastMessage || "Processing cancelled.");
     }, [resetProgress]);
 
-    const handleCloseDialog = () => {
+    // Wrapper for process execution using helpers
+    const executeProcess = useCallback((
+        command: any,
+        toastMessage: string,
+        onSuccess?: any,
+        inputFile?: any,
+        outputFile?: any
+    ) => {
+        return executeProcessHelper({
+            child_process,
+            fs,
+            path,
+            tasFolder,
+            command,
+            toastMessage,
+            resetProgress,
+            setFullLogs,
+            setIsProcessCancelled,
+            processCancelledRef,
+            deletePreRender,
+            onSuccess,
+            inputFile,
+            outputFile
+        });
+    }, [resetProgress, setFullLogs, setIsProcessCancelled, deletePreRender]);
+
+    const handleCloseDialog = useCallback(() => {
         if (!isBackendAvailable) {
             setisBackendAvailable(true);
         }
         setShowDownloadDialog(false);
-    };
+    }, [isBackendAvailable]);
 
-    const startAutoCut = async () => {
+    const startAutoCut = useCallback(async () => {
         try {
-
             var info: any | null = null;
-            info = await evalTS("start"); // gets the inpoint, outpoint, input, and name of the video
+            info = await evalTS("start");
 
             if (!(await ensureProjectIsSaved())) {
                 return;
@@ -513,7 +587,6 @@ const Main = () => {
 
             const { inpoint, outpoint, input, name } = info;
 
-            // make
             var command = await autoCutLogic(
                 pythonExePath,
                 mainPyPath,
@@ -522,7 +595,6 @@ const Main = () => {
                 inpoint,
                 outpoint
             );
-            // Add the current socket port to the command
             command = addPortToCommand(command);
 
             setIsProcessing(true);
@@ -532,9 +604,9 @@ const Main = () => {
         } catch (error) {
             console.error("Error in startAutoCut:", error);
         }
-    };
+    }, [pythonExePath, mainPyPath, autoCutSensitivity, tasRoamingPath, executeProcess]);
 
-    const startYoutubeDownload = async () => {
+    const startYoutubeDownload = useCallback(async () => {
         var isSaved = await ensureProjectIsSaved();
         if (!isSaved) {
             return;
@@ -542,7 +614,7 @@ const Main = () => {
 
         let projectFolderPath = await getAEProjectFolderPath();
         if (!projectFolderPath) {
-            return; // Error toast already shown by helper
+            return;
         }
         var { command, outputPath } = youtubeDownloadLogic(
             youtubeUrl,
@@ -558,178 +630,95 @@ const Main = () => {
         runProcess(executeProcess, command, "Youtube download", () => {
             evalTS("importVideo", outputPath);
         });
-    };
+    }, [youtubeUrl, mainPyPath, pythonExePath, executeProcess]);
 
-    const startExtraTabLogic = async (mode: string) => {
-        const aeContext = await getValidatedAEContext();
-        if (!aeContext) return;
-        const { layerInfo, projectFolderPath } = aeContext;
-
-        if (mode === "depth") {
-            var toast = "Depth map extraction";
-            var depthMethod = depthModel;
-            var workflowBitDepth = bitDepth;
-            var depthres = depthQuality;
-
-            // Check if depthMethod is null and provide a default value or handle the case appropriately
-            if (depthMethod === null) {
-                console.error("Depth method is null. Please select a depth method.");
-                return;
-            }
-
-            if (workflowBitDepth === null) {
-                console.error("Bit depth is null. Please select a bit depth.");
-                return;
-            }
-
-            if (depthres === null) {
-                console.error("Depth quality is null. Please select a depth quality.");
-                return;
-            }
-
-            var renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
-            generateToast(3, "Initiating the pre-render step...");
-            var info: any | null = null;
-            // @ts-ignore
-            info = await evalTS("render", renderAlgo);
-            if (info === "undefined") {
-                generateToast(
-                    2,
-                    "Error: Rendering failed. Consider using an alternative encoding method."
-                );
-                return;
-            }
-
-            //var inpoint = info?.inpoint;
-            //var outpoint = info?.outpoint;
-            var input = info?.input;
-            var name = info?.name;
-
-
-            const half = aiPrecision || DEFAULT.aiPrecision;
-
-            var { command, outputPath } = await depthMapExtractionLogic(
-                pythonExePath,
-                mainPyPath,
-                input,
-                projectFolderPath,
-                depthMethod,
-                workflowBitDepth,
-                depthres,
-                half
-            );
-            // Add the current socket port to the command
-            command = addPortToCommand(command);
-
-        } else if (mode === "background") {
-            var toast = "Background removal";
-            generateToast(3, "Initiating the pre-render step...");
+    const startExtraTabLogic = useCallback(async (mode: string) => {
+        try {
+            const aeContext = await getValidatedAEContext();
+            if (!aeContext) return;
+            const { layerInfo, projectFolderPath } = aeContext;
 
             const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
-            var info: any | null = null;
-            // @ts-ignore
-            info = await evalTS("render", renderAlgo);
+            generateToast(3, "Initiating the pre-render step...");
+            
+            const info: any | null = await evalTS("render", renderAlgo);
             if (info === "undefined") {
-                generateToast(
-                    2,
-                    "Error: Rendering failed. Consider using an alternative encoding method."
-                );
+                generateToast(2, "Error: Rendering failed. Consider using an alternative encoding method.");
                 return;
             }
 
-            //var inpoint = info?.inpoint;
-            //var outpoint = info?.outpoint;
-            var input = info?.input;
-            var name = info?.name;
-
-
-            const backgroundMethod = segmentMethod || DEFAULT.segmentMethod;
+            const input = info?.input;
             const half = aiPrecision || DEFAULT.aiPrecision;
-            var { command, outputPath } = await removeBackgroundLogic(
-                pythonExePath,
-                mainPyPath,
-                input,
-                projectFolderPath,
-                backgroundMethod,
-                half
-            );
+            let command: string;
+            let outputPath: string;
+            let toast: string;
 
-            // Add the current socket port to the command
-            command = addPortToCommand(command);
-        }
+            if (mode === "depth") {
+                if (!depthModel || !bitDepth || !depthQuality) {
+                    console.error("Missing depth parameters");
+                    return;
+                }
 
-        else {
-            generateToast(2, "Invalid mode selected for extraction.");
-            return;
-        }
+                toast = "Depth map extraction";
+                const result = await depthMapExtractionLogic(
+                    pythonExePath,
+                    mainPyPath,
+                    input,
+                    projectFolderPath,
+                    depthModel,
+                    bitDepth,
+                    depthQuality,
+                    half
+                );
+                command = addPortToCommand(result.command);
+                outputPath = result.outputPath;
 
-        setIsProcessing(true);
-        runProcess(
-            executeProcess,
-            command,
-            toast,
-            () => {
+            } else if (mode === "background") {
+                toast = "Background removal";
+                const backgroundMethod = segmentMethod || DEFAULT.segmentMethod;
+                const result = await removeBackgroundLogic(
+                    pythonExePath,
+                    mainPyPath,
+                    input,
+                    projectFolderPath,
+                    backgroundMethod,
+                    half
+                );
+                command = addPortToCommand(result.command);
+                outputPath = result.outputPath;
+
+            } else {
+                generateToast(2, "Invalid mode selected for extraction.");
+                return;
+            }
+
+            setIsProcessing(true);
+            runProcess(executeProcess, command, toast, () => {
                 evalTS("importVideo", outputPath);
-            },
-            input,
-            outputPath
-        );
-    }
+            }, input, outputPath);
 
-    const startOfflineMode = async () => {
+        } catch (error) {
+            console.error("Error in startExtraTabLogic:", error);
+            generateToast(2, "An error occurred during processing.");
+        }
+    }, [
+        preRenderAlgorithm, depthModel, bitDepth, depthQuality, aiPrecision,
+        segmentMethod, pythonExePath, mainPyPath, executeProcess
+    ]);
+
+    const startOfflineMode = useCallback(async () => {
         var command = offlineModeLogic(pythonExePath, mainPyPath);
 
         runProcess(executeProcess, command, "Offline mode", () => {
             generateToast(1, "TAS is now fully operational offline.");
         });
-    };
+    }, [pythonExePath, mainPyPath, executeProcess]);
 
-    const startChain = async () => {
-        const aeContext = await getValidatedAEContext();
-        if (!aeContext) return;
-        const { layerInfo, projectFolderPath } = aeContext;
-
-        var renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
-        generateToast(3, "Initiating the pre-render step...");
-        // @ts-ignore
-        var info: any | null = await evalTS("render", renderAlgo);
-        if (info === "undefined") {
-            generateToast(
-                2,
-                "Error: Rendering failed. Consider using an alternative encoding method."
-            );
-            return;
-        }
-
-        //var inpoint = info?.inpoint;
-        //var outpoint = info?.outpoint;
-        var input = info?.input;
-
-
-        // in case if the user has not selected any processing options other than pre-render
-        if (!interpolate && !upscale && !deduplicate && !restore && !sharpening && !resize) {
-            evalTS("importVideo", input);
-            return;
-        }
-        var outputFolder = await getAEProjectFolderPath();
-        if (!outputFolder) {
-            return; // Error toast already shown by helper
-        }
-        var randomNumbers = Math.floor(Math.random() * 100000);
-
-        var outName = `Chain_${randomNumbers}.mp4`;
-
-        var tasChainFolder = path.join(outputFolder.replace(/\\$/, ""), "/TAS-Chain");
-        if (!fs.existsSync(tasChainFolder)) {
-            fs.mkdirSync(tasChainFolder, { recursive: true });
-        }
-
-        var outFile = outputFolder.replace(/\\$/, "") + "/TAS-Chain/" + outName;
-        // Properly quote the output file name
-        var outFileQuoted = `"${outFile}"`;
-        var inputQuoted = `"${input}"`;
-        // Properly quote the output file name
-        var attempt = [
+    const buildChainCommand = useCallback((input: string, outFile: string) => {
+        const inputQuoted = `"${input}"`;
+        const outFileQuoted = `"${outFile}"`;
+        
+        const attempt = [
             `"${pythonExePath}"`,
             `"${mainPyPath}"`,
             "--input",
@@ -756,18 +745,12 @@ const Main = () => {
         }
 
         if (interpolate) {
-            if (interpolateFactor.endsWith("x")) {
-                var newinterpolateFactor = interpolateFactor.slice(0, -1);
-            } else {
-                var newinterpolateFactor = interpolateFactor;
-            }
+            const newinterpolateFactor = interpolateFactor.endsWith("x") 
+                ? interpolateFactor.slice(0, -1) 
+                : interpolateFactor;
 
             if (isNaN(Number(newinterpolateFactor))) {
-                generateToast(
-                    2,
-                    "Error: Interpolation factor is not valid. Please select a valid interpolation factor."
-                );
-                return;
+                throw new Error("Invalid interpolation factor");
             }
 
             attempt.push(
@@ -778,25 +761,14 @@ const Main = () => {
                 interpolationModel || DEFAULT.interpolationModel
             );
 
-            if (slowMotion) {
-                attempt.push("--slowmo");
-            }
-
-            if (rifeensemble) {
-                attempt.push("--ensemble");
-            }
-
-            if (dynamicScale) {
-                attempt.push("--dynamic_scale");
-            }
+            if (slowMotion) attempt.push("--slowmo");
+            if (rifeensemble) attempt.push("--ensemble");
+            if (dynamicScale) attempt.push("--dynamic_scale");
         }
 
         if (upscale) {
             attempt.push("--upscale", "--upscale_method", upscaleModel || DEFAULT.upscaleModel);
-
-            if (forceStatic) {
-                attempt.push("--static");
-            }
+            if (forceStatic) attempt.push("--static");
         }
 
         if (deduplicate) {
@@ -825,37 +797,80 @@ const Main = () => {
             attempt.push("--half", aiPrecision || DEFAULT.aiPrecision);
         }
 
-        var command = attempt.join(" ");
+        return addPortToCommand(attempt.join(" "));
+    }, [
+        pythonExePath, mainPyPath, enablePreview, encodeAlgorithm, bitDepth, resize, resizeFactor,
+        interpolate, interpolateFactor, interpolationModel, slowMotion, rifeensemble, dynamicScale,
+        upscale, upscaleModel, forceStatic, deduplicate, deduplicateSensitivity, deduplicateMethod,
+        restore, restoreModel, sharpening, sharpeningSensitivity, aiPrecision
+    ]);
 
-        // Add the current socket port to the command
-        command = addPortToCommand(command);
+    const hasProcessingOptions = useMemo(() => 
+        interpolate || upscale || deduplicate || restore || sharpening || resize,
+        [interpolate, upscale, deduplicate, restore, sharpening, resize]
+    );
 
-        setIsProcessing(true);
-        runProcess(
-            executeProcess,
-            command,
-            "Chained Process",
-            () => {
+    const startChain = useCallback(async () => {
+        try {
+            const aeContext = await getValidatedAEContext();
+            if (!aeContext) return;
+
+            const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
+            generateToast(3, "Initiating the pre-render step...");
+            
+            const info: any | null = await evalTS("render", renderAlgo);
+            if (info === "undefined") {
+                generateToast(2, "Error: Rendering failed. Consider using an alternative encoding method.");
+                return;
+            }
+
+            const input = info?.input;
+
+            if (!hasProcessingOptions) {
+                evalTS("importVideo", input);
+                return;
+            }
+
+            const outputFolder = await getAEProjectFolderPath();
+            if (!outputFolder) return;
+
+            const randomNumbers = Math.floor(Math.random() * 100000);
+            const outName = `Chain_${randomNumbers}.mp4`;
+            const tasChainFolder = path.join(outputFolder.replace(/\\$/, ""), "/TAS-Chain");
+            
+            if (!fs.existsSync(tasChainFolder)) {
+                fs.mkdirSync(tasChainFolder, { recursive: true });
+            }
+
+            const outFile = outputFolder.replace(/\\$/, "") + "/TAS-Chain/" + outName;
+            const command = buildChainCommand(input, outFile);
+
+            setIsProcessing(true);
+            runProcess(executeProcess, command, "Chained Process", () => {
                 evalTS("importVideo", outFile);
-            },
-            input,
-            outFile
-        );
-    };
+            }, input, outFile);
+        } catch (error) {
+            if (error instanceof Error && error.message === "Invalid interpolation factor") {
+                generateToast(2, "Error: Interpolation factor is not valid. Please select a valid interpolation factor.");
+            } else {
+                console.error("Error in startChain:", error);
+            }
+        }
+    }, [preRenderAlgorithm, hasProcessingOptions, buildChainCommand, executeProcess]);
 
-    const startAddAdjustmentLayerLogic = async () => {
+    const startAddAdjustmentLayerLogic = useCallback(async () => {
         if (await ensureProjectIsSaved()) {
             await createLayer("adjustment", toolboxLayerLength || DEFAULT.toolboxLayerLength);
         }
-    };
+    }, [toolboxLayerLength]);
 
-    const startAddSolidLayerLogic = async () => {
+    const startAddSolidLayerLogic = useCallback(async () => {
         if (await ensureProjectIsSaved()) {
             await createLayer("solid", toolboxLayerLength || DEFAULT.toolboxLayerLength, solidLayerColor || DEFAULT.solidLayerColor);
         }
-    };
+    }, [toolboxLayerLength, solidLayerColor]);
 
-    const startDeduplicateLayerTimemapLogic = async () => {
+    const startDeduplicateLayerTimemapLogic = useCallback(async () => {
         if (await ensureProjectIsSaved()) {
             const result = await evalTS("removeDuplicates");
             if (result) {
@@ -864,15 +879,15 @@ const Main = () => {
                 generateToast(2, "Error: Please select a layer first.");
             }
         }
-    };
+    }, []);
 
-    const startAddNullLayerLogic = async () => {
+    const startAddNullLayerLogic = useCallback(async () => {
         if (await ensureProjectIsSaved()) {
             await createLayer("null", toolboxLayerLength || DEFAULT.toolboxLayerLength);
         }
-    };
+    }, [toolboxLayerLength]);
 
-    const startSortLayersLogic = async () => {
+    const startSortLayersLogic = useCallback(async () => {
         const isSaved = await ensureProjectIsSaved();
         if (isSaved) {
             const result = await evalTS("sortLayers", sortLayerMethod || DEFAULT.sortLayerMethod);
@@ -882,33 +897,9 @@ const Main = () => {
                 generateToast(2, "Error: Please select at least 2 layers.");
             }
         }
-    };
+    }, [sortLayerMethod]);
 
-    // Wrapper for process execution using helpers
-    const executeProcess = (
-        command: any,
-        toastMessage: string,
-        onSuccess?: any,
-        inputFile?: any,
-        outputFile?: any
-    ) => {
-        return executeProcessHelper({
-            child_process,
-            fs,
-            path,
-            tasFolder,
-            command,
-            toastMessage,
-            resetProgress,
-            setFullLogs,
-            setIsProcessCancelled,
-            processCancelledRef,
-            deletePreRender,
-            onSuccess,
-            inputFile,
-            outputFile
-        });
-    };
+
 
     useEffect(() => {
         const savedSettings = localStorage.getItem("settings");
@@ -964,49 +955,46 @@ const Main = () => {
         console.log("Settings saved via debounce"); // Optional: for debugging
     }, 1000); // Adjust delay as needed, e.g., 1000ms
 
-    useEffect(() => {
-        const settings = {
-            deduplicate,
-            restore,
-            upscale,
-            interpolate,
-            sharpening,
-            rifeensemble,
-            deduplicateMethod,
-            encodeAlgorithm,
-            restoreModel,
-            upscaleModel,
-            interpolationModel,
-            depthModel,
-            deduplicateSensitivity,
-            sharpeningSensitivity,
-            autoCutSensitivity,
-            interpolateFactor,
-            youtubeUrl,
-            bitDepth,
-            segmentMethod,
-            enablePreview,
-            deletePreRender,
-            preRenderAlgorithm,
-            depthQuality,
-            adjustmentLayerLength,
-            solidLayerColor,
-            sortLayerMethod,
-            dynamicScale,
-            forceStatic,
-            disableDonatePopup,
-            disableProgressBar,
-            tabListOrientation,
-            toolboxLayerLength,
-            slowMotion,
-            resize,
-            resizeFactor,
-            uiScale,
-            aiPrecision,
-            selectedTab,
-        };
-        debouncedSaveSettings(settings);
-    }, [
+    const settings = useMemo(() => ({
+        deduplicate,
+        restore,
+        upscale,
+        interpolate,
+        sharpening,
+        rifeensemble,
+        deduplicateMethod,
+        encodeAlgorithm,
+        restoreModel,
+        upscaleModel,
+        interpolationModel,
+        depthModel,
+        deduplicateSensitivity,
+        sharpeningSensitivity,
+        autoCutSensitivity,
+        interpolateFactor,
+        youtubeUrl,
+        bitDepth,
+        segmentMethod,
+        enablePreview,
+        deletePreRender,
+        preRenderAlgorithm,
+        depthQuality,
+        adjustmentLayerLength,
+        solidLayerColor,
+        sortLayerMethod,
+        dynamicScale,
+        forceStatic,
+        disableDonatePopup,
+        disableProgressBar,
+        tabListOrientation,
+        toolboxLayerLength,
+        slowMotion,
+        resize,
+        resizeFactor,
+        uiScale,
+        aiPrecision,
+        selectedTab,
+    }), [
         preRenderAlgorithm,
         deduplicate,
         restore,
@@ -1046,6 +1034,10 @@ const Main = () => {
         aiPrecision,
         selectedTab,
     ]);
+
+    useEffect(() => {
+        debouncedSaveSettings(settings);
+    }, [settings, debouncedSaveSettings]);
 
     return (
         <Provider
@@ -1193,7 +1185,14 @@ const Main = () => {
                                                             >
                                                                 <Text>Resize</Text>
                                                             </ToggleButton>
-                                                            <DialogTrigger isDismissable>
+                                                            <DialogTrigger 
+                                                                isDismissable
+                                                                onOpenChange={(isOpen) => {
+                                                                    if (isOpen) {
+                                                                        getCompositionDimensions();
+                                                                    }
+                                                                }}
+                                                            >
                                                                 <TooltipTrigger delay={0}>
                                                                     <ActionButton>
                                                                         <Settings />
@@ -1222,6 +1221,59 @@ const Main = () => {
                                                                         </Heading>
                                                                         <Divider />
                                                                         <Content>
+                                                                            <View
+                                                                                backgroundColor="gray-75"
+                                                                                padding="size-150"
+                                                                                borderRadius="medium"
+                                                                                marginBottom="size-200"
+                                                                            >
+                                                                                <Flex direction="column" gap="size-100">
+                                                                                    {isDimensionsLoading ? (
+                                                                                        <Flex direction="row" justifyContent="center" alignItems="center" minHeight="size-600">
+                                                                                            <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.7 }}>
+                                                                                                Getting composition dimensions...
+                                                                                            </Text>
+                                                                                        </Flex>
+                                                                                    ) : (
+                                                                                        <Flex direction="row" justifyContent="space-between" alignItems="center">
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Input:
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{ 
+                                                                                                    fontSize: "14px", 
+                                                                                                    fontWeight: "medium",
+                                                                                                    color: compDimensions ? "#ffffff" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compDimensions 
+                                                                                                        ? `${compDimensions.width}×${compDimensions.height}`
+                                                                                                        : "No composition active"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                            <Text UNSAFE_style={{ fontSize: "18px", opacity: 0.6 }}>
+                                                                                                →
+                                                                                            </Text>
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Output ({resizeFactor}x):
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{ 
+                                                                                                    fontSize: "14px", 
+                                                                                                    fontWeight: "medium", 
+                                                                                                    color: compDimensions ? "#4CAF50" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compDimensions && resizeFactor
+                                                                                                        ? `${Math.round(compDimensions.width * parseFloat(resizeFactor))}×${Math.round(compDimensions.height * parseFloat(resizeFactor))}`
+                                                                                                        : "Select a composition"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                        </Flex>
+                                                                                    )}
+                                                                                </Flex>
+                                                                            </View>
+
                                                                             <Flex
                                                                                 direction="column"
                                                                                 gap={10}
@@ -1656,7 +1708,14 @@ const Main = () => {
                                                             >
                                                                 <Text>Interpolate</Text>
                                                             </ToggleButton>
-                                                            <DialogTrigger isDismissable>
+                                                            <DialogTrigger 
+                                                                isDismissable
+                                                                onOpenChange={(isOpen) => {
+                                                                    if (isOpen) {
+                                                                        getCompositionFPS();
+                                                                    }
+                                                                }}
+                                                            >
                                                                 <TooltipTrigger delay={0}>
                                                                     <ActionButton>
                                                                         <Settings />
@@ -1700,6 +1759,59 @@ const Main = () => {
 
                                                                         <Divider />
                                                                         <Content>
+                                                                            <View
+                                                                                backgroundColor="gray-75"
+                                                                                padding="size-150"
+                                                                                borderRadius="medium"
+                                                                                marginBottom="size-200"
+                                                                            >
+                                                                                <Flex direction="column" gap="size-100">
+                                                                                    {isFPSLoading ? (
+                                                                                        <Flex direction="row" justifyContent="center" alignItems="center" minHeight="size-600">
+                                                                                            <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.7 }}>
+                                                                                                Getting composition FPS...
+                                                                                            </Text>
+                                                                                        </Flex>
+                                                                                    ) : (
+                                                                                        <Flex direction="row" justifyContent="space-between" alignItems="center">
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Input:
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{ 
+                                                                                                    fontSize: "14px", 
+                                                                                                    fontWeight: "medium",
+                                                                                                    color: compFPS ? "#ffffff" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compFPS 
+                                                                                                        ? `${compFPS.toFixed(3)} FPS`
+                                                                                                        : "No composition active"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                            <Text UNSAFE_style={{ fontSize: "18px", opacity: 0.6 }}>
+                                                                                                →
+                                                                                            </Text>
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Output ({interpolateFactor}):
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{ 
+                                                                                                    fontSize: "14px", 
+                                                                                                    fontWeight: "medium", 
+                                                                                                    color: compFPS ? "#4CAF50" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compFPS && interpolateFactor
+                                                                                                        ? `${(compFPS * parseFloat(interpolateFactor.replace('x', ''))).toFixed(3)} FPS`
+                                                                                                        : "Select a composition"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                        </Flex>
+                                                                                    )}
+                                                                                </Flex>
+                                                                            </View>
+
                                                                             <Flex
                                                                                 direction="column"
                                                                                 gap={8}
@@ -2184,7 +2296,14 @@ const Main = () => {
                                                             >
                                                                 <Text>Upscale</Text>
                                                             </ToggleButton>
-                                                            <DialogTrigger isDismissable>
+                                                            <DialogTrigger 
+                                                                isDismissable
+                                                                onOpenChange={(isOpen) => {
+                                                                    if (isOpen) {
+                                                                        getCompositionDimensions();
+                                                                    }
+                                                                }}
+                                                            >
                                                                 <TooltipTrigger delay={0}>
                                                                     <ActionButton>
                                                                         <Settings />
@@ -2213,6 +2332,59 @@ const Main = () => {
                                                                         </Heading>
                                                                         <Divider />
                                                                         <Content>
+                                                                            <View
+                                                                                backgroundColor="gray-75"
+                                                                                padding="size-150"
+                                                                                borderRadius="medium"
+                                                                                marginBottom="size-200"
+                                                                            >
+                                                                                <Flex direction="column" gap="size-100">
+                                                                          
+                                                                                    {isDimensionsLoading ? (
+                                                                                        <Flex direction="row" justifyContent="center" alignItems="center" minHeight="size-600">
+                                                                                            <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.7 }}>
+                                                                                                Getting composition dimensions...
+                                                                                            </Text>
+                                                                                        </Flex>
+                                                                                    ) : (
+                                                                                        <Flex direction="row" justifyContent="space-between" alignItems="center">
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Input:
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{ 
+                                                                                                    fontSize: "14px", 
+                                                                                                    fontWeight: "medium",
+                                                                                                    color: compDimensions ? "#ffffff" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compDimensions 
+                                                                                                        ? `${compDimensions.width}×${compDimensions.height}`
+                                                                                                        : "No composition active"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                            <Text UNSAFE_style={{ fontSize: "18px", opacity: 0.6 }}>
+                                                                                                →
+                                                                                            </Text>
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Output (2x):
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{ 
+                                                                                                    fontSize: "14px", 
+                                                                                                    fontWeight: "medium", 
+                                                                                                    color: compDimensions ? "#4CAF50" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compDimensions 
+                                                                                                        ? `${compDimensions.width * 2}×${compDimensions.height * 2}`
+                                                                                                        : "Select a composition"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                        </Flex>
+                                                                                    )}
+                                                                                </Flex>
+                                                                            </View>
 
                                                                             <Flex direction="row">
                                                                                 <Checkbox
@@ -2263,6 +2435,7 @@ const Main = () => {
                                                                                     </>
                                                                                 )}
                                                                             </Flex>
+
                                                                             <Picker
                                                                                 label="Upscale Model"
                                                                                 selectedKey={
@@ -4273,10 +4446,10 @@ const Main = () => {
                                                             isFilled
                                                             value={viewportZoom}
                                                             formatOptions={{style: 'percent'}}
-                                                            onChange={async (val) => {
+                                                            onChange={useCallback(async (val) => {
                                                                 setViewportZoom(val);
                                                                 await evalTS("setViewportZoom", val);
-                                                            }}
+                                                            }, [])}
                                                             width="100%"
                                                         />
                                                     </Flex>
@@ -4620,197 +4793,25 @@ const Main = () => {
 
                     {/* Progress bar with tab switching animation */}
                     <AnimatePresence mode="wait">
-                        {(isDownloading || (isProcessing && !disableProgressBar)) && (
-                            <motion.div
-                                key={`progress-${selectedTab}`}
-                                variants={slideAnimationVariants}
-                                initial="initial"
-                                animate="animate"
-                                exit="exit"
-
-                                style={{
-                                    width: '100%',
-                                }}
-                            >
-                                {isDownloading && (
-                                    <motion.div
-                                        className="progress-container"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-
-                                    >
-                                        <View
-                                            borderWidth="thin"
-                                            borderColor="dark"
-                                            borderRadius="medium"
-                                            padding="size-200"
-                                            marginTop={8}
-                                            marginStart={2}
-                                        >
-                                            <Flex direction="column" gap="size-100" marginTop={-8}>
-                                                {/* Progress bar */}
-                                                <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-
-                                                >
-                                                    <ProgressBar
-                                                        value={downloadProgress}
-                                                        width={"100%"}
-                                                        maxValue={100}
-                                                        size="L"
-                                                        showValueLabel={true}
-                                                        label={
-                                                            downloadProgress > 0
-                                                                ? progressBarState
-                                                                : "Initializing..."
-                                                        }
-                                                        isIndeterminate={downloadProgress === 0}
-                                                    />
-                                                </motion.div>
-                                                {/* Compact info display */}
-                                                <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-
-                                                >
-                                                    <Flex
-                                                        direction="row"
-                                                        justifyContent="space-between"
-                                                        alignItems="center"
-                                                        marginTop="size-75"
-                                                    >
-                                                        <Text
-                                                            UNSAFE_style={{
-                                                                fontSize: "11px",
-                                                                opacity: 0.7,
-                                                            }}
-                                                        >
-                                                            {downloadProgress > 0
-                                                                ? `Check logs for details`
-                                                                : "Please wait, this will take a moment..."}
-                                                        </Text>
-                                                    </Flex>
-                                                </motion.div>
-                                            </Flex>
-                                        </View>
-                                    </motion.div>
-                                )}
-                                {isProcessing && !disableProgressBar && (
-                                    <motion.div
-                                        className="progress-container"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-
-                                    >
-                                        <View
-                                            borderWidth="thin"
-                                            borderColor="dark"
-                                            borderRadius="medium"
-                                            padding="size-200"
-                                            marginTop={8}
-                                            marginStart={2}
-                                        >
-                                            <Flex direction="row" alignItems="center" gap="size-100">
-                                                <Flex direction="column" gap="size-100" flex="1">
-                                                    {/* Progress bar */}
-                                                    <motion.div
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-
-                                                    >
-                                                        <Flex
-                                                            direction="row"
-                                                            alignItems="center"
-                                                        >
-                                                            <View flex="1">
-                                                                <ProgressBar
-                                                                    value={(progressState.currentFrame / progressState.totalFrames) * 100}
-                                                                    minValue={0}
-                                                                    maxValue={100}
-                                                                    size="L"
-                                                                    width={"100%"}
-                                                                    showValueLabel={true}
-                                                                    // label = "Status: + progressBarStatus"
-                                                                    label={
-                                                                        progressState.progressBarStatus
-                                                                            ? `Status: ${progressState.progressBarStatus}`
-                                                                            : "Processing..."
-                                                                    }
-                                                                />
-                                                            </View>
-
-                                                        </Flex>
-                                                    </motion.div>
-                                                    {/* Processing info with fps and eta */}
-                                                    <motion.div
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-
-                                                    >
-                                                        <Flex
-                                                            direction="row"
-                                                            justifyContent="space-between"
-                                                            alignItems="center"
-                                                        >
-                                                            <Text
-                                                                UNSAFE_style={{
-                                                                    fontSize: "11px",
-                                                                    opacity: 0.7,
-                                                                    fontWeight: "medium",
-                                                                }}
-                                                            >
-                                                                {progressState.currentFrame > 0 && progressState.totalFrames > 0
-                                                                    ? `${progressState.currentFrame.toLocaleString()} / ${progressState.totalFrames.toLocaleString()} frames`
-                                                                    : "0/0 frames"}
-                                                                {" • "}
-                                                                {progressState.estimatedTimeRemaining > 0
-                                                                    ? formatETA(progressState.estimatedTimeRemaining)
-                                                                    : "0s remaining"}
-                                                                {" • "}
-                                                                {progressState.processingFps > 0
-                                                                    ? progressState.processingFps.toFixed(1)
-                                                                    : "0.0"}
-                                                                fps
-                                                            </Text>
-                                                            <Text
-                                                                UNSAFE_style={{
-                                                                    fontSize: "11px",
-                                                                    opacity: 0.7,
-                                                                }}
-                                                            >
-                                                                See Logs tab for details
-                                                            </Text>
-                                                        </Flex>
-                                                    </motion.div>
-                                                </Flex>
-                                                <TooltipTrigger delay={0}>
-                                                    <ActionButton
-                                                        marginStart={5}
-                                                        isQuiet
-                                                        onPress={() => cancelProcessing()}
-                                                        aria-label="Cancel"
-                                                    >
-                                                        <Cancel />
-                                                    </ActionButton>
-                                                    <Tooltip>Cancel Process</Tooltip>
-                                                </TooltipTrigger>
-                                            </Flex>
-                                        </View>
-                                    </motion.div>
-                                )}
-                            </motion.div>
-                        )}
+                        <ProgressDisplay
+                            key={`progress-${selectedTab}`}
+                            isDownloading={isDownloading}
+                            isProcessing={isProcessing}
+                            disableProgressBar={disableProgressBar}
+                            downloadProgress={downloadProgress}
+                            progressBarState={progressBarState}
+                            progressState={progressState}
+                            formatETA={formatETA}
+                            onCancel={cancelProcessing}
+                            slideAnimationVariants={slideAnimationVariants}
+                        />
                     </AnimatePresence>
                 </Flex>
             </View>
         </Provider>
     );
-};
+});
+
+Main.displayName = 'Main';
+
 export default Main;

@@ -247,7 +247,9 @@ export function executeProcessHelper({
     processCancelledRef.current = false;
     setIsProcessCancelled(false);
     let hasFailed = false;
+    
     setFullLogs([]);
+    
     let localLogs: string[] = [];
     let lastLogSize = 0;
     let logPollingInterval: NodeJS.Timeout | null = null;
@@ -256,11 +258,24 @@ export function executeProcessHelper({
 
     const logTxtPath = path.join(tasFolder, "TAS-Log.log");
 
+    try {
+        if (fs.existsSync(logTxtPath)) {
+            fs.unlinkSync(logTxtPath);
+        }
+    } catch (error) {
+        console.warn("Could not delete existing log file:", error);
+    }
+
     const readNewLogs = () => {
         if (fs.existsSync(logTxtPath)) {
             try {
                 const stats = fs.statSync(logTxtPath);
-                if (stats.size < lastLogSize) lastLogSize = 0;
+                
+                if (stats.size < lastLogSize) {
+                    lastLogSize = 0;
+                    localLogs = [];
+                }
+                
                 if (stats.size > lastLogSize) {
                     const fd = fs.openSync(logTxtPath, "r");
                     const buffer = Buffer.alloc(stats.size - lastLogSize);
@@ -269,7 +284,11 @@ export function executeProcessHelper({
 
                     const newContent = buffer.toString("utf8");
                     if (newContent.trim()) {
-                        const newLines = newContent.split("\n").filter(line => line.trim());
+                        const newLines = newContent
+                            .split(/\r?\n/)
+                            .filter(line => line.trim())
+                            .map(line => line.trim());
+                        
                         if (newLines.length > 0) {
                             localLogs.push(...newLines);
                             setFullLogs([...localLogs]);
@@ -303,9 +322,21 @@ export function executeProcessHelper({
         process = child_process.exec(command, (error: any) => {
             if (error) {
                 hasFailed = true;
+                
                 if (logPollingInterval) {
                     clearInterval(logPollingInterval);
+                    logPollingInterval = null;
                 }
+                
+                if (logWatcher) {
+                    try {
+                        logWatcher.close();
+                    } catch (err) {
+                        console.warn("Error closing log watcher:", err);
+                    }
+                    logWatcher = null;
+                }
+                
                 resetProgress("Process failed!");
                 generateToast(
                     2,
@@ -315,9 +346,21 @@ export function executeProcessHelper({
         });
     } catch (err) {
         hasFailed = true;
+        
         if (logPollingInterval) {
             clearInterval(logPollingInterval);
+            logPollingInterval = null;
         }
+        
+        if (logWatcher) {
+            try {
+                logWatcher.close();
+            } catch (error) {
+                console.warn("Error closing log watcher:", error);
+            }
+            logWatcher = null;
+        }
+        
         resetProgress("Process failed!");
         generateToast(
             2,
@@ -330,9 +373,21 @@ export function executeProcessHelper({
 
     process.on("error", (err: any) => {
         hasFailed = true;
+        
         if (logPollingInterval) {
             clearInterval(logPollingInterval);
+            logPollingInterval = null;
         }
+        
+        if (logWatcher) {
+            try {
+                logWatcher.close();
+            } catch (error) {
+                console.warn("Error closing log watcher:", error);
+            }
+            logWatcher = null;
+        }
+        
         resetProgress("Process failed!");
         generateToast(
             2,
@@ -343,9 +398,21 @@ export function executeProcessHelper({
     process.on("exit", (code: any) => {
         if (exited) return;
         exited = true;
+        
         if (logPollingInterval) {
             clearInterval(logPollingInterval);
+            logPollingInterval = null;
         }
+        
+        if (logWatcher) {
+            try {
+                logWatcher.close();
+            } catch (error) {
+                console.warn("Error closing log watcher:", error);
+            }
+            logWatcher = null;
+        }
+        
         readNewLogs();
 
         try {
@@ -396,11 +463,31 @@ export function executeProcessHelper({
     });
 
     return () => {
+        exited = true;
+        
         if (logPollingInterval) {
             clearInterval(logPollingInterval);
+            logPollingInterval = null;
         }
+        
         if (logWatcher) {
-            logWatcher.close();
+            try {
+                logWatcher.close();
+            } catch (error) {
+                console.warn("Error closing log watcher:", error);
+            }
+            logWatcher = null;
         }
+        
+        if (process && !process.killed) {
+            try {
+                process.kill();
+            } catch (error) {
+                console.warn("Error killing process:", error);
+            }
+        }
+        
+        localLogs = [];
+        lastLogSize = 0;
     };
 }

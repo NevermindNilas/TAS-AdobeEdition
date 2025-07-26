@@ -637,7 +637,6 @@ export function getSelectedKeyframeBezier() {
         // @ts-ignore
         var keys = prop.selectedKeys;
         if (!keys || keys.length < 2) return "Error: Select 2 keyframes (keys.length=" + (keys ? keys.length : "null") + ")";
-        // Use the first two selected keyframes
         var key1 = keys[0];
         var key2 = keys[1];
         // @ts-ignore
@@ -1150,3 +1149,32 @@ function cleanupTimeRemapKeyframes(
 
     layer.outPoint = layer.inPoint + timeOffset;
 }
+
+export const getCompDimensions = () => {
+    try {
+        if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+            return null;
+        }
+
+        const comp = app.project.activeItem as CompItem;
+        return {
+            width: comp.width,
+            height: comp.height
+        };
+    } catch (error: any) {
+        return null;
+    }
+};
+
+export const getCompFPS = () => {
+    try {
+        if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+            return null;
+        }
+
+        const comp = app.project.activeItem as CompItem;
+        return comp.frameRate;
+    } catch (error: any) {
+        return null;
+    }
+};

@@ -16,12 +16,12 @@ import {
     Image,
     Item,
     Picker,
-    ProgressBar,
     Provider,
     Section,
     Slider,
     TabList,
     TabPanels,
+    Meter,
     Tabs,
     Text,
     TextField,
@@ -41,7 +41,6 @@ import { socketManager } from "./utils/socket";
 
 // Icons
 import Beaker from "@spectrum-icons/workflow/Beaker";
-import Cancel from "@spectrum-icons/workflow/Cancel";
 import Download from "@spectrum-icons/workflow/Download";
 import Effects from "@spectrum-icons/workflow/Effects";
 import Gauge1 from "@spectrum-icons/workflow/Gauge1";
@@ -58,6 +57,7 @@ import SortOrderDown from "@spectrum-icons/workflow/SortOrderDown";
 import SortOrderUp from "@spectrum-icons/workflow/SortOrderUp";
 import Wrench from "@spectrum-icons/workflow/Wrench";
 import Asterisk from "@spectrum-icons/workflow/Asterisk";
+import Alert from "@spectrum-icons/workflow/Alert";
 
 import { child_process, fs, path } from "../lib/cep/node";
 import { evalTS } from "../lib/utils/bolt";
@@ -81,12 +81,15 @@ import { useDebounce } from "./utils/useDebounce";
 import { getTASPaths, addPortToCommand } from "./utils/helpers";
 import { depthMapExtractionLogic } from "./utils/depthMap";
 import { removeBackgroundLogic } from "./utils/removeBackground";
+import { checkDiskSpace } from "./utils/checkDiskSpace";
 
 // Tab Components
 import { aboutTab } from "./utils/aboutTab";
 import { logTab } from "./utils/logTab";
 import KeyframeGraphEditor from "./utils/KeyframeGraphEditor";
 import ProgressDisplay from "./components/ProgressDisplay";
+
+
 
 // Contextual Help Utilities
 import {
@@ -199,6 +202,11 @@ const Main = memo(() => {
 
     const [youtubeUrl, setYoutubeUrl] = useState("");
 
+    // Drive Space
+    const [drive, setDrive] = useState<string | null>(null);
+    const [freeSpace, setFreeSpace] = useState<number | undefined>(undefined);
+    const [totalSpace, setTotalSpace] = useState<number | undefined>(undefined);
+
     // Interpolation
     const [interpolate, setInterpolate] = useState(false);
     const [rifeensemble, setRifeEnsemble] = useState(false);
@@ -256,7 +264,7 @@ const Main = memo(() => {
     const [viewportZoom, setViewportZoom] = useState(100);
 
     // Composition dimensions for upscale preview
-    const [compDimensions, setCompDimensions] = useState<{width: number, height: number} | null>(null);
+    const [compDimensions, setCompDimensions] = useState<{ width: number, height: number } | null>(null);
     const [isDimensionsLoading, setIsDimensionsLoading] = useState(false);
 
     // Composition FPS for interpolation preview
@@ -268,7 +276,6 @@ const Main = memo(() => {
         DEFAULT.tabListOrientation
     );
     const [uiScale, setUIScale] = useState<string | null>(DEFAULT.uiScale);
-    const [percentangeFree, setPercentageFree] = useState<number | undefined>(0);
 
     // Tab management for swipe gestures
     const tabKeys = useMemo(() => ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"], []);
@@ -460,6 +467,13 @@ const Main = memo(() => {
     const checkIfBackendExists = useCallback(async () => {
         let isEmpty = true;
 
+
+        const { drive, free, size } = await checkDiskSpace();
+        const accurateValue = size - free;
+        setDrive(drive);
+        setFreeSpace(accurateValue);
+        setTotalSpace(size);
+
         const tasExists = fs.existsSync(tasAppDataPath);
         if (tasExists) {
             const files = fs.readdirSync(tasAppDataPath);
@@ -482,6 +496,7 @@ const Main = memo(() => {
             fs.mkdirSync(tasAppDataPath, { recursive: true });
             setShowDownloadDialog(true);
         }
+
 
         setIsTASCheckDone(true);
     }, [tasAppDataPath, pythonExePath, tasVersion, latestVersion]);
@@ -640,7 +655,8 @@ const Main = memo(() => {
 
             const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
             generateToast(3, "Initiating the pre-render step...");
-            
+
+            //@ts-ignore
             const info: any | null = await evalTS("render", renderAlgo);
             if (info === "undefined") {
                 generateToast(2, "Error: Rendering failed. Consider using an alternative encoding method.");
@@ -717,7 +733,7 @@ const Main = memo(() => {
     const buildChainCommand = useCallback((input: string, outFile: string) => {
         const inputQuoted = `"${input}"`;
         const outFileQuoted = `"${outFile}"`;
-        
+
         const attempt = [
             `"${pythonExePath}"`,
             `"${mainPyPath}"`,
@@ -745,8 +761,8 @@ const Main = memo(() => {
         }
 
         if (interpolate) {
-            const newinterpolateFactor = interpolateFactor.endsWith("x") 
-                ? interpolateFactor.slice(0, -1) 
+            const newinterpolateFactor = interpolateFactor.endsWith("x")
+                ? interpolateFactor.slice(0, -1)
                 : interpolateFactor;
 
             if (isNaN(Number(newinterpolateFactor))) {
@@ -805,7 +821,7 @@ const Main = memo(() => {
         restore, restoreModel, sharpening, sharpeningSensitivity, aiPrecision
     ]);
 
-    const hasProcessingOptions = useMemo(() => 
+    const hasProcessingOptions = useMemo(() =>
         interpolate || upscale || deduplicate || restore || sharpening || resize,
         [interpolate, upscale, deduplicate, restore, sharpening, resize]
     );
@@ -817,7 +833,8 @@ const Main = memo(() => {
 
             const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
             generateToast(3, "Initiating the pre-render step...");
-            
+
+            //@ts-ignore
             const info: any | null = await evalTS("render", renderAlgo);
             if (info === "undefined") {
                 generateToast(2, "Error: Rendering failed. Consider using an alternative encoding method.");
@@ -837,7 +854,7 @@ const Main = memo(() => {
             const randomNumbers = Math.floor(Math.random() * 100000);
             const outName = `Chain_${randomNumbers}.mp4`;
             const tasChainFolder = path.join(outputFolder.replace(/\\$/, ""), "/TAS-Chain");
-            
+
             if (!fs.existsSync(tasChainFolder)) {
                 fs.mkdirSync(tasChainFolder, { recursive: true });
             }
@@ -1066,23 +1083,70 @@ const Main = memo(() => {
                         secondaryActionLabel="Manual Method"
                         UNSAFE_className="alertDialogBorder"
                     >
-                        The Anime Scripter dependencies were <strong>not found.</strong>
-                        <br></br>
-                        <br></br>A download of ~35MB is required, (
-                        {isNvidia === "LITE" ? "~800MB" : "~8GB"} after full installation).
-                        <br></br>
-                        <strong>This is a one time download!</strong>
-                        <br />
-                        <br />
-                        Current Version of TAS Dependencies:
-                        {CurrentVersionOfExe || "Not Available"}
-                        <br />
-                        Latest Version of TAS Dependencies: {tasVersion}
-                        <br />
-                        <br />
-                        Download Location: {tasAppDataPath.replace(/^.*[\\/]AppData/, "%appdata%")}
-                        <br />
-                        <br />
+                        <Flex direction="column" gap="size-200" width="100%">
+                            <Flex direction="row" alignItems="center" gap="size-100">
+                                <Info color="notice" size="XS" />
+                                <Text UNSAFE_style={{ color: "#FFD700", fontWeight: 600 }}>
+                                    Anime Scripter dependencies were <strong>not found</strong>
+                                </Text>
+                            </Flex>
+                            <View borderRadius="medium"  borderWidth="thin" borderColor="dark" padding="size-150" marginBottom="size-100">
+                                <Flex direction={"column"} gap="size-100">
+                                <Text UNSAFE_style={{ fontSize: 13 }}>
+                                    A download of <strong>~35MB</strong> is required (
+                                    <Text UNSAFE_style={{ color: "#4CAF50", fontWeight: 600, display: "inline" }}>
+                                        {isNvidia === "LITE" ? "~800MB" : "~8GB"}
+                                    </Text>
+                                    {" "}after full installation). <strong>This is a one time download!</strong>
+                                </Text>
+                                <Flex direction="column" gap="size-50">
+                                    <Flex direction="row" gap="size-100" alignItems="center">
+                                        <Gauge1 color="informative" size="XS" />
+                                        <Text UNSAFE_style={{ fontSize: 13 }}>
+                                            <strong>Current Version:</strong> {CurrentVersionOfExe || "Not Available"}
+                                        </Text>
+                                    </Flex>
+                                    <Flex direction="row" gap="size-100" alignItems="center">
+                                        <Gauge5 color="positive" size="XS" />
+                                        <Text UNSAFE_style={{ fontSize: 13 }}>
+                                            <strong>Latest Version:</strong> {tasVersion}
+                                        </Text>
+                                    </Flex>
+                                    <Flex direction="row" gap="size-100" alignItems="center">
+                                        <Inbox color="informative" size="XS" />
+                                        <Text UNSAFE_style={{ fontSize: 13 }}>
+                                            <strong>Download Location:</strong> {tasAppDataPath.replace(/^.*[\\/]AppData/, "%appdata%")}
+                                        </Text>
+                                    </Flex>
+                                </Flex>
+                                </Flex>
+                            </View>
+                            <Meter
+                                label={"Total Space Occupied on Drive: " + drive}
+                                value={freeSpace}
+                                minValue={0}
+                                maxValue={totalSpace}
+                                UNSAFE_style={{ width: "100%" }}
+                            />
+                            {(freeSpace !== undefined && totalSpace !== undefined) && (
+                                <Flex direction="row" justifyContent="space-between" alignItems="center" marginTop={-10}>
+                                    <Text UNSAFE_style={{ fontSize: 13 }}>
+                                        <span style={{ color: "#5ea9f6" }}>
+                                            {(freeSpace / (1024 * 1024 * 1024)).toFixed(2)} GB
+                                        </span> of {Math.round(totalSpace / (1024 * 1024 * 1024))} GB used
+                                    </Text>
+                                </Flex>
+                            )}
+                            {(freeSpace !== undefined && freeSpace < 9 * 1024 * 1024 * 1024) && (
+                                <Flex direction="row" alignItems="center" gap="size-100">
+                                    <Alert color="negative" size="XS" />
+                                    <Text UNSAFE_style={{ color: "#FF9800", fontWeight: 600 }}>
+                                        Warning: Less than 8.5GB of free space available. The download WILL fail!
+                                    </Text>
+                                </Flex>
+                            )}
+                                
+                        </Flex>
                     </AlertDialog>
                 </DialogTrigger>
                 <Flex
@@ -1185,7 +1249,7 @@ const Main = memo(() => {
                                                             >
                                                                 <Text>Resize</Text>
                                                             </ToggleButton>
-                                                            <DialogTrigger 
+                                                            <DialogTrigger
                                                                 isDismissable
                                                                 onOpenChange={(isOpen) => {
                                                                     if (isOpen) {
@@ -1240,12 +1304,12 @@ const Main = memo(() => {
                                                                                                 <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
                                                                                                     Input:
                                                                                                 </Text>
-                                                                                                <Text UNSAFE_style={{ 
-                                                                                                    fontSize: "14px", 
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
                                                                                                     fontWeight: "medium",
                                                                                                     color: compDimensions ? "#ffffff" : "#ff9800"
                                                                                                 }}>
-                                                                                                    {compDimensions 
+                                                                                                    {compDimensions
                                                                                                         ? `${compDimensions.width}×${compDimensions.height}`
                                                                                                         : "No composition active"
                                                                                                     }
@@ -1258,9 +1322,9 @@ const Main = memo(() => {
                                                                                                 <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
                                                                                                     Output ({resizeFactor}x):
                                                                                                 </Text>
-                                                                                                <Text UNSAFE_style={{ 
-                                                                                                    fontSize: "14px", 
-                                                                                                    fontWeight: "medium", 
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
+                                                                                                    fontWeight: "medium",
                                                                                                     color: compDimensions ? "#4CAF50" : "#ff9800"
                                                                                                 }}>
                                                                                                     {compDimensions && resizeFactor
@@ -1708,7 +1772,7 @@ const Main = memo(() => {
                                                             >
                                                                 <Text>Interpolate</Text>
                                                             </ToggleButton>
-                                                            <DialogTrigger 
+                                                            <DialogTrigger
                                                                 isDismissable
                                                                 onOpenChange={(isOpen) => {
                                                                     if (isOpen) {
@@ -1778,12 +1842,12 @@ const Main = memo(() => {
                                                                                                 <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
                                                                                                     Input:
                                                                                                 </Text>
-                                                                                                <Text UNSAFE_style={{ 
-                                                                                                    fontSize: "14px", 
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
                                                                                                     fontWeight: "medium",
                                                                                                     color: compFPS ? "#ffffff" : "#ff9800"
                                                                                                 }}>
-                                                                                                    {compFPS 
+                                                                                                    {compFPS
                                                                                                         ? `${compFPS.toFixed(3)} FPS`
                                                                                                         : "No composition active"
                                                                                                     }
@@ -1796,9 +1860,9 @@ const Main = memo(() => {
                                                                                                 <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
                                                                                                     Output ({interpolateFactor}):
                                                                                                 </Text>
-                                                                                                <Text UNSAFE_style={{ 
-                                                                                                    fontSize: "14px", 
-                                                                                                    fontWeight: "medium", 
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
+                                                                                                    fontWeight: "medium",
                                                                                                     color: compFPS ? "#4CAF50" : "#ff9800"
                                                                                                 }}>
                                                                                                     {compFPS && interpolateFactor
@@ -2296,7 +2360,7 @@ const Main = memo(() => {
                                                             >
                                                                 <Text>Upscale</Text>
                                                             </ToggleButton>
-                                                            <DialogTrigger 
+                                                            <DialogTrigger
                                                                 isDismissable
                                                                 onOpenChange={(isOpen) => {
                                                                     if (isOpen) {
@@ -2339,7 +2403,7 @@ const Main = memo(() => {
                                                                                 marginBottom="size-200"
                                                                             >
                                                                                 <Flex direction="column" gap="size-100">
-                                                                          
+
                                                                                     {isDimensionsLoading ? (
                                                                                         <Flex direction="row" justifyContent="center" alignItems="center" minHeight="size-600">
                                                                                             <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.7 }}>
@@ -2352,12 +2416,12 @@ const Main = memo(() => {
                                                                                                 <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
                                                                                                     Input:
                                                                                                 </Text>
-                                                                                                <Text UNSAFE_style={{ 
-                                                                                                    fontSize: "14px", 
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
                                                                                                     fontWeight: "medium",
                                                                                                     color: compDimensions ? "#ffffff" : "#ff9800"
                                                                                                 }}>
-                                                                                                    {compDimensions 
+                                                                                                    {compDimensions
                                                                                                         ? `${compDimensions.width}×${compDimensions.height}`
                                                                                                         : "No composition active"
                                                                                                     }
@@ -2370,12 +2434,12 @@ const Main = memo(() => {
                                                                                                 <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
                                                                                                     Output (2x):
                                                                                                 </Text>
-                                                                                                <Text UNSAFE_style={{ 
-                                                                                                    fontSize: "14px", 
-                                                                                                    fontWeight: "medium", 
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
+                                                                                                    fontWeight: "medium",
                                                                                                     color: compDimensions ? "#4CAF50" : "#ff9800"
                                                                                                 }}>
-                                                                                                    {compDimensions 
+                                                                                                    {compDimensions
                                                                                                         ? `${compDimensions.width * 2}×${compDimensions.height * 2}`
                                                                                                         : "Select a composition"
                                                                                                     }
@@ -4445,8 +4509,8 @@ const Main = memo(() => {
                                                             step={0.01}
                                                             isFilled
                                                             value={viewportZoom}
-                                                            formatOptions={{style: 'percent'}}
-                                                            onChange={useCallback(async (val) => {
+                                                            formatOptions={{ style: 'percent' }}
+                                                            onChange={useCallback(async (val: number) => {
                                                                 setViewportZoom(val);
                                                                 await evalTS("setViewportZoom", val);
                                                             }, [])}
@@ -4707,14 +4771,14 @@ const Main = memo(() => {
                                                                 <ActionButton
                                                                     onPress={execTakeScreenshot}
                                                                     width="100%"
-                                                                    >
+                                                                >
                                                                     <Text>Take Screenshot</Text>
                                                                 </ActionButton>
 
                                                                 <ActionButton
                                                                     onPress={execPrecompose}
                                                                     width="100%"
-                                                                    >
+                                                                >
                                                                     <Text>PreCompose</Text>
                                                                 </ActionButton>
                                                             </Flex>

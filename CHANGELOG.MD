@@ -12,12 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New functions getCompDimensions() and getCompFPS() in After Effects script to get composition information
 Viewport zoom slider was added to `ToolBox`
 - Added a brand new Graph Editor ( Alpha )
+- Added a function to dynamically fetch the available space in C drive and display it in the download tas dependencies dialog.
 
 ### Changed
 - Made big performance improvements to main interface - now it renders much faster and uses less memory
 - Converted many functions to use useCallback and useMemo for better React performance
 - Moved progress bar display to separate component file for cleaner code organization
 - Resolution and FPS previews automatically fetch data when you open the settings dialogs
+- Slight refactor to the dependencies dialog to improve readability.
 
 ### Fixed
 - Fixed issue where executeProcess function was used before it was declared (TypeScript error)

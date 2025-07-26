@@ -64,13 +64,12 @@ export default function KeyframeGraphEditor() {
   const [sliderState, setSliderState] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ width: 300, height: 300 });
 
-  // this is for how much of the graph you see, if you want to see more or less
   const getViewportBounds = useCallback(() => {
     return {
       minX: -0.3,
       maxX: 1.3,
-      minY: -0.54,
-      maxY: 1.54
+      minY: -0.5,
+      maxY: 1.5
     };
   }, []);
 
@@ -654,7 +653,7 @@ export default function KeyframeGraphEditor() {
           <Flex direction="row" gap={8} alignItems="center">
             <Asterisk size="S" />
             <Heading level={4} margin={0}>
-              Keyframe Graph Editor ( Alpha )
+              Keyframe Graph Editor ( Early Alpha )
             </Heading>
             {createGeneralContextualHelp(
               "Keyframe Graph Editor Help",
@@ -678,8 +677,8 @@ export default function KeyframeGraphEditor() {
               ref={containerRef}
               style={{
                 flex: 1,
-                minWidth: 200,
-                maxWidth: 600,
+                minWidth: 100,
+                maxWidth: 400,
                 aspectRatio: "1",
                 border: "1px solid #333",
                 borderRadius: "12px",

@@ -343,7 +343,7 @@ export function executeProcessHelper({
                 );
             }
         });
-    } catch (err) {
+    } catch (processError) {
         hasFailed = true;
         
         if (logPollingInterval) {

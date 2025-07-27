@@ -34,7 +34,6 @@ import {
 import { ToastContainer } from "@react-spectrum/toast";
 import { Key } from "@react-types/shared";
 import React, { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import "./style.css";
 
 import { socketManager } from "./utils/socket";
@@ -276,17 +275,7 @@ const Main = memo(() => {
         }
     }, []);
 
-    const slideAnimationVariants = useMemo(() => ({
-        initial: {
-            opacity: 0,
-        },
-        animate: {
-            opacity: 1,
-        },
-        exit: {
-            opacity: 0,
-        },
-    }), []);
+
 
 
     const formatETA = useCallback((seconds: number): string => {
@@ -1155,17 +1144,7 @@ const Main = memo(() => {
 
                                 <TabPanels>
                                     <Item key="Chain">
-                                        <motion.div
-                                            key={`chain-${selectedTab}`}
-                                            variants={slideAnimationVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-
-                                            style={{
-                                                width: '100%',
-                                            }}
-                                        >
+                                        <div style={{ width: '100%' }}>
                                             <Flex
                                                 direction="column"
                                                 gap={8}
@@ -2884,20 +2863,10 @@ const Main = memo(() => {
                                                     </Flex>
                                                 </View>
                                             </Flex>
-                                        </motion.div>
+                                        </div>
                                     </Item>
                                     <Item key="Extra">
-                                        <motion.div
-                                            key={`extra-${selectedTab}`}
-                                            variants={slideAnimationVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-
-                                            style={{
-                                                width: '100%',
-                                            }}
-                                        >
+                                        <div style={{ width: '100%' }}>
                                             <Flex
                                                 direction="column"
                                                 width="100%"
@@ -4401,20 +4370,10 @@ const Main = memo(() => {
                                                     </Flex>
                                                 </View>
                                             </Flex>
-                                        </motion.div>
+                                        </div>
                                     </Item>
                                     <Item key="Toolbox">
-                                        <motion.div
-                                            key={`toolbox-${selectedTab}`}
-                                            variants={slideAnimationVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-
-                                            style={{
-                                                width: '100%',
-                                            }}
-                                        >
+                                        <div style={{ width: '100%' }}>
                                             <Flex
                                                 direction="column"
                                                 gap={10}
@@ -4760,72 +4719,38 @@ const Main = memo(() => {
                                                     </Flex>
                                                 </View>
                                             </Flex>
-                                        </motion.div>
+                                        </div>
                                     </Item>
                                     <Item key="Logs">
-                                        <motion.div
-                                            key={`logs-${selectedTab}`}
-                                            variants={slideAnimationVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-
-                                            style={{
-                                                width: '100%',
-                                            }}
-                                        >
+                                        <div style={{ width: '100%' }}>
                                             {logTab(fullLogs, setFullLogs)}
-                                        </motion.div>
+                                        </div>
                                     </Item>
                                     <Item key="About">
-                                        <motion.div
-                                            key={`about-${selectedTab}`}
-                                            variants={slideAnimationVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-
-                                            style={{
-                                                width: '100%',
-                                            }}
-                                        >
+                                        <div style={{ width: '100%' }}>
                                             {aboutTab(tasVersion)}
-                                        </motion.div>
+                                        </div>
                                     </Item>
                                     <Item key="Graph">
-                                        <motion.div
-                                            key={`Graph-${selectedTab}`}
-                                            variants={slideAnimationVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-                                            style={{
-                                                width: '100%',
-                                            }}
-                                        >
+                                        <div style={{ width: '100%' }}>
                                             <KeyframeGraphEditor />
-                                        </motion.div>
+                                        </div>
                                     </Item>
                                 </TabPanels>
                             </Flex>
                         </div>
                     </Tabs>
 
-                    {/* Progress bar with tab switching animation */}
-                    <AnimatePresence mode="wait">
-                        <ProgressDisplay
-                            key={`progress-${selectedTab}`}
-                            isDownloading={isDownloading}
-                            isProcessing={isProcessing}
-                            disableProgressBar={disableProgressBar}
-                            downloadProgress={downloadProgress}
-                            progressBarState={progressBarState}
-                            progressState={progressState}
-                            formatETA={formatETA}
-                            onCancel={cancelProcessing}
-                            slideAnimationVariants={slideAnimationVariants}
-                        />
-                    </AnimatePresence>
+                    <ProgressDisplay
+                        isDownloading={isDownloading}
+                        isProcessing={isProcessing}
+                        disableProgressBar={disableProgressBar}
+                        downloadProgress={downloadProgress}
+                        progressBarState={progressBarState}
+                        progressState={progressState}
+                        formatETA={formatETA}
+                        onCancel={cancelProcessing}
+                    />
                 </Flex>
             </View>
         </Provider>

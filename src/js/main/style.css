@@ -24,66 +24,15 @@ html {
 .tab-content-container {
   user-select: none;
   touch-action: pan-y; /* Allow vertical scrolling but capture horizontal swipes */
-  overflow-x: hidden; /* Prevent horizontal scrolling during animations */
-  
-  /* Hardware acceleration for smooth blur animations */
-  transform: translateZ(0);
-  will-change: transform, filter, opacity;
-  backface-visibility: hidden;
-  position: relative;
-  perspective: 1000px; /* Add perspective for 3D-like effects */
 }
 
-/* Motion blur reduction and smooth scaling */
-[data-motion-component] {
-  transform-origin: center center;
-  backface-visibility: hidden;
-  perspective: 1000px;
-  will-change: transform, opacity, filter;
-  
-  /* GPU acceleration */
-  transform: translateZ(0);
-}
 
-/* Progress container enhancements */
-.progress-container {
-  transform-origin: center top;
-  will-change: transform, opacity, filter;
-  backface-visibility: hidden;
-}
 
-/* Reduce layout shifts during animations */
-.spectrum-TabPanels {
-  min-height: 400px; /* Prevent height jumping */
-  overflow: hidden;
-}
 
-/* Smooth transitions for all Spectrum components */
-.spectrum-Button,
-.spectrum-ToggleButton,
-.spectrum-Picker,
-.spectrum-Slider,
-.spectrum-Checkbox {
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
 
-/* Enhanced focus and hover states */
-.spectrum-Button:hover,
-.spectrum-ToggleButton:hover {
-  transform: translateY(-1px);
-}
 
-.spectrum-Button:active,
-.spectrum-ToggleButton:active {
-  transform: translateY(0px);
-}
 
-/* Smooth dialog animations */
-.spectrum-Modal,
-.spectrum-Dialog {
-  transform-origin: center center;
-  will-change: transform, opacity;
-}
+
 
 /* Prevent scrollbar jumping */
 body.spectrum-modal-is-open {
@@ -123,43 +72,16 @@ body.spectrum-modal-is-open {
   border-radius: var(--border-radius-md);
 }
 
-.dialogTriggerPopover {
-  background: var(--color-dark-bg);
-  border-radius: var(--border-radius-lg);
-  backdrop-filter: var(--blur-effect);
-  transition: box-shadow var(--transition-speed) ease-in-out;
-}
-
-.dialogTriggerPopover:hover,
-.dialogTriggerPopover:focus {
-  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1);
-}
-
-.imageStyling {
-  border-radius: var(--border-radius-md);
-}
-
-/* Animations */
-@keyframes wiggle {
-  0% { transform: scale(1) rotate(0deg); }
-  25% { transform: scale(1.5) rotate(5deg); }
-  50% { transform: scale(1.5) rotate(0deg); }
-  75% { transform: scale(1.5) rotate(-5deg); }
-  100% { transform: scale(1.5) rotate(0deg); }
-}
 
 /* Social elements */
 .socialIconDonate {
   background-color: transparent;
   color: red;
-  transform: scale(1);
-  transition: filter var(--transition-speed) ease-in-out, transform var(--transition-speed) ease-in-out;
 }
 
 .socialIconDonate:hover,
 .socialIconDonate:focus {
   filter: brightness(var(--brightness-bright));
-  animation: wiggle 0.5s ease-in-out forwards;
 }
 
 .actionButtonSocial {
@@ -176,7 +98,6 @@ body.spectrum-modal-is-open {
 .socialIcon {
   background-color: transparent;
   filter: brightness(var(--brightness-dim));
-  transition: filter var(--transition-speed) ease-in-out;
 }
 
 .socialIcon:focus {
@@ -189,28 +110,7 @@ body.spectrum-modal-is-open {
   filter: brightness(var(--brightness-normal));
 }
 
-/* About section */
-.aboutTASButton {
-  background-color: transparent;
-  color: var(--color-white);
-  border: none;
-  box-shadow: none;
-  filter: brightness(var(--brightness-dim));
-  transition: filter var(--transition-speed) ease-in-out;
-}
 
-.aboutTASButton:hover,
-.aboutTASButton:focus {
-  background-color: transparent;
-  box-shadow: none;
-  filter: brightness(var(--brightness-normal));
-}
-
-/* Progress Bar Enhancements */
-.spectrum-ProgressBar {
-  /* Add subtle animation for the progress bar */
-  transition: all var(--transition-speed) ease-out;
-}
 
 .spectrum-ProgressBar-fill {
   /* Add a subtle gradient that matches the theme */
@@ -218,9 +118,6 @@ body.spectrum-modal-is-open {
     rgba(255, 255, 255, 0.9) 0%, 
     rgba(255, 255, 255, 0.8) 50%, 
     rgba(255, 255, 255, 0.9) 100%);
-  
-  /* Add subtle animation */
-  transition: width 0.3s ease-out;
 }
 
 .spectrum-ProgressBar-track {
@@ -245,22 +142,12 @@ body.spectrum-modal-is-open {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Indeterminate progress bar animation enhancement */
+/* Indeterminate progress bar styling */
 .spectrum-ProgressBar.is-indeterminate .spectrum-ProgressBar-fill {
   background: linear-gradient(90deg, 
     transparent 0%, 
     rgba(255, 255, 255, 0.6) 50%, 
     transparent 100%);
-  animation: progress-indeterminate 1.5s ease-in-out infinite;
-}
-
-@keyframes progress-indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
 }
 
 

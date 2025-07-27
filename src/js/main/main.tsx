@@ -33,7 +33,7 @@ import {
 } from "@adobe/react-spectrum";
 import { ToastContainer } from "@react-spectrum/toast";
 import { Key } from "@react-types/shared";
-import React, { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import "./style.css";
 
 import { socketManager } from "./utils/socket";
@@ -121,7 +121,7 @@ const {
 } = getTASPaths();
 
 
-const Main = memo(() => {
+const Main = () => {
     const [tasVersion, setVersion] = useState(DEFAULT.tasVersion);
 
 
@@ -233,13 +233,13 @@ const Main = memo(() => {
     const [uiScale, setUIScale] = useState<string | null>(DEFAULT.uiScale);
 
     // Tab management for swipe gestures
-    const tabKeys = useMemo(() => ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"], []);
+    const tabKeys = ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"];
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
 
     // Tab selection change (no direction logic)
-    const handleTabSelectionChange = useCallback((key: Key) => {
+    function handleTabSelectionChange(key: Key) {
         setSelectedTab(key);
-    }, []);
+    }
 
     const getCompositionDimensions = useCallback(async () => {
         setIsDimensionsLoading(true);
@@ -4755,7 +4755,7 @@ const Main = memo(() => {
             </View>
         </Provider>
     );
-});
+}
 
 Main.displayName = 'Main';
 

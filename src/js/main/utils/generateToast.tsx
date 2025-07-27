@@ -3,18 +3,25 @@ import { openGithubWithLatestRelease } from "./Socials";
 
 const BASETIMEOUT = 2000;
 
-export function generateToast(value: number, message: string): void {
+export enum ToastType {
+    Positive = 1,
+    Negative,
+    Info,
+    Update
+}
+
+export function generateToast(value: ToastType, message: string): void {
     switch (value) {
-        case 1:
+        case ToastType.Positive:
             ToastQueue.positive(message, { timeout: BASETIMEOUT });
             break;
-        case 2:
+        case ToastType.Negative:
             ToastQueue.negative(message, { timeout: BASETIMEOUT });
             break;
-        case 3:
+        case ToastType.Info:
             ToastQueue.info(message, { timeout: BASETIMEOUT });
             break;
-        case 4:
+        case ToastType.Update:
             ToastQueue.info(message, {
                 actionLabel: "Update",
                 onAction: () => openGithubWithLatestRelease(),

@@ -647,7 +647,7 @@ export default function KeyframeGraphEditor() {
   }, [bezierInput, canvasSize]);
 
   return (
-    <Flex direction="column" gap={8} width="100%" marginTop={4}>
+    <Flex direction="column" gap={8} width="100%" marginTop={8}>
       <View borderWidth="thin" borderColor="dark" borderRadius="medium" padding="size-150">
         <Flex direction="column" gap={8}>
           <Flex direction="row" gap={8} alignItems="center">

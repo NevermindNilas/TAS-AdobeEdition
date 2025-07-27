@@ -46,8 +46,16 @@ function autoclip(tasAppdataPath: string) {
 
         var inPoint = currentLayer.inPoint;
         var outPoint = currentLayer.outPoint;
+
+        // Batch read all lines first
+        var lines = [];
         while (!autoClipLog.eof) {
-            var line = autoClipLog.readln();
+            lines.push(autoClipLog.readln());
+        }
+        autoClipLog.close();
+
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
             if (currentComp == null) {
                 alert("No active composition found.");
                 return;
@@ -64,7 +72,6 @@ function autoclip(tasAppdataPath: string) {
 
             currentLayer = duplicateLayer;
         }
-        autoClipLog.close();
     } catch (error: any) {
         alert("Error auto-cutting clip: " + error.toString());
     }

@@ -20,6 +20,7 @@ Viewport zoom slider was added to `ToolBox`
 - Moved progress bar display to separate component file for cleaner code organization
 - Resolution and FPS previews automatically fetch data when you open the settings dialogs
 - Slight refactor to the dependencies dialog to improve readability.
+- Removed Motion and fade in/out effects in order to retain snappiness. 
 
 ### Fixed
 - Fixed issue where executeProcess function was used before it was declared (TypeScript error)

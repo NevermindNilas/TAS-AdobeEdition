@@ -1,6 +1,6 @@
 import { child_process } from "../../lib/cep/node";
 
-async function checkForGPU(): Promise<string> {
+async function checkForGPU(): Promise<"FULL" | "LITE"> {
     return new Promise((resolve, reject) => {
         child_process.exec("nvidia-smi", (error, stdout, stderr) => {
             if (error) {

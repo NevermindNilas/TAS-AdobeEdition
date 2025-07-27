@@ -1,7 +1,6 @@
 import { path, os } from "../../lib/cep/node";
 import { evalTS } from "../../lib/utils/bolt";
 import { generateToast } from "./generateToast";
-import { socketManager } from "./socket";
 
 /**
  * Runs an AE command and handles errors/toasts.
@@ -337,7 +336,7 @@ export function executeProcessHelper({
                     logWatcher = null;
                 }
                 
-                resetProgress("Process failed!");
+                resetProgress("Initializing");
                 generateToast(
                     2,
                     `Error: ${toastMessage} failed to start or crashed. Check the logs & contact Nilas on Discord.`
@@ -361,7 +360,7 @@ export function executeProcessHelper({
             logWatcher = null;
         }
         
-        resetProgress("Process failed!");
+        resetProgress("Initializing");
         generateToast(
             2,
             `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
@@ -388,7 +387,7 @@ export function executeProcessHelper({
             logWatcher = null;
         }
         
-        resetProgress("Process failed!");
+        resetProgress("Initializing");
         generateToast(
             2,
             `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`

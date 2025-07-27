@@ -66,7 +66,6 @@ import autoCutLogic from "./utils/autoCutClipLogic";
 import checkForGPU from "./utils/checkForGPU";
 import checkForUpdates from "./utils/checkTASVersionGithub";
 import execClearCache from "./utils/clearCache";
-import DEFAULT from "./utils/DEFAULTS";
 import downloadTASCLI from "./utils/downloadTAS";
 import { generateToast } from "./utils/generateToast";
 import getCurrentVersion from "./utils/getCurrentVersion";
@@ -89,6 +88,15 @@ import { logTab } from "./utils/logTab";
 import KeyframeGraphEditor from "./utils/KeyframeGraphEditor";
 import ProgressDisplay from "./utils/ProgressDisplay";
 
+// Constants
+import { 
+    DEFAULT,
+    UPSCALE_MODEL_EXAMPLES, 
+    DEPTH_MODEL_EXAMPLES, 
+    type UpscaleModelKey, 
+    type DepthModelKey 
+} from "./utils/appConstants";
+
 
 
 // Contextual Help Utilities
@@ -100,59 +108,7 @@ import {
     createSliderContextualHelp,
 } from "./utils/ConsistentContextualHelp";
 
-// Upscale model example images
-const UPSCALEMODELEXAMPLES = {
-    shufflecugan: "https://files.catbox.moe/7ppoj4.png",
-    compact: "https://files.catbox.moe/l9xlz9.png",
-    ultracompact: "https://files.catbox.moe/feu7fo.png",
-    superultracompact: "https://files.catbox.moe/kv4yh7.png",
-    aniscale2: "https://files.catbox.moe/y22vc4.png",
-    span: "https://files.catbox.moe/0wiigm.png", // Using ModernSpanimationV2 for span
-    "open-proteus": "https://files.catbox.moe/yugo9m.png",
-    // Models without specific examples will show fallback text
-    "shufflecugan-tensorrt": "https://files.catbox.moe/7ppoj4.png",
-    "span-tensorrt": "https://files.catbox.moe/0wiigm.png",
-    "aniscale2-directml": "https://files.catbox.moe/y22vc4.png",
-    "open-proteus-directml": "https://files.catbox.moe/yugo9m.png",
-    "rtmosr-directml": null,
-    "rtmosr-tensorrt": null,
-    "compact-tensorrt": "https://files.catbox.moe/l9xlz9.png",
-    "ultracompact-tensorrt": "https://files.catbox.moe/feu7fo.png",
-    "superultracompact-tensorrt": "https://files.catbox.moe/kv4yh7.png",
-    "compact-directml": "https://files.catbox.moe/l9xlz9.png",
-    "ultracompact-directml": "https://files.catbox.moe/feu7fo.png",
-    "superultracompact-directml": "https://files.catbox.moe/kv4yh7.png",
-    "aniscale2-tensorrt": "https://files.catbox.moe/y22vc4.png",
-    "open-proteus-tensorrt": "https://files.catbox.moe/yugo9m.png",
-    default: "https://files.catbox.moe/7ppoj4.png", // Default fallback
-};
 
-// Depth model example images
-const DEPTHMODELEXAMPLES = {
-    distill_base_v2: "https://files.catbox.moe/fmyj1d.png",
-    distill_small_v2: "https://files.catbox.moe/pva2vb.png",
-    og_base_v2: "https://files.catbox.moe/jjjif0.png",
-    og_distill_base_v2: "https://files.catbox.moe/7tugf9.png",
-    og_distill_small_v2: "https://files.catbox.moe/kkujv9.png",
-    og_large_v2: "https://files.catbox.moe/bitvfy.png",
-    og_small_v2: "https://files.catbox.moe/28i39s.png",
-    // TensorRT and DirectML variants use the same examples as their base models or null if not available
-    "distill_small_v2-tensorrt": null,
-    "distill_base_v2-tensorrt": null,
-    "distill_large_v2-tensorrt": null,
-    "distill_small_v2-directml": null,
-    "distill_base_v2-directml": null,
-    "distill_large_v2-directml": null,
-    "og_small_v2-tensorrt": null,
-    "og_base_v2-tensorrt": null,
-    "og_large_v2-tensorrt": null,
-    "og_distill_small_v2-tensorrt": null,
-    "og_distill_base_v2-tensorrt": null,
-    "small_v2-tensorrt": null,
-    "base_v2-tensorrt": null,
-    "large_v2-tensorrt": null,
-    default: "https://files.catbox.moe/28i39s.png", // Default fallback
-};
 
 
 
@@ -2770,16 +2726,16 @@ const Main = memo(() => {
                                                                                     "{upscaleModel}"
                                                                                 </DisclosureTitle>
                                                                                 <DisclosurePanel>
-                                                                                    {UPSCALEMODELEXAMPLES[
-                                                                                        upscaleModel as keyof typeof UPSCALEMODELEXAMPLES
+                                                                                    {UPSCALE_MODEL_EXAMPLES[
+                                                                                        upscaleModel as UpscaleModelKey
                                                                                     ] ? (
                                                                                         <>
                                                                                             <Image
                                                                                                 src={
-                                                                                                    UPSCALEMODELEXAMPLES[
-                                                                                                    upscaleModel as keyof typeof UPSCALEMODELEXAMPLES
+                                                                                                    UPSCALE_MODEL_EXAMPLES[
+                                                                                                    upscaleModel as UpscaleModelKey
                                                                                                     ] ||
-                                                                                                    UPSCALEMODELEXAMPLES.default
+                                                                                                    UPSCALE_MODEL_EXAMPLES.default
                                                                                                 }
                                                                                                 alt={`Example output using ${upscaleModel} upscale model`}
                                                                                                 UNSAFE_style={{
@@ -2792,10 +2748,10 @@ const Main = memo(() => {
                                                                                             <Link
                                                                                                 onPress={() =>
                                                                                                     window.cep.util.openURLInDefaultBrowser(
-                                                                                                        UPSCALEMODELEXAMPLES[
-                                                                                                        upscaleModel as keyof typeof UPSCALEMODELEXAMPLES
+                                                                                                        UPSCALE_MODEL_EXAMPLES[
+                                                                                                        upscaleModel as UpscaleModelKey
                                                                                                         ] ||
-                                                                                                        UPSCALEMODELEXAMPLES.default
+                                                                                                        UPSCALE_MODEL_EXAMPLES.default
                                                                                                     )
                                                                                                 }
                                                                                             >
@@ -3633,16 +3589,16 @@ const Main = memo(() => {
                                                                                         {depthModel}"
                                                                                     </DisclosureTitle>
                                                                                     <DisclosurePanel>
-                                                                                        {DEPTHMODELEXAMPLES[
-                                                                                            depthModel as keyof typeof DEPTHMODELEXAMPLES
+                                                                                        {DEPTH_MODEL_EXAMPLES[
+                                                                                            depthModel as DepthModelKey
                                                                                         ] ? (
                                                                                             <>
                                                                                                 <Image
                                                                                                     src={
-                                                                                                        DEPTHMODELEXAMPLES[
-                                                                                                        depthModel as keyof typeof DEPTHMODELEXAMPLES
+                                                                                                        DEPTH_MODEL_EXAMPLES[
+                                                                                                        depthModel as DepthModelKey
                                                                                                         ] ||
-                                                                                                        DEPTHMODELEXAMPLES.default
+                                                                                                        DEPTH_MODEL_EXAMPLES.default
                                                                                                     }
                                                                                                     alt={`Example depth map output using ${depthModel} model`}
                                                                                                     UNSAFE_style={{
@@ -3655,10 +3611,10 @@ const Main = memo(() => {
                                                                                                 <Link
                                                                                                     onPress={() =>
                                                                                                         window.cep.util.openURLInDefaultBrowser(
-                                                                                                            DEPTHMODELEXAMPLES[
-                                                                                                            depthModel as keyof typeof DEPTHMODELEXAMPLES
+                                                                                                            DEPTH_MODEL_EXAMPLES[
+                                                                                                            depthModel as DepthModelKey
                                                                                                             ] ||
-                                                                                                            DEPTHMODELEXAMPLES.default
+                                                                                                            DEPTH_MODEL_EXAMPLES.default
                                                                                                         )
                                                                                                     }
                                                                                                 >

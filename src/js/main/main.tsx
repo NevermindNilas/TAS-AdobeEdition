@@ -87,7 +87,7 @@ import { checkDiskSpace } from "./utils/checkDiskSpace";
 import { aboutTab } from "./utils/aboutTab";
 import { logTab } from "./utils/logTab";
 import KeyframeGraphEditor from "./utils/KeyframeGraphEditor";
-import ProgressDisplay from "./components/ProgressDisplay";
+import ProgressDisplay from "./utils/ProgressDisplay";
 
 
 

@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { 
-  ProcessingOptions, 
+import { 
   ProcessingStatus, 
-  ProgressData,
   PreRenderAlgorithm,
   UpscaleModel,
   InterpolationModel,
   DeduplicateMethod,
   RestoreModel,
   BitDepth
+} from '../../core/domain/types/processing.types';
+import type { 
+  ProcessingOptions, 
+  ProgressData
 } from '../../core/domain/types/processing.types';
 
 interface ProcessingState {

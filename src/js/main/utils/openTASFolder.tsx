@@ -1,7 +1,5 @@
-import { path, os, fs } from "../../lib/cep/node";
+import { path, os, fs, child_process } from "../../lib/cep/node";
 import { generateToast } from "./generateToast";
-import { SecureCommandExecutor } from "../../../core/security/SecureCommandExecutor";
-import { ValidationService } from "../../../core/security/ValidationService";
 
 const getFolderPath = () => {
     const homeDir = os.homedir();
@@ -14,21 +12,40 @@ const openTasFolder = async () => {
     try {
         const folderPath = getFolderPath();
         
-        // Validate the path before using it
-        const validatedPath = ValidationService.validatePath(folderPath);
-        
         // Create directory if it doesn't exist
-        if (!fs.existsSync(validatedPath)) {
-            fs.mkdirSync(validatedPath, { recursive: true });
-            console.log("Folder created:", validatedPath);
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
+            console.log("Folder created:", folderPath);
         }
 
-        // Use secure command executor to open the folder
-        await SecureCommandExecutor.openPath(validatedPath);
+        // Open folder using appropriate command for the platform
+        const platform = os.platform();
+        let command: string;
+        let args: string[];
+
+        switch (platform) {
+            case 'darwin':
+                command = 'open';
+                args = [folderPath];
+                break;
+            case 'win32':
+                command = 'explorer';
+                args = [folderPath];
+                break;
+            case 'linux':
+                command = 'xdg-open';
+                args = [folderPath];
+                break;
+            default:
+                throw new Error(`Unsupported platform: ${platform}`);
+        }
+
+        // Execute command to open folder
+        child_process.spawn(command, args, { shell: false });
         
     } catch (error) {
         console.error("Error opening TAS folder:", error);
-        generateToast(1, `Failed to open TAS folder: ${error.message}`);
+        generateToast(1, `Failed to open TAS folder: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
 

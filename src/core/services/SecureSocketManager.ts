@@ -1,5 +1,4 @@
 import { AuthenticationService } from '../security/AuthenticationService';
-import { ValidationService } from '../security/ValidationService';
 
 export interface SocketConfig {
   baseUrl: string;
@@ -113,7 +112,7 @@ export class SecureSocketManager {
 
     this.eventSource.onmessage = (event) => {
       try {
-        const data = ValidationService.parseJsonSafely<ProgressData>(event.data);
+        const data = JSON.parse(event.data) as ProgressData;
         this.handleProgressUpdate(data);
       } catch (error) {
         console.error('Failed to parse SSE message:', error);

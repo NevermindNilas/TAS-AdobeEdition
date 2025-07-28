@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Viewport zoom slider was added to `ToolBox`
 - Added a brand new Graph Editor ( Alpha )
 - Added a function to dynamically fetch the available space in C drive and display it in the download tas dependencies dialog.
+- Migrated from `yarn/npm` to `bun` for package management, improving build performance and dependency management.
 
 ### Changed
 - Made big performance improvements to main interface - now it renders much faster and uses less memory
@@ -21,6 +22,9 @@ Viewport zoom slider was added to `ToolBox`
 - Resolution and FPS previews automatically fetch data when you open the settings dialogs
 - Slight refactor to the dependencies dialog to improve readability.
 - Removed Motion and fade in/out effects in order to retain snappiness. 
+- Migrated from using `exec` to `spawn` for process execution, improving performance and reliability.
+- A complete overhaul to `logTab` to make it more performant and user-friendly.
+- Updated the `executeProcess` function to handle errors more gracefully and provide better user feedback.
 
 ### Fixed
 - Fixed issue where executeProcess function was used before it was declared (TypeScript error)

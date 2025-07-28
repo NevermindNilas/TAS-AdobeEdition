@@ -312,6 +312,11 @@ const Main = () => {
 
     // Stable callback functions to avoid race conditions
     const updateProgress = useCallback((data: any) => {
+        // Don't update progress if process was cancelled
+        if (processCancelledRef.current) {
+            return;
+        }
+
         // Update refs immediately
         currentFrameRef.current = data.currentFrame;
         totalFramesRef.current = data.totalFrames;
@@ -484,19 +489,36 @@ const Main = () => {
     }, [isDownloading]); // Only re-run when isDownloading changes
 
     const cancelProcessing = useCallback((toastMessage?: string, toastState?: number) => {
+        // Immediately set cancellation flag - this is the most critical part
         processCancelledRef.current = true;
-        setIsProcessCancelled(true);
+        
+        // Kill processes without any state updates that could crash the UI
+        const killCommand = "taskkill /f /im python.exe & taskkill /f /im ffmpeg.exe & taskkill /f /im ffprobe.exe";
+        child_process.exec(killCommand, () => {
+            // Don't handle errors here to avoid any potential crashes
+        });
 
-        // Group these commands into a single batch script for Windows
-        const killCommand =
-            "taskkill /f /im python.exe & taskkill /f /im ffmpeg.exe & taskkill /f /im ffprobe.exe";
-        child_process.exec(killCommand);
-
-        // Use the resetProgress callback instead of individual setters
-        resetProgress("Processing cancelled");
-
-        generateToast(toastState || 2, toastMessage || "Processing cancelled.");
-    }, [resetProgress]);
+        // Use requestAnimationFrame to defer state updates until the next render cycle
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                try {
+                    setIsProcessCancelled(true);
+                    setIsProcessing(false);
+                    
+                    // Reset progress state in the safest way possible
+                    setProgressState(prev => ({
+                        ...prev,
+                        isProcessing: false,
+                        progressBarStatus: "Processing cancelled"
+                    }));
+                    
+                    generateToast(toastState || 2, toastMessage || "Processing cancelled.");
+                } catch (error) {
+                    console.error("Error in deferred cancel processing:", error);
+                }
+            });
+        });
+    }, []);
 
     // Wrapper for process execution using helpers
     const executeProcess = useCallback((

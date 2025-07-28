@@ -1,14 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Flex, View, Button, Text, Heading, TextField, Tooltip, TooltipTrigger, Divider } from "@adobe/react-spectrum";
+import { Flex, View, Button, Text, Heading, TextField, Tooltip, TooltipTrigger, Divider, Slider, ActionButton, AlertDialog, DialogTrigger } from "@adobe/react-spectrum";
 import { generateToast } from "./generateToast";
 import { evalTS } from "../../lib/utils/bolt";
 import Play from "@spectrum-icons/workflow/Play";
 import Asterisk from "@spectrum-icons/workflow/Asterisk";
+
+import Refresh from "@spectrum-icons/workflow/Refresh";
+import Add from "@spectrum-icons/workflow/Add";
+import Delete from "@spectrum-icons/workflow/Delete";
 import { createGeneralContextualHelp } from "./ConsistentContextualHelp";
 
 
 type BezierPoint = { x: number; y: number };
-type LogicalBounds = { minX: number; maxX: number; minY: number; maxY: number; range: number };
+
 type PresetCurve = { label: string; bezier: string; tooltip: string };
 
 const presetCurves: PresetCurve[] = [
@@ -56,20 +60,32 @@ export default function KeyframeGraphEditor() {
   const [point1, setPoint1] = useState<BezierPoint>({ x: 0, y: 0 });
   const [point2, setPoint2] = useState<BezierPoint>({ x: 0, y: 0 });
   const [dragging, setDragging] = useState<boolean>(false);
-  const [closest, setClosest] = useState(1);
+
   const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
   const [bezierInput, setBezierInput] = useState("0.25,0.1,0.75,0.9");
   const [selectedPreset, setSelectedPreset] = useState<PresetCurve | null>(null);
   const [animationDuration, setAnimationDuration] = useState(2);
   const [sliderState, setSliderState] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ width: 300, height: 300 });
+  const [inputError, setInputError] = useState<string>("");
+  const [isHovering, setIsHovering] = useState<number | null>(null);
+  const [customPresets, setCustomPresets] = useState<PresetCurve[]>(() => {
+    try {
+      const saved = localStorage.getItem('keyframe-custom-presets');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showAddPreset, setShowAddPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState("");
 
   const getViewportBounds = useCallback(() => {
     return {
       minX: -0.3,
       maxX: 1.3,
-      minY: -0.5,
-      maxY: 1.5
+      minY: -0.8,
+      maxY: 1.8
     };
   }, []);
 
@@ -285,26 +301,27 @@ export default function KeyframeGraphEditor() {
     const cp2OutOfBounds = bezier2X < 0 || bezier2X > 1 || bezier2Y < 0 || bezier2Y > 1;
 
     // Control point 1
+    const cp1Size = draggedPoint === 1 ? 10 : 8;
     ctx.beginPath();
-    ctx.arc(cp1.x, cp1.y, 8, 0, Math.PI * 2);
-    const cp1Gradient = ctx.createRadialGradient(cp1.x, cp1.y, 0, cp1.x, cp1.y, 8);
+    ctx.arc(cp1.x, cp1.y, cp1Size, 0, Math.PI * 2);
+    const cp1Gradient = ctx.createRadialGradient(cp1.x, cp1.y, 0, cp1.x, cp1.y, cp1Size);
     if (cp1OutOfBounds) {
       cp1Gradient.addColorStop(0, '#ffaa44');
       cp1Gradient.addColorStop(1, '#ff8800');
     } else {
-      cp1Gradient.addColorStop(0, '#4bcffa');
-      cp1Gradient.addColorStop(1, '#1e90ff');
+      cp1Gradient.addColorStop(0, draggedPoint === 1 ? '#66d9ff' : '#4bcffa');
+      cp1Gradient.addColorStop(1, draggedPoint === 1 ? '#0099cc' : '#1e90ff');
     }
     ctx.fillStyle = cp1Gradient;
     ctx.fill();
-    ctx.strokeStyle = cp1OutOfBounds ? '#ffcc66' : '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = cp1OutOfBounds ? '#ffcc66' : draggedPoint === 1 ? '#00ccff' : '#ffffff';
+    ctx.lineWidth = draggedPoint === 1 ? 3 : 2;
     ctx.stroke();
 
     // Add warning indicator for out-of-bounds control point 1
     if (cp1OutOfBounds) {
       ctx.beginPath();
-      ctx.arc(cp1.x, cp1.y, 12, 0, Math.PI * 2);
+      ctx.arc(cp1.x, cp1.y, cp1Size + 4, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(255, 170, 68, 0.4)';
       ctx.lineWidth = 2;
       ctx.setLineDash([2, 2]);
@@ -313,31 +330,54 @@ export default function KeyframeGraphEditor() {
     }
 
     // Control point 2
+    const cp2Size = draggedPoint === 2 ? 10 : 8;
     ctx.beginPath();
-    ctx.arc(cp2.x, cp2.y, 8, 0, Math.PI * 2);
-    const cp2Gradient = ctx.createRadialGradient(cp2.x, cp2.y, 0, cp2.x, cp2.y, 8);
+    ctx.arc(cp2.x, cp2.y, cp2Size, 0, Math.PI * 2);
+    const cp2Gradient = ctx.createRadialGradient(cp2.x, cp2.y, 0, cp2.x, cp2.y, cp2Size);
     if (cp2OutOfBounds) {
       cp2Gradient.addColorStop(0, '#ffaa44');
       cp2Gradient.addColorStop(1, '#ff8800');
     } else {
-      cp2Gradient.addColorStop(0, '#4bcffa');
-      cp2Gradient.addColorStop(1, '#1e90ff');
+      cp2Gradient.addColorStop(0, draggedPoint === 2 ? '#66d9ff' : '#4bcffa');
+      cp2Gradient.addColorStop(1, draggedPoint === 2 ? '#0099cc' : '#1e90ff');
     }
     ctx.fillStyle = cp2Gradient;
     ctx.fill();
-    ctx.strokeStyle = cp2OutOfBounds ? '#ffcc66' : '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = cp2OutOfBounds ? '#ffcc66' : draggedPoint === 2 ? '#00ccff' : '#ffffff';
+    ctx.lineWidth = draggedPoint === 2 ? 3 : 2;
     ctx.stroke();
 
     // Add warning indicator for out-of-bounds control point 2
     if (cp2OutOfBounds) {
       ctx.beginPath();
-      ctx.arc(cp2.x, cp2.y, 12, 0, Math.PI * 2);
+      ctx.arc(cp2.x, cp2.y, cp2Size + 4, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(255, 170, 68, 0.4)';
       ctx.lineWidth = 2;
       ctx.setLineDash([2, 2]);
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    // Draw coordinate labels for control points when dragging
+    if (draggedPoint !== null) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.font = '12px system-ui';
+      
+      const cp1Label = `P1: (${bezier1X.toFixed(2)}, ${bezier1Y.toFixed(2)})`;
+      const cp2Label = `P2: (${bezier2X.toFixed(2)}, ${bezier2Y.toFixed(2)})`;
+      
+      // Control point 1 label
+      const cp1LabelWidth = ctx.measureText(cp1Label).width;
+      ctx.fillRect(cp1.x - cp1LabelWidth/2 - 4, cp1.y - 30, cp1LabelWidth + 8, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(cp1Label, cp1.x - cp1LabelWidth/2, cp1.y - 18);
+      
+      // Control point 2 label
+      const cp2LabelWidth = ctx.measureText(cp2Label).width;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(cp2.x - cp2LabelWidth/2 - 4, cp2.y - 30, cp2LabelWidth + 8, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(cp2Label, cp2.x - cp2LabelWidth/2, cp2.y - 18);
     }
 
 
@@ -485,7 +525,6 @@ export default function KeyframeGraphEditor() {
     console.log("Mouse down at:", canvasX, canvasY, "scale:", scaleX, scaleY);
     setDragging(true);
     const closestPoint = getClosestPoint(canvasX, canvasY);
-    setClosest(closestPoint);
     setDraggedPoint(closestPoint);
     console.log("Closest point set to:", closestPoint);
     setSelectedPreset(null);
@@ -493,8 +532,6 @@ export default function KeyframeGraphEditor() {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!dragging) return;
-    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -504,6 +541,25 @@ export default function KeyframeGraphEditor() {
     const scaleY = canvasSize.height / rect.height;
     const canvasX = (e.clientX - rect.left) * scaleX;
     const canvasY = (e.clientY - rect.top) * scaleY;
+
+    if (!dragging) {
+      // Update cursor based on proximity to control points
+      const closestPoint = getClosestPoint(canvasX, canvasY);
+      const bezier1X = point1.x / canvasSize.width;
+      const bezier1Y = 1 - point1.y / canvasSize.height;
+      const bezier2X = point2.x / canvasSize.width;
+      const bezier2Y = 1 - point2.y / canvasSize.height;
+      
+      const cp1 = bezierToCanvas(bezier1X, bezier1Y);
+      const cp2 = bezierToCanvas(bezier2X, bezier2Y);
+      
+      const point1Dist = Math.sqrt(Math.pow(canvasX - cp1.x, 2) + Math.pow(canvasY - cp1.y, 2));
+      const point2Dist = Math.sqrt(Math.pow(canvasX - cp2.x, 2) + Math.pow(canvasY - cp2.y, 2));
+      
+      const minDist = Math.min(point1Dist, point2Dist);
+      canvas.style.cursor = minDist < 15 ? "pointer" : "grab";
+      return;
+    }
     
     // Convert to bezier coordinates
     const bezierCoords = canvasToBezier(canvasX, canvasY);
@@ -558,6 +614,39 @@ export default function KeyframeGraphEditor() {
     setSelectedPreset(preset);
   }, [canvasSize]);
 
+  // Custom preset management
+  const addCustomPreset = useCallback(() => {
+    if (!newPresetName.trim()) {
+      generateToast(2, "Please enter a preset name");
+      return;
+    }
+    
+    const values = bezierInput.split(",").map((v) => parseFloat(v.trim()));
+    if (values.length !== 4 || values.some((v) => isNaN(v))) {
+      generateToast(2, "Invalid bezier values");
+      return;
+    }
+    
+    const newPreset: PresetCurve = {
+      label: newPresetName.trim(),
+      bezier: bezierInput.trim(),
+      tooltip: `Custom preset: ${newPresetName.trim()}`
+    };
+    
+    setCustomPresets(prev => [...prev, newPreset]);
+    setNewPresetName("");
+    setShowAddPreset(false);
+    generateToast(1, `Custom preset "${newPresetName.trim()}" added!`);
+  }, [newPresetName, bezierInput]);
+
+  const removeCustomPreset = useCallback((presetToRemove: PresetCurve) => {
+    setCustomPresets(prev => prev.filter(preset => preset.label !== presetToRemove.label));
+    if (selectedPreset?.label === presetToRemove.label) {
+      setSelectedPreset(null);
+    }
+    generateToast(1, `Preset "${presetToRemove.label}" removed`);
+  }, [selectedPreset]);
+
   // Auto-apply bezierInput to graph if valid
   useEffect(() => {
     const values = bezierInput.split(",").map((v) => parseFloat(v.trim()));
@@ -565,12 +654,25 @@ export default function KeyframeGraphEditor() {
       const [a, b, c, d] = values;
       setPoint1({ x: a * canvasSize.width, y: (1 - b) * canvasSize.height });
       setPoint2({ x: c * canvasSize.width, y: (1 - d) * canvasSize.height });
+      setInputError("");
+    } else if (bezierInput.trim() !== "") {
+      setInputError("Invalid format. Use: x1,y1,x2,y2");
+    } else {
+      setInputError("");
     }
     // Do not clear selectedPreset here, so preset highlight remains until user clicks elsewhere
     // Do not send to AE, just update the graph
-    // Do not show error for invalid input, just ignore
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bezierInput, canvasSize.width, canvasSize.height]);
+
+  // Save custom presets to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('keyframe-custom-presets', JSON.stringify(customPresets));
+    } catch (error) {
+      console.warn('Failed to save custom presets to localStorage:', error);
+    }
+  }, [customPresets]);
 
   // Play animation - matching original script
   const playAnimation = useCallback(() => {
@@ -592,10 +694,6 @@ export default function KeyframeGraphEditor() {
   const handleAnimationEnd = useCallback(() => {
     setSliderState(sliderState === 0 ? 1 : 0);
   }, [sliderState]);
-
-
-
-
 
   // Apply values and send to After Effects
   const applyToAE = useCallback(async () => {
@@ -646,6 +744,8 @@ export default function KeyframeGraphEditor() {
     }
   }, [bezierInput, canvasSize]);
 
+
+
   return (
     <Flex direction="column" gap={8} width="100%" marginTop={8}>
       <View borderWidth="thin" borderColor="dark" borderRadius="medium" padding="size-150">
@@ -659,14 +759,14 @@ export default function KeyframeGraphEditor() {
               "Keyframe Graph Editor Help",
               <>
                 <b>How to use:</b><br />
-                - Drag the points on graph to change curve.<br />
-                - Click a preset to use it.<br />
-                - "Apply" sends curve to AE (select 2+ keyframes first).<br />
-                - "Copy From Selection" reads curve from 2 selected keyframes.<br />
-                - "Play Animation" shows how curve behaves.<br />
-                - "Reset to Default" restores original curve.<br />
+                - Drag the blue control points to shape your curve<br />
+                - Click preset buttons for common easing curves<br />
+
+                - Orange points indicate values outside normal [0,1] range<br />
+                - "Apply" sends curve to AE (select 2+ keyframes first)<br />
+                - Adjust animation duration to preview timing<br />
                 <br />
-                <strong>Note:</strong> This is an experimental feature, tested only with AE 2025 <br />
+                <strong>Note:</strong> This is an experimental feature, tested only with AE 2025<br />
               </>
             )}
           </Flex>
@@ -710,18 +810,52 @@ export default function KeyframeGraphEditor() {
               />
             </div>
 
-            <Flex direction="column" gap={6} minWidth={180}>
-              <TextField
-                label="Bezier Values"
-                value={bezierInput}
-                onChange={setBezierInput}
-
-              />
+            <Flex direction="column" gap={6} minWidth={200}>
+              <Flex direction="row" gap={4} alignItems="end">
+                <TextField
+                  label={`Bezier Values ${selectedPreset ? `(${selectedPreset.label})` : ''}`}
+                  value={bezierInput}
+                  onChange={setBezierInput}
+                  validationState={inputError ? "invalid" : "valid"}
+                  errorMessage={inputError}
+                  flex={1}
+                />
+                <TooltipTrigger>
+                  <ActionButton onPress={() => {
+                    setBezierInput("0.25,0.1,0.75,0.9");
+                    setSelectedPreset(null);
+                  }} isQuiet>
+                    <Refresh />
+                  </ActionButton>
+                  <Tooltip>Reset to default</Tooltip>
+                </TooltipTrigger>
+              </Flex>
               
-              <Flex direction="row" gap={6}>
-                <Button variant="secondary" flex={1} onPress={applyToAE}>
-                  Apply
+              <TooltipTrigger>
+                <Button variant="cta" flex={1} onPress={applyToAE}>
+                  Apply to After Effects
                 </Button>
+                <Tooltip>Apply curve to selected keyframes</Tooltip>
+              </TooltipTrigger>
+
+              <Divider size="S" />
+
+              <Flex direction="column" gap={4}>
+                <Slider
+                  label="Animation Duration"
+                  value={animationDuration}
+                  onChange={setAnimationDuration}
+                  minValue={0.1}
+                  maxValue={5}
+                  step={0.1}
+                  isFilled
+                  width={"100%"}
+                  formatOptions={{
+                    style: "unit",
+                    unit: "second",
+                    unitDisplay: "short"
+                  }}
+                />
               </Flex>
 
               <Divider size="S" />
@@ -775,84 +909,236 @@ export default function KeyframeGraphEditor() {
                 />
               </View>
 
-              <Button variant="secondary" onPress={playAnimation}>
-                <Play />
-                Play Animation
-              </Button>
+              <Flex direction="column" gap={4}>
+                <TooltipTrigger>
+                  <Button variant="secondary" onPress={playAnimation}>
+                    <Play />
+                    Play Animation
+                  </Button>
+                  <Tooltip>Preview animation with current curve</Tooltip>
+                </TooltipTrigger>
 
-              <Button variant="secondary" onPress={() => {
-                // Reset to default bezier (same as initial)
-                setBezierInput("0.25,0.1,0.75,0.9");
-              }}>
-                Reset to Default
-              </Button>
-
-              <Button isDisabled variant="secondary" onPress={async () => {
-                // Try to get bezier from AE selection
-                try {
-                  const result = await evalTS("getSelectedKeyframeBezier");
-                  if (typeof result === "string" && result.match(/^(\s*-?\d+(\.\d+)?\s*,){3}\s*-?\d+(\.\d+)?\s*$/)) {
-                    setBezierInput(result);
-                    generateToast(1, "Copied bezier from selected keyframes.");
-                  } else if (result && typeof result === "string") {
-                    generateToast(2, result);
-                  } else {
-                    generateToast(2, "Could not get bezier from selection.");
+                <Button isDisabled variant="secondary" onPress={async () => {
+                  // Try to get bezier from AE selection
+                  try {
+                    const result = await evalTS("getSelectedKeyframeBezier");
+                    if (typeof result === "string" && result.match(/^(\s*-?\d+(\.\d+)?\s*,){3}\s*-?\d+(\.\d+)?\s*$/)) {
+                      setBezierInput(result);
+                      setSelectedPreset(null);
+                      generateToast(1, "Copied bezier from selected keyframes.");
+                    } else if (result && typeof result === "string") {
+                      generateToast(2, result);
+                    } else {
+                      generateToast(2, "Could not get bezier from selection.");
+                    }
+                  } catch (e) {
+                    generateToast(2, "Error getting bezier from selection.");
                   }
-                } catch (e) {
-                  generateToast(2, "Error getting bezier from selection.");
-                }
-              }}>
-                Copy From Selection
-              </Button>
+                }}>
+                  Copy From Selection
+                </Button>
+              </Flex>
             </Flex>
           </Flex>
 
           <Divider size="S" />
 
           <Flex direction="column" gap={6}>
-            <Flex wrap gap={6} justifyContent="start">
-              {presetCurves.map((preset) => (
-                <div
-                  key={preset.label}
-                  onClick={() => selectPreset(preset)}
-                  style={{
-                    border: "1px solid #fff",
-                    borderRadius: "12px",
-                    background: "transparent",
-                    cursor: "pointer",
-                    padding: 4,
-                    width: 56,
-                    height: 56,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxSizing: "border-box",
-                    transition: "background 0.15s",
-                  }}
-                  title={preset.tooltip}
+            <Flex direction="row" justifyContent="space-between" alignItems="center">
+              <Text>Curve Presets</Text>
+              <DialogTrigger>
+                <ActionButton isQuiet>
+                  <Add />
+                  <Text>Add Custom</Text>
+                </ActionButton>
+                <AlertDialog
+                  title="Add Custom Preset"
+                  variant="confirmation"
+                  primaryActionLabel="Add Preset"
+                  secondaryActionLabel="Cancel"
+                  onPrimaryAction={addCustomPreset}
+                  onSecondaryAction={() => setNewPresetName("")}
                 >
-                  <svg width="44" height="44" viewBox="0 0 44 44">
-                    <rect x="0" y="0" width="44" height="44" fill="none" />
-                    <path
-                      d={(() => {
-                        const [x1, y1, x2, y2] = preset.bezier.split(",").map(Number);
-                        const start = { x: 4, y: 40 };
-                        const end = { x: 40, y: 4 };
-                        const cp1 = { x: 4 + (x1 * 36), y: 40 - (y1 * 36) };
-                        const cp2 = { x: 4 + (x2 * 36), y: 40 - (y2 * 36) };
-                        return `M${start.x},${start.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${end.x},${end.y}`;
-                      })()}
-                      stroke="#7cbdfa"
-                      strokeWidth="2.5"
-                      fill="none"
+                  <Flex direction="column" gap={4}>
+                    <TextField
+                      label="Preset Name"
+                      value={newPresetName}
+                      onChange={setNewPresetName}
+                      placeholder="Enter preset name"
+                      autoFocus
                     />
-                    <circle cx="4" cy="40" r="2" fill="#fff" />
-                    <circle cx="40" cy="4" r="2" fill="#fff" />
-                  </svg>
-                </div>
+                    <Text>Current Bezier: {bezierInput}</Text>
+                  </Flex>
+                </AlertDialog>
+              </DialogTrigger>
+            </Flex>
+            
+            {/* Built-in Presets */}
+            <Flex wrap gap={4} justifyContent="start">
+              {presetCurves.map((preset, index) => (
+                <TooltipTrigger key={preset.label}>
+                  <div
+                    onClick={() => selectPreset(preset)}
+                    onMouseEnter={() => setIsHovering(index)}
+                    onMouseLeave={() => setIsHovering(null)}
+                    style={{
+                      border: selectedPreset?.label === preset.label 
+                        ? "2px solid #7cbdfa" 
+                        : isHovering === index 
+                          ? "2px solid rgba(124, 189, 250, 0.5)"
+                          : "1px solid rgba(255, 255, 255, 0.3)",
+                      borderRadius: "8px",
+                      background: selectedPreset?.label === preset.label 
+                        ? "rgba(124, 189, 250, 0.1)" 
+                        : isHovering === index 
+                          ? "rgba(124, 189, 250, 0.05)"
+                          : "transparent",
+                      cursor: "pointer",
+                      padding: "8px",
+                      width: "80px",
+                      height: "70px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxSizing: "border-box",
+                      transition: "all 0.2s ease",
+                      transform: isHovering === index ? "scale(1.05)" : "scale(1)",
+                    }}
+                  >
+                    <svg width="40" height="32" viewBox="0 0 40 32">
+                      <rect x="0" y="0" width="40" height="32" fill="none" />
+                      <path
+                        d={(() => {
+                          const [x1, y1, x2, y2] = preset.bezier.split(",").map(Number);
+                          const start = { x: 2, y: 30 };
+                          const end = { x: 38, y: 2 };
+                          const cp1 = { x: 2 + (x1 * 36), y: 30 - (y1 * 28) };
+                          const cp2 = { x: 2 + (x2 * 36), y: 30 - (y2 * 28) };
+                          return `M${start.x},${start.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${end.x},${end.y}`;
+                        })()}
+                        stroke={selectedPreset?.label === preset.label ? "#7cbdfa" : "#7cbdfa"}
+                        strokeWidth="2"
+                        fill="none"
+                      />
+                      <circle cx="2" cy="30" r="1.5" fill={selectedPreset?.label === preset.label ? "#7cbdfa" : "#fff"} />
+                      <circle cx="38" cy="2" r="1.5" fill={selectedPreset?.label === preset.label ? "#7cbdfa" : "#fff"} />
+                    </svg>
+                    <Text 
+                      UNSAFE_style={{ 
+                        fontSize: "10px", 
+                        marginTop: "4px", 
+                        textAlign: "center",
+                        color: selectedPreset?.label === preset.label ? "#7cbdfa" : "inherit"
+                      }}
+                    >
+                      {preset.label}
+                    </Text>
+                  </div>
+                  <Tooltip>{preset.tooltip}</Tooltip>
+                </TooltipTrigger>
               ))}
             </Flex>
+
+            {/* Custom Presets */}
+            {customPresets.length > 0 && (
+              <>
+                <Divider size="S" />
+                <Text>Custom Presets</Text>
+                <Flex wrap gap={4} justifyContent="start">
+                  {customPresets.map((preset, index) => (
+                    <TooltipTrigger key={preset.label}>
+                      <div
+                        style={{
+                          position: "relative",
+                          border: selectedPreset?.label === preset.label 
+                            ? "2px solid #7cbdfa" 
+                            : isHovering === (presetCurves.length + index)
+                              ? "2px solid rgba(124, 189, 250, 0.5)"
+                              : "1px solid rgba(255, 255, 255, 0.3)",
+                          borderRadius: "8px",
+                          background: selectedPreset?.label === preset.label 
+                            ? "rgba(124, 189, 250, 0.1)" 
+                            : isHovering === (presetCurves.length + index)
+                              ? "rgba(124, 189, 250, 0.05)"
+                              : "transparent",
+                          cursor: "pointer",
+                          padding: "8px",
+                          width: "80px",
+                          height: "70px",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxSizing: "border-box",
+                          transition: "all 0.2s ease",
+                          transform: isHovering === (presetCurves.length + index) ? "scale(1.05)" : "scale(1)",
+                        }}
+                        onClick={() => selectPreset(preset)}
+                        onMouseEnter={() => setIsHovering(presetCurves.length + index)}
+                        onMouseLeave={() => setIsHovering(null)}
+                      >
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeCustomPreset(preset);
+                          }}
+                          style={{
+                            position: "absolute",
+                            top: "2px",
+                            right: "2px",
+                            width: "16px",
+                            height: "16px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            borderRadius: "2px",
+                            backgroundColor: "rgba(255, 0, 0, 0.1)",
+                            zIndex: 10
+                          }}
+                        >
+                          <Delete size="XS" />
+                        </div>
+                        <svg width="40" height="32" viewBox="0 0 40 32">
+                          <rect x="0" y="0" width="40" height="32" fill="none" />
+                          <path
+                            d={(() => {
+                              const [x1, y1, x2, y2] = preset.bezier.split(",").map(Number);
+                              const start = { x: 2, y: 30 };
+                              const end = { x: 38, y: 2 };
+                              const cp1 = { x: 2 + (x1 * 36), y: 30 - (y1 * 28) };
+                              const cp2 = { x: 2 + (x2 * 36), y: 30 - (y2 * 28) };
+                              return `M${start.x},${start.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${end.x},${end.y}`;
+                            })()}
+                            stroke={selectedPreset?.label === preset.label ? "#7cbdfa" : "#ff9500"}
+                            strokeWidth="2"
+                            fill="none"
+                          />
+                          <circle cx="2" cy="30" r="1.5" fill={selectedPreset?.label === preset.label ? "#7cbdfa" : "#ff9500"} />
+                          <circle cx="38" cy="2" r="1.5" fill={selectedPreset?.label === preset.label ? "#7cbdfa" : "#ff9500"} />
+                        </svg>
+                        <Text 
+                          UNSAFE_style={{ 
+                            fontSize: "10px", 
+                            marginTop: "4px", 
+                            textAlign: "center",
+                            color: selectedPreset?.label === preset.label ? "#7cbdfa" : "#ff9500",
+                            maxWidth: "70px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
+                          }}
+                        >
+                          {preset.label}
+                        </Text>
+                      </div>
+                      <Tooltip>{preset.tooltip}</Tooltip>
+                    </TooltipTrigger>
+                  ))}
+                </Flex>
+              </>
+            )}
           </Flex>
         </Flex>
       </View>

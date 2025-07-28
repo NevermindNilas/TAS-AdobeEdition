@@ -301,48 +301,69 @@ export function executeProcessHelper({
         }
     };
 
-    logPollingInterval = setInterval(readNewLogs, 1000);
+    // Keep log polling as fallback for file-based logs (reduced frequency since we have real-time streams)
+    logPollingInterval = setInterval(readNewLogs, 2000);
 
-    // Add file watcher for even more realtime updates
-    if (fs.existsSync(logTxtPath)) {
-        try {
-            logWatcher = fs.watch(logTxtPath, (eventType: string) => {
-                if (eventType === "change") {
-                    readNewLogs();
-                }
-            });
-        } catch (error) {
-            console.error("Error watching log file:", error);
+    // Add file watcher for log file updates (as fallback)
+    const setupLogWatcher = () => {
+        if (fs.existsSync(logTxtPath)) {
+            try {
+                logWatcher = fs.watch(logTxtPath, (eventType: string) => {
+                    if (eventType === "change" && !processCancelledRef.current) {
+                        readNewLogs();
+                    }
+                });
+            } catch (error) {
+                console.error("Error watching log file:", error);
+            }
+        } else {
+            // Retry setting up watcher after a delay if log file doesn't exist yet
+            setTimeout(setupLogWatcher, 1000);
         }
-    }
+    };
+    
+    setupLogWatcher();
+
+    // Parse command for spawn (split command and args)
+    const commandParts = command.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+    const executable = commandParts[0]?.replace(/"/g, '') || '';
+    const args = commandParts.slice(1).map((arg: string) => arg.replace(/"/g, ''));
 
     let process: any;
     try {
-        process = child_process.exec(command, (error: any) => {
-            if (error) {
-                hasFailed = true;
-                
-                if (logPollingInterval) {
-                    clearInterval(logPollingInterval);
-                    logPollingInterval = null;
+        process = child_process.spawn(executable, args, {
+            shell: true, // Keep shell for Windows compatibility
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        // Handle real-time stdout
+        process.stdout?.on('data', (data: Buffer) => {
+            if (processCancelledRef.current) return;
+            
+            const output = data.toString('utf8');
+            if (output.trim()) {
+                const lines = output.split(/\r?\n/).filter(line => line.trim());
+                if (lines.length > 0) {
+                    localLogs.push(...lines);
+                    setFullLogs([...localLogs]);
                 }
-                
-                if (logWatcher) {
-                    try {
-                        logWatcher.close();
-                    } catch (err) {
-                        console.warn("Error closing log watcher:", err);
-                    }
-                    logWatcher = null;
-                }
-                
-                resetProgress("Initializing");
-                generateToast(
-                    2,
-                    `Error: ${toastMessage} failed to start or crashed. Check the logs & contact Nilas on Discord.`
-                );
             }
         });
+
+        // Handle real-time stderr
+        process.stderr?.on('data', (data: Buffer) => {
+            if (processCancelledRef.current) return;
+            
+            const output = data.toString('utf8');
+            if (output.trim()) {
+                const lines = output.split(/\r?\n/).filter(line => line.trim());
+                if (lines.length > 0) {
+                    localLogs.push(...lines);
+                    setFullLogs([...localLogs]);
+                }
+            }
+        });
+
     } catch (processError) {
         hasFailed = true;
         
@@ -360,17 +381,21 @@ export function executeProcessHelper({
             logWatcher = null;
         }
         
-        resetProgress("Initializing");
-        generateToast(
-            2,
-            `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
-        );
+        // Don't show error toast if process was cancelled by user
+        if (!processCancelledRef.current) {
+            resetProgress("Initializing");
+            generateToast(
+                2,
+                `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
+            );
+        }
         return;
     }
 
     generateToast(3, `${toastMessage} initiated...`);
 
-    process.on("error", (err: any) => {
+    process.on("error", (error: any) => {
+        console.error("Process error:", error);
         hasFailed = true;
         
         if (logPollingInterval) {
@@ -381,20 +406,23 @@ export function executeProcessHelper({
         if (logWatcher) {
             try {
                 logWatcher.close();
-            } catch (error) {
-                console.warn("Error closing log watcher:", error);
+            } catch (watcherError) {
+                console.warn("Error closing log watcher:", watcherError);
             }
             logWatcher = null;
         }
         
-        resetProgress("Initializing");
-        generateToast(
-            2,
-            `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
-        );
+        // Don't show error toast if process was cancelled by user
+        if (!processCancelledRef.current) {
+            resetProgress("Initializing");
+            generateToast(
+                2,
+                `Error: ${toastMessage} failed to start. Check the logs & contact Nilas on Discord.`
+            );
+        }
     });
 
-    process.on("exit", (code: any) => {
+    process.on("exit", (code: number | null, signal: string | null) => {
         if (exited) return;
         exited = true;
         
@@ -414,23 +442,40 @@ export function executeProcessHelper({
         
         readNewLogs();
 
+        // Check if process succeeded based on exit code
+        const processSucceeded = code === 0 || (code === null && signal === null);
+
         try {
             if (!processCancelledRef.current) {
                 if (outputFile) {
-                    if (fs.existsSync(outputFile)) {
+                    if (fs.existsSync(outputFile) && processSucceeded) {
                         if (typeof onSuccess === "function") {
                             onSuccess();
                         }
                     } else {
-                        hasFailed = true;
-                        generateToast(
-                            2,
-                            `Error: ${toastMessage} failed, check the logs & contact Nilas on Discord.`
-                        );
+                        if (!processCancelledRef.current) {
+                            hasFailed = true;
+                            const errorMsg = code !== 0 ? 
+                                `Process exited with code ${code}` : 
+                                `Process terminated by signal ${signal}`;
+                            generateToast(
+                                2,
+                                `Error: ${toastMessage} failed (${errorMsg}). Check the logs & contact Nilas on Discord.`
+                            );
+                        }
                     }
                 } else {
-                    if (typeof onSuccess === "function") {
+                    if (processSucceeded && typeof onSuccess === "function") {
                         onSuccess();
+                    } else if (!processSucceeded && !processCancelledRef.current) {
+                        hasFailed = true;
+                        const errorMsg = code !== 0 ? 
+                            `Process exited with code ${code}` : 
+                            `Process terminated by signal ${signal}`;
+                        generateToast(
+                            2,
+                            `Error: ${toastMessage} failed (${errorMsg}). Check the logs & contact Nilas on Discord.`
+                        );
                     }
                 }
             }
@@ -439,7 +484,7 @@ export function executeProcessHelper({
         } finally {
             resetProgress("Progress complete!");
 
-            if (!processCancelledRef.current && !hasFailed) {
+            if (!processCancelledRef.current && !hasFailed && processSucceeded) {
                 generateToast(1, `${toastMessage} completed.`);
             }
             setIsProcessCancelled(false);
@@ -480,7 +525,13 @@ export function executeProcessHelper({
         
         if (process && !process.killed) {
             try {
-                process.kill();
+                // For spawn, we can use different kill signals
+                process.kill('SIGTERM'); // Graceful termination first
+                setTimeout(() => {
+                    if (!process.killed) {
+                        process.kill('SIGKILL'); // Force kill if still running
+                    }
+                }, 5000);
             } catch (error) {
                 console.warn("Error killing process:", error);
             }

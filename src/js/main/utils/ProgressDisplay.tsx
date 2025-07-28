@@ -152,7 +152,13 @@ const ProgressDisplay = memo(({
                             <ActionButton
                                 marginStart={5}
                                 isQuiet
-                                onPress={onCancel}
+                                onPress={() => {
+                                    try {
+                                        onCancel();
+                                    } catch (error) {
+                                        console.error("Cancel button error:", error);
+                                    }
+                                }}
                                 aria-label="Cancel"
                             >
                                 <Cancel />

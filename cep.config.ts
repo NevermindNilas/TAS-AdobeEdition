@@ -63,7 +63,7 @@ const config: CEP_Config = {
     ],
     allowSkipTSA: false,
     sourceMap: false,
-    jsxBin: "replace",
+    jsxBin: "off",
   },
   installModules: [],
   copyAssets: [],

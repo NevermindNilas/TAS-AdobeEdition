@@ -7,8 +7,3 @@ dist
 yarn-error.log
 .media
 .vscode
-
-# Environment variables
-.env
-.env.local
-.env.production

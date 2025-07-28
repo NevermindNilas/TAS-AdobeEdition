@@ -1,18 +1,5 @@
 import { CEP_Config } from "vite-cep-plugin";
 import { version } from "./package.json";
-import * as dotenv from 'dotenv';
-import * as crypto from 'crypto';
-
-// Load environment variables
-dotenv.config();
-
-// Generate a secure password if none is provided
-function generateSecurePassword(): string {
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('WARNING: Using generated password for ZXP signing. Set ZXP_PASSWORD in .env for production.');
-  }
-  return crypto.randomBytes(16).toString('base64');
-}
 
 const config: CEP_Config = {
   version,
@@ -56,7 +43,7 @@ const config: CEP_Config = {
     country: "US",
     province: "CA",
     org: "Company",
-    password: process.env.ZXP_PASSWORD || generateSecurePassword(),
+    password: "password",
     tsa: [
       "http://timestamp.digicert.com/", // Windows Only
       "http://timestamp.apple.com/ts01", // MacOS Only

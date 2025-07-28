@@ -1,4 +1,4 @@
-import { child_process, path, os, fs } from "../../lib/cep/node";
+import { path, os, fs, child_process } from "../../lib/cep/node";
 import { generateToast } from "./generateToast";
 
 const getFolderPath = () => {
@@ -6,18 +6,47 @@ const getFolderPath = () => {
     return path.join(homeDir, "AppData", "Roaming", "TheAnimeScripter");
 };
 
-const openTasFolder = () => {
+const openTasFolder = async () => {
     generateToast(3, "Opening TAS folder...");
-    const folderPath = getFolderPath();
-    if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
-        console.log("Folder created:", folderPath);
-    }
-    child_process.exec(`explorer ${folderPath}`, err => {
-        if (err) {
-            console.error("Error opening folder:", err);
+    
+    try {
+        const folderPath = getFolderPath();
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
+            console.log("Folder created:", folderPath);
         }
-    });
+
+        // Open folder using appropriate command for the platform
+        const platform = os.platform();
+        let command: string;
+        let args: string[];
+
+        switch (platform) {
+            case 'darwin':
+                command = 'open';
+                args = [folderPath];
+                break;
+            case 'win32':
+                command = 'explorer';
+                args = [folderPath];
+                break;
+            case 'linux':
+                command = 'xdg-open';
+                args = [folderPath];
+                break;
+            default:
+                throw new Error(`Unsupported platform: ${platform}`);
+        }
+
+        // Execute command to open folder
+        child_process.spawn(command, args, { shell: false });
+        
+    } catch (error) {
+        console.error("Error opening TAS folder:", error);
+        generateToast(1, `Failed to open TAS folder: ${error instanceof Error ? error.message : String(error)}`);
+    }
 };
 
 export default openTasFolder;

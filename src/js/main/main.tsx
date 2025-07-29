@@ -76,7 +76,7 @@ import { openChangelog, openGitHubWiki } from "./utils/Socials";
 import execTakeScreenshot from "./utils/takeScreenshot";
 import { youtubeDownloadLogic } from "./utils/urlToVideo";
 import { useDebounce } from "./utils/useDebounce";
-import { getTASPaths, addPortToCommand } from "./utils/helpers";
+import { getTASPaths, addPortToCommand, quotePath, buildCommand, wrapCommandForCmd } from "./utils/helpers";
 import { depthMapExtractionLogic } from "./utils/depthMap";
 import { removeBackgroundLogic } from "./utils/removeBackground";
 import { checkDiskSpace } from "./utils/checkDiskSpace";
@@ -605,7 +605,7 @@ const Main = () => {
             projectFolderPath
         );
 
-        command = `start /wait cmd /c "${command}"`;
+        command = wrapCommandForCmd(command);
 
         generateToast(3, "Youtube download initiated...");
 
@@ -698,16 +698,13 @@ const Main = () => {
     }, [pythonExePath, mainPyPath, executeProcess]);
 
     const buildChainCommand = useCallback((input: string, outFile: string) => {
-        const inputQuoted = `"${input}"`;
-        const outFileQuoted = `"${outFile}"`;
-
         const attempt = [
-            `"${pythonExePath}"`,
-            `"${mainPyPath}"`,
+            quotePath(pythonExePath),
+            quotePath(mainPyPath),
             "--input",
-            inputQuoted,
+            quotePath(input),
             "--output",
-            outFileQuoted,
+            quotePath(outFile),
             "--ae",
         ];
 
@@ -780,7 +777,7 @@ const Main = () => {
             attempt.push("--half", aiPrecision || DEFAULT.aiPrecision);
         }
 
-        return addPortToCommand(attempt.join(" "));
+        return addPortToCommand(buildCommand(attempt));
     }, [
         pythonExePath, mainPyPath, enablePreview, encodeAlgorithm, bitDepth, resize, resizeFactor,
         interpolate, interpolateFactor, interpolationModel, slowMotion, rifeensemble, dynamicScale,
@@ -826,7 +823,7 @@ const Main = () => {
                 fs.mkdirSync(tasChainFolder, { recursive: true });
             }
 
-            const outFile = outputFolder.replace(/\\$/, "") + "/TAS-Chain/" + outName;
+            const outFile = path.join(outputFolder.replace(/\\$/, ""), "TAS-Chain", outName);
             const command = buildChainCommand(input, outFile);
 
             setIsProcessing(true);

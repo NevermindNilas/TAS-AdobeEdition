@@ -142,6 +142,38 @@ export async function getAEProjectFolderPath(): Promise<string | null> {
 
 
 /**
+ * Properly quotes a path for command line usage on Windows.
+ * Handles paths with spaces and special characters.
+ * @param path - The path to quote
+ * @returns The properly quoted path
+ */
+export function quotePath(path: string): string {
+    // Remove any existing quotes and add new ones
+    return `"${path.replace(/"/g, '')}"`;
+}
+
+/**
+ * Builds a command array with proper path quoting and joins it safely.
+ * @param parts - Array of command parts where paths should be quoted
+ * @returns The properly constructed command string
+ */
+export function buildCommand(parts: string[]): string {
+    return parts.join(" ");
+}
+
+/**
+ * Wraps a command for execution through Windows cmd.
+ * Properly escapes quotes to avoid conflicts.
+ * @param command - The command to wrap
+ * @returns The wrapped command ready for execution
+ */
+export function wrapCommandForCmd(command: string): string {
+    // Escape inner quotes and wrap the whole command
+    const escapedCommand = command.replace(/"/g, '\\"');
+    return `start /wait cmd /c "${escapedCommand}"`;
+}
+
+/**
  * Modifies a TAS backend command to include the WebSocket URL in the --ae flag.
  * Only modifies commands that contain the --ae flag (indicating CEP frontend usage).
  * Changes --ae to --ae ws://localhost:PORT for backend WebSocket communication.
@@ -324,16 +356,12 @@ export function executeProcessHelper({
     
     setupLogWatcher();
 
-    // Parse command for spawn (split command and args)
-    const commandParts = command.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-    const executable = commandParts[0]?.replace(/"/g, '') || '';
-    const args = commandParts.slice(1).map((arg: string) => arg.replace(/"/g, ''));
-
     let process: any;
     try {
-        process = child_process.spawn(executable, args, {
-            shell: true, // Keep shell for Windows compatibility
-            stdio: ['pipe', 'pipe', 'pipe']
+        // Use exec instead of spawn for better command string handling
+        process = child_process.exec(command, {
+            shell: true,
+            maxBuffer: 1024 * 1024 * 10 // 10MB buffer
         });
 
         // Handle real-time stdout

@@ -1,4 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
+import { quotePath, buildCommand } from "./helpers";
 
 const youtubeDownloadLogic = (
     youtubeURL: string,
@@ -6,12 +7,17 @@ const youtubeDownloadLogic = (
     pathToTasExe: string,
     pathToSave: string
 ) => {
-    const quotedPathToTasExe = `"${pathToTasExe}"`;
-    const quotedMainPyPath = `"${mainPyPath}"`;
     const outputPath = generateRandomOutputPath(pathToSave, "TAS-Youtube", "TAS", ".mp4");
-    const quotedOutputPath = `"${outputPath}"`;
 
-    const command = `${quotedPathToTasExe} ${quotedMainPyPath} --input ${youtubeURL} --output ${quotedOutputPath} --ae`;
+    const command = buildCommand([
+        quotePath(pathToTasExe),
+        quotePath(mainPyPath),
+        "--input",
+        youtubeURL,
+        "--output",
+        quotePath(outputPath),
+        "--ae"
+    ]);
 
     return { command, outputPath };
 };

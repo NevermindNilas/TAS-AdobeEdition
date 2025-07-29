@@ -56,7 +56,7 @@ export default function KeyframeGraphEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<HTMLDivElement>(null);
   
-  // here we keep the points for bezier curve
+
   const [point1, setPoint1] = useState<BezierPoint>({ x: 0, y: 0 });
   const [point2, setPoint2] = useState<BezierPoint>({ x: 0, y: 0 });
   const [dragging, setDragging] = useState<boolean>(false);
@@ -89,7 +89,7 @@ export default function KeyframeGraphEditor() {
     };
   }, []);
 
-  // Convert Bezier coordinates to canvas pixels with dynamic viewport
+
   const bezierToCanvas = useCallback((bezierX: number, bezierY: number): BezierPoint => {
     const bounds = getViewportBounds();
     const padding = 0;
@@ -105,7 +105,7 @@ export default function KeyframeGraphEditor() {
     };
   }, [canvasSize, getViewportBounds]);
 
-  // Convert canvas pixels to Bezier coordinates with dynamic viewport
+
   const canvasToBezier = useCallback((canvasX: number, canvasY: number): { bezierX: number; bezierY: number } => {
     const bounds = getViewportBounds();
     const padding = 0;
@@ -121,13 +121,18 @@ export default function KeyframeGraphEditor() {
     };
   }, [canvasSize, getViewportBounds]);
 
-  // Draw the canvas with modern, stylish design and dynamic zoom
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    if (canvasSize.width <= 0 || canvasSize.height <= 0) {
+      console.warn("Invalid canvas dimensions, skipping draw");
+      return;
+    }
 
     const bounds = getViewportBounds();
     
@@ -161,7 +166,6 @@ export default function KeyframeGraphEditor() {
     }
     ctx.stroke();
 
-    // Draw major grid lines every 0.5 units
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1;
@@ -183,19 +187,16 @@ export default function KeyframeGraphEditor() {
     }
     ctx.stroke();
 
-    // Draw main coordinate system axes
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
     
-    // X-axis (y = 0)
     if (bounds.minY <= 0 && bounds.maxY >= 0) {
       const y0 = bezierToCanvas(0, 0).y;
       ctx.moveTo(padding, y0);
       ctx.lineTo(canvasSize.width - padding, y0);
     }
     
-    // Y-axis (x = 0)
     if (bounds.minX <= 0 && bounds.maxX >= 0) {
       const x0 = bezierToCanvas(0, 0).x;
       ctx.moveTo(x0, padding);
@@ -203,7 +204,6 @@ export default function KeyframeGraphEditor() {
     }
     ctx.stroke();
 
-    // Draw unit square [0,1] x [0,1] with enhanced styling
     const unitSquare = {
       topLeft: bezierToCanvas(0, 1),
       topRight: bezierToCanvas(1, 1),
@@ -211,7 +211,6 @@ export default function KeyframeGraphEditor() {
       bottomRight: bezierToCanvas(1, 0)
     };
     
-    // Unit square fill with subtle gradient
     ctx.beginPath();
     ctx.moveTo(unitSquare.bottomLeft.x, unitSquare.bottomLeft.y);
     ctx.lineTo(unitSquare.bottomRight.x, unitSquare.bottomRight.y);
@@ -228,32 +227,23 @@ export default function KeyframeGraphEditor() {
     ctx.fillStyle = unitGradient;
     ctx.fill();
     
-    // Unit square border with emphasis
     ctx.strokeStyle = 'rgba(124, 189, 250, 0.6)';
     ctx.lineWidth = 2;
     ctx.stroke();
 
 
-    
 
-
-    // Get current bezier coordinates (matching original script exactly)
     const bezier1X = point1.x / canvasSize.width;
     const bezier1Y = 1 - point1.y / canvasSize.height;
     const bezier2X = point2.x / canvasSize.width;
     const bezier2Y = 1 - point2.y / canvasSize.height;
     
-    // Debug: log the bezier values to compare with AE
     console.log(`Bezier curve: cubic-bezier(${bezier1X.toFixed(3)}, ${bezier1Y.toFixed(3)}, ${bezier2X.toFixed(3)}, ${bezier2Y.toFixed(3)})`);
-
-    // Draw bezier curve with consistent visual orientation
-    // The graph always shows the same way - detection happens only when applying to AE
     const start = bezierToCanvas(0, 0);
     const cp1 = bezierToCanvas(bezier1X, bezier1Y);
     const cp2 = bezierToCanvas(bezier2X, bezier2Y);
     const end = bezierToCanvas(1, 1);
     
-    // Curve shadow/glow effect
     ctx.save();
     ctx.shadowColor = 'rgba(255, 107, 107, 0.5)';
     ctx.shadowBlur = 8;
@@ -265,7 +255,6 @@ export default function KeyframeGraphEditor() {
     ctx.stroke();
     ctx.restore();
 
-    // Main curve
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
@@ -273,7 +262,6 @@ export default function KeyframeGraphEditor() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw control lines with modern styling
     ctx.beginPath();
     ctx.setLineDash([4, 4]);
     ctx.moveTo(start.x, start.y);
@@ -285,7 +273,6 @@ export default function KeyframeGraphEditor() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw start and end points
     ctx.beginPath();
     ctx.arc(start.x, start.y, 4, 0, Math.PI * 2);
     ctx.arc(end.x, end.y, 4, 0, Math.PI * 2);
@@ -294,13 +281,8 @@ export default function KeyframeGraphEditor() {
     ctx.strokeStyle = "rgba(124, 189, 250, 1)";
     ctx.lineWidth = 2;
     ctx.stroke();
-
-    // Draw control points with modern styling and out-of-bounds indicators
-    // Check if control points are outside normal [0,1] range
     const cp1OutOfBounds = bezier1X < 0 || bezier1X > 1 || bezier1Y < 0 || bezier1Y > 1;
     const cp2OutOfBounds = bezier2X < 0 || bezier2X > 1 || bezier2Y < 0 || bezier2Y > 1;
-
-    // Control point 1
     const cp1Size = draggedPoint === 1 ? 10 : 8;
     ctx.beginPath();
     ctx.arc(cp1.x, cp1.y, cp1Size, 0, Math.PI * 2);
@@ -318,7 +300,6 @@ export default function KeyframeGraphEditor() {
     ctx.lineWidth = draggedPoint === 1 ? 3 : 2;
     ctx.stroke();
 
-    // Add warning indicator for out-of-bounds control point 1
     if (cp1OutOfBounds) {
       ctx.beginPath();
       ctx.arc(cp1.x, cp1.y, cp1Size + 4, 0, Math.PI * 2);
@@ -328,8 +309,6 @@ export default function KeyframeGraphEditor() {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-
-    // Control point 2
     const cp2Size = draggedPoint === 2 ? 10 : 8;
     ctx.beginPath();
     ctx.arc(cp2.x, cp2.y, cp2Size, 0, Math.PI * 2);
@@ -347,7 +326,6 @@ export default function KeyframeGraphEditor() {
     ctx.lineWidth = draggedPoint === 2 ? 3 : 2;
     ctx.stroke();
 
-    // Add warning indicator for out-of-bounds control point 2
     if (cp2OutOfBounds) {
       ctx.beginPath();
       ctx.arc(cp2.x, cp2.y, cp2Size + 4, 0, Math.PI * 2);
@@ -358,21 +336,16 @@ export default function KeyframeGraphEditor() {
       ctx.setLineDash([]);
     }
 
-    // Draw coordinate labels for control points when dragging
     if (draggedPoint !== null) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.font = '12px system-ui';
       
       const cp1Label = `P1: (${bezier1X.toFixed(2)}, ${bezier1Y.toFixed(2)})`;
       const cp2Label = `P2: (${bezier2X.toFixed(2)}, ${bezier2Y.toFixed(2)})`;
-      
-      // Control point 1 label
       const cp1LabelWidth = ctx.measureText(cp1Label).width;
       ctx.fillRect(cp1.x - cp1LabelWidth/2 - 4, cp1.y - 30, cp1LabelWidth + 8, 16);
       ctx.fillStyle = '#ffffff';
       ctx.fillText(cp1Label, cp1.x - cp1LabelWidth/2, cp1.y - 18);
-      
-      // Control point 2 label
       const cp2LabelWidth = ctx.measureText(cp2Label).width;
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.fillRect(cp2.x - cp2LabelWidth/2 - 4, cp2.y - 30, cp2LabelWidth + 8, 16);
@@ -383,22 +356,6 @@ export default function KeyframeGraphEditor() {
 
 
     ctx.restore();
-
-    // Update output and input - with safety checks
-    // (Removed setBezierInput to prevent feedback loop)
-    // if (canvasSize.width > 0 && canvasSize.height > 0) {
-    //   const x1 = Math.round((point1.x / canvasSize.width) * 100) / 100;
-    //   const y1 = Math.round((1 - point1.y / canvasSize.height) * 100) / 100;
-    //   const x2 = Math.round((point2.x / canvasSize.width) * 100) / 100;
-    //   const y2 = Math.round((1 - point2.y / canvasSize.height) * 100) / 100;
-    //   
-    //   // Only update if values are valid numbers
-    //   if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
-    //     setBezierInput(`${x1}, ${y1}, ${x2}, ${y2}`);
-    //   }
-    // }
-
-    // Update animation - with safety checks
     if (animationRef.current && canvasSize.width > 0 && canvasSize.height > 0) {
       const x1 = Math.round((point1.x / canvasSize.width) * 100) / 100;
       const y1 = Math.round((1 - point1.y / canvasSize.height) * 100) / 100;
@@ -411,78 +368,104 @@ export default function KeyframeGraphEditor() {
       }
     }
   }, [point1, point2, canvasSize, bezierToCanvas, animationDuration]);
-
-  // Initialize canvas size and points with responsive sizing
   useEffect(() => {
-    const updateCanvasSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        // Make it square and responsive, with much smaller minimum size
-        const containerWidth = rect.width; // No padding
-        const size = Math.max(200, Math.min(containerWidth, 600)); // Min 200px, max 600px
+    const initializeCanvas = () => {
+      try {
+        const defaultSize = 300;
+        setCanvasSize({ width: defaultSize, height: defaultSize });
         
-        console.log("Updating canvas size to:", size);
+        const p1 = { x: defaultSize * 0.25, y: defaultSize * (1 - 0.1) };
+        const p2 = { x: defaultSize * 0.75, y: defaultSize * (1 - 0.9) };
+        setPoint1(p1);
+        setPoint2(p2);
         
-        // Scale existing points proportionally if canvas was already initialized
-        if (canvasSize.width > 0 && canvasSize.height > 0) {
-          const scaleX = size / canvasSize.width;
-          const scaleY = size / canvasSize.height;
-          
-          setPoint1(prev => ({
-            x: prev.x * scaleX,
-            y: prev.y * scaleY
-          }));
-          setPoint2(prev => ({
-            x: prev.x * scaleX,
-            y: prev.y * scaleY
-          }));
-        } else {
-          // Initial setup - set default curve points
-          const p1 = { x: size * 0.25, y: size * (1 - 0.1) }; // (0.25, 0.1)
-          const p2 = { x: size * 0.75, y: size * (1 - 0.9) }; // (0.75, 0.9)
-          console.log("Setting initial points:", p1, p2);
-          setPoint1(p1);
-          setPoint2(p2);
-        }
-        
-        setCanvasSize({ width: size, height: size });
+        console.log("Canvas initialized with default size:", defaultSize);
+      } catch (error) {
+        console.error("Error initializing canvas:", error);
       }
     };
 
-    // Initial size calculation
-    const timer = setTimeout(updateCanvasSize, 100);
+    initializeCanvas();
+    const updateCanvasSize = () => {
+      if (!containerRef.current) return;
+      
+      try {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0) {
+          const size = Math.max(200, Math.min(rect.width, 600));
+          
+          // Only update if size actually changed significantly
+          if (Math.abs(canvasSize.width - size) > 10) {
+            const scaleX = size / canvasSize.width;
+            const scaleY = size / canvasSize.height;
+            
+            setPoint1(prev => ({
+              x: prev.x * scaleX,
+              y: prev.y * scaleY
+            }));
+            setPoint2(prev => ({
+              x: prev.x * scaleX,
+              y: prev.y * scaleY
+            }));
+            
+            setCanvasSize({ width: size, height: size });
+            console.log("Canvas resized to:", size);
+          }
+        }
+      } catch (error) {
+        console.error("Error updating canvas size:", error);
+      }
+    };
 
-    // Add resize listener
-    window.addEventListener('resize', updateCanvasSize);
+    // Set up resize handling with debouncing
+    let resizeTimeout: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updateCanvasSize, 100);
+    };
+
+    // Initial resize check after a short delay
+    const initialTimer = setTimeout(updateCanvasSize, 500);
     
-    // Use ResizeObserver for more accurate container size changes
-    let resizeObserver: ResizeObserver | null = null;
-    if (containerRef.current && 'ResizeObserver' in window) {
-      resizeObserver = new ResizeObserver(updateCanvasSize);
-      resizeObserver.observe(containerRef.current);
-    }
+    window.addEventListener('resize', debouncedResize);
     
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateCanvasSize);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
+      clearTimeout(initialTimer);
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', debouncedResize);
     };
-  }, [canvasSize.width, canvasSize.height]);
+  }, []); // Run once on mount
 
   // Update canvas when dependencies change
   useEffect(() => {
-    if (canvasRef.current && canvasSize.width > 0 && canvasSize.height > 0) {
-      canvasRef.current.width = canvasSize.width;
-      canvasRef.current.height = canvasSize.height;
-      console.log("Canvas sized to:", canvasSize.width, canvasSize.height);
-      draw();
-    }
+    const updateCanvas = () => {
+      if (!canvasRef.current || canvasSize.width <= 0 || canvasSize.height <= 0) {
+        return;
+      }
+      
+      try {
+        canvasRef.current.width = canvasSize.width;
+        canvasRef.current.height = canvasSize.height;
+        console.log("Canvas sized to:", canvasSize.width, canvasSize.height);
+        draw();
+      } catch (error) {
+        console.error("Error updating canvas:", error);
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(updateCanvas, 10);
+    
+    return () => clearTimeout(timer);
   }, [canvasSize, draw, point1, point2]);
 
   // Set closest point - simplified
   const getClosestPoint = useCallback((canvasX: number, canvasY: number): number => {
+    // Safety check for canvas dimensions
+    if (canvasSize.width <= 0 || canvasSize.height <= 0) {
+      return 1; // Default to first point
+    }
+    
     // Convert current points to canvas coordinates for distance calculation
     const bezier1X = point1.x / canvasSize.width;
     const bezier1Y = 1 - point1.y / canvasSize.height;
@@ -512,35 +495,40 @@ export default function KeyframeGraphEditor() {
 
   // Mouse event handlers - with proper coordinate scaling
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas || canvasSize.width <= 0 || canvasSize.height <= 0) return;
 
-    const rect = canvas.getBoundingClientRect();
-    // Scale mouse coordinates to match canvas internal coordinates
-    const scaleX = canvasSize.width / rect.width;
-    const scaleY = canvasSize.height / rect.height;
-    const canvasX = (e.clientX - rect.left) * scaleX;
-    const canvasY = (e.clientY - rect.top) * scaleY;
-    
-    console.log("Mouse down at:", canvasX, canvasY, "scale:", scaleX, scaleY);
-    setDragging(true);
-    const closestPoint = getClosestPoint(canvasX, canvasY);
-    setDraggedPoint(closestPoint);
-    console.log("Closest point set to:", closestPoint);
-    setSelectedPreset(null);
-    e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      // Scale mouse coordinates to match canvas internal coordinates
+      const scaleX = canvasSize.width / rect.width;
+      const scaleY = canvasSize.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      
+      console.log("Mouse down at:", canvasX, canvasY, "scale:", scaleX, scaleY);
+      setDragging(true);
+      const closestPoint = getClosestPoint(canvasX, canvasY);
+      setDraggedPoint(closestPoint);
+      console.log("Closest point set to:", closestPoint);
+      setSelectedPreset(null);
+      e.preventDefault();
+    } catch (error) {
+      console.error("Error in handleMouseDown:", error);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas || canvasSize.width <= 0 || canvasSize.height <= 0) return;
 
-    const rect = canvas.getBoundingClientRect();
-    // Scale mouse coordinates to match canvas internal coordinates
-    const scaleX = canvasSize.width / rect.width;
-    const scaleY = canvasSize.height / rect.height;
-    const canvasX = (e.clientX - rect.left) * scaleX;
-    const canvasY = (e.clientY - rect.top) * scaleY;
+      const rect = canvas.getBoundingClientRect();
+      // Scale mouse coordinates to match canvas internal coordinates
+      const scaleX = canvasSize.width / rect.width;
+      const scaleY = canvasSize.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
 
     if (!dragging) {
       // Update cursor based on proximity to control points
@@ -588,11 +576,18 @@ export default function KeyframeGraphEditor() {
     setBezierInput(`${x1}, ${y1}, ${x2}, ${y2}`);
     
     e.preventDefault();
+    } catch (error) {
+      console.error("Error in handleMouseMove:", error);
+    }
   };
 
   const handleMouseUp = () => {
-    setDragging(false);
-    setDraggedPoint(null);
+    try {
+      setDragging(false);
+      setDraggedPoint(null);
+    } catch (error) {
+      console.error("Error in handleMouseUp:", error);
+    }
   };
 
 
@@ -743,6 +738,8 @@ export default function KeyframeGraphEditor() {
       generateToast(2, "Failed to apply to After Effects");
     }
   }, [bezierInput, canvasSize]);
+
+
 
 
 

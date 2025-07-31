@@ -103,52 +103,77 @@ export function logTab(data: string[], setData: React.Dispatch<React.SetStateAct
         generateToast(3, "Logs cleared");
     }, [setData]);
 
-    const copyToClipboard = useCallback(async (text: string): Promise<boolean> => {
+    const copyWithExecCommand = useCallback((text: string) => {
         try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(text);
-                return true;
-            }
-            
             const el = document.createElement("textarea");
             el.value = text;
             el.style.position = "absolute";
             el.style.left = "-9999px";
             document.body.appendChild(el);
+            el.focus();
             el.select();
-            const success = document.execCommand("copy");
+
+            const successful = document.execCommand("copy");
             document.body.removeChild(el);
-            return success;
-        } catch {
-            return false;
+
+            if (successful) {
+                setCopySuccess(true);
+                generateToast(1, "Logs copied to clipboard!");
+                setTimeout(() => setCopySuccess(false), 1000);
+            } else {
+                generateToast(2, "Copy failed");
+            }
+        } catch (err) {
+            generateToast(2, "Copy failed");
+            console.error("Fallback copy failed:", err);
         }
     }, []);
 
-    const copyLogs = useCallback(async () => {
+    const copyLogs = useCallback(() => {
         const logText = data.join("\n");
-        const success = await copyToClipboard(logText);
-        
-        if (success) {
-            setCopySuccess(true);
-            generateToast(1, "Logs copied to clipboard!");
-            setTimeout(() => setCopySuccess(false), 1000);
-        } else {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard
+                    .writeText(logText)
+                    .then(() => {
+                        setCopySuccess(true);
+                        generateToast(1, "Logs copied to clipboard!");
+                        setTimeout(() => setCopySuccess(false), 1000);
+                    })
+                    .catch(() => {
+                        copyWithExecCommand(logText);
+                    });
+            } else {
+                copyWithExecCommand(logText);
+            }
+        } catch (err) {
             generateToast(2, "Copy failed");
+            console.error("Copy failed:", err);
         }
-    }, [data, copyToClipboard]);
+    }, [data, copyWithExecCommand]);
 
-    const handleReportIssue = useCallback(async () => {
+    const handleReportIssue = useCallback(() => {
         const logText = data.join("\n");
-        const success = await copyToClipboard(logText);
-        
-        if (success) {
-            generateToast(1, "Logs copied to clipboard!");
-        } else {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard
+                    .writeText(logText)
+                    .then(() => {
+                        generateToast(1, "Logs copied to clipboard!");
+                    })
+                    .catch(() => {
+                        copyWithExecCommand(logText);
+                    });
+            } else {
+                copyWithExecCommand(logText);
+            }
+        } catch (err) {
             generateToast(2, "Copy failed");
+            console.error("Copy failed:", err);
         }
         
         openReportIssue();
-    }, [data, copyToClipboard]);
+    }, [data, copyWithExecCommand]);
 
     return (
         <Flex direction="column" gap={10} width="100%" marginTop={8}>

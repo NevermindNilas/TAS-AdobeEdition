@@ -406,7 +406,6 @@ const Main = () => {
                 checkIfBackendExists();
             }
 
-            // Try to get composition dimensions and FPS on startup
             getCompositionDimensions();
             getCompositionFPS();
         };

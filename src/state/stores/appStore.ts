@@ -38,7 +38,7 @@ interface AppState {
 }
 
 const initialState = {
-  tasVersion: '2.3.7',
+  tasVersion: '2.3.8',
   latestVersion: 'unknown',
   currentExeVersion: 'Not Available',
   isNvidia: false,
@@ -70,30 +70,53 @@ export const useAppStore = create<AppState>()(
             state.latestVersion = version;
           }),
 
+        /**
+         * Checks backend availability with dynamic port detection and retry logic.
+         * Scans a port range if the default fails, retries with exponential backoff.
+         * Persists the working port if found.
+         */
         checkBackendAvailability: async () => {
           set((state) => {
             state.backendStatus = 'connecting';
           });
 
-          try {
-            const port = get().backendPort;
-            const response = await fetch(`http://127.0.0.1:${port}/health`, {
-              method: 'GET',
-              signal: AbortSignal.timeout(5000)
-            });
+          const portRange = [8080, 8081, 8082, 8083, 8084]; // Extend as needed
+          const maxRetries = 3;
+          const baseDelay = 500; // ms
 
-            const available = response.ok;
+          // Helper to check a single port with retries
+          const checkPort = async (port: number) => {
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+              try {
+                const response = await fetch(`http://127.0.0.1:${port}/health`, {
+                  method: 'GET',
+                  signal: AbortSignal.timeout(3000)
+                });
+                if (response.ok) return true;
+              } catch (e) {
+                // Wait before retrying
+                await new Promise(res => setTimeout(res, baseDelay * Math.pow(2, attempt)));
+              }
+            }
+            return false;
+          };
 
-            set((state) => {
-              state.isBackendAvailable = available;
-              state.backendStatus = available ? 'connected' : 'error';
-            });
-          } catch (error) {
-            set((state) => {
-              state.isBackendAvailable = false;
-              state.backendStatus = 'error';
-            });
+          let found = false;
+          let workingPort = get().backendPort;
+          for (const port of [workingPort, ...portRange.filter(p => p !== workingPort)]) {
+            const ok = await checkPort(port);
+            if (ok) {
+              found = true;
+              workingPort = port;
+              break;
+            }
           }
+
+          set((state) => {
+            state.isBackendAvailable = found;
+            state.backendStatus = found ? 'connected' : 'error';
+            if (found) state.backendPort = workingPort;
+          });
         },
 
         updateSystemInfo: (info) =>

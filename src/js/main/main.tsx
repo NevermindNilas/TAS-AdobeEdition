@@ -68,7 +68,7 @@ import execClearCache from "./utils/clearCache";
 import downloadTASCLI from "./utils/downloadTAS";
 import { generateToast } from "./utils/generateToast";
 import getCurrentVersion from "./utils/getCurrentVersion";
-import { getAELayerInfo, getAEProjectFolderPath, ensureProjectIsSaved, createLayer, runProcess, executeProcessHelper, getValidatedAEContext } from "./utils/helpers";
+import { getAELayerInfo, getAEProjectFolderPath, ensureProjectIsSaved, createLayer, runProcess, executeProcessHelper, getValidatedAEContext, getTASPaths, addPortToCommand, quotePath, buildCommand, wrapCommandForCmd } from "./utils/helpers";
 import { offlineModeLogic } from "./utils/offlineMode";
 import OpenTASFolder from "./utils/openTASFolder";
 import execPrecompose from "./utils/precompose";
@@ -76,7 +76,7 @@ import { openChangelog, openGitHubWiki } from "./utils/Socials";
 import execTakeScreenshot from "./utils/takeScreenshot";
 import { youtubeDownloadLogic } from "./utils/urlToVideo";
 import { useDebounce } from "./utils/useDebounce";
-import { getTASPaths, addPortToCommand, quotePath, buildCommand, wrapCommandForCmd } from "./utils/helpers";
+import { safePathJoin, safeExistsSync, safeMkdirSync, ensureUtf8String } from "./utils/utf8PathUtils";
 import { depthMapExtractionLogic } from "./utils/depthMap";
 import { removeBackgroundLogic } from "./utils/removeBackground";
 import { checkDiskSpace } from "./utils/checkDiskSpace";
@@ -95,7 +95,6 @@ import {
     type UpscaleModelKey, 
     type DepthModelKey 
 } from "./utils/appConstants";
-
 
 
 // Contextual Help Utilities
@@ -235,6 +234,10 @@ const Main = () => {
     // Tab management for swipe gestures
     const tabKeys = ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"];
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
+
+
+    // Store the previous tab for restoring after closing temporary panels
+    const [previousTab, setPreviousTab] = useState<Key | null>(null);
 
     // Tab selection change (no direction logic)
     function handleTabSelectionChange(key: Key) {
@@ -488,13 +491,11 @@ const Main = () => {
     }, [isDownloading]); // Only re-run when isDownloading changes
 
     const cancelProcessing = useCallback((toastMessage?: string, toastState?: number) => {
-        // Immediately set cancellation flag - this is the most critical part
         processCancelledRef.current = true;
         
         // Kill processes without any state updates that could crash the UI
         const killCommand = "taskkill /f /im python.exe & taskkill /f /im ffmpeg.exe & taskkill /f /im ffprobe.exe";
         child_process.exec(killCommand, () => {
-            // Don't handle errors here to avoid any potential crashes
         });
 
         // Use requestAnimationFrame to defer state updates until the next render cycle
@@ -504,7 +505,6 @@ const Main = () => {
                     setIsProcessCancelled(true);
                     setIsProcessing(false);
                     
-                    // Reset progress state in the safest way possible
                     setProgressState(prev => ({
                         ...prev,
                         isProcessing: false,
@@ -519,7 +519,6 @@ const Main = () => {
         });
     }, []);
 
-    // Wrapper for process execution using helpers
     const executeProcess = useCallback((
         command: any,
         toastMessage: string,
@@ -554,15 +553,17 @@ const Main = () => {
 
     const startAutoCut = useCallback(async () => {
         try {
-            var info: any | null = null;
-            info = await evalTS("start");
+            const aeContext = await getValidatedAEContext();
+            if (!aeContext) return;
+            const { layerInfo, projectFolderPath } = aeContext;
 
-            if (!(await ensureProjectIsSaved())) {
-                return;
-            }
+            const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
+            generateToast(3, "Initiating the pre-render step...");
 
+            //@ts-ignore
+            const info: any | null = await evalTS("render", renderAlgo);
             if (info === "undefined") {
-                generateToast(2, "Error: No layer selected. Please choose a layer and try again.");
+                generateToast(2, "Error: Rendering failed. Consider using an alternative encoding method.");
                 return;
             }
 
@@ -573,11 +574,8 @@ const Main = () => {
                 mainPyPath,
                 input,
                 autoCutSensitivity || DEFAULT.autoCutSensitivity,
-                inpoint,
-                outpoint
             );
             command = addPortToCommand(command);
-
             setIsProcessing(true);
             runProcess(executeProcess, command, "Auto Cutting Clip", () => {
                 evalTS("autoClip", tasRoamingPath);
@@ -603,7 +601,6 @@ const Main = () => {
             pythonExePath,
             projectFolderPath
         );
-
         command = wrapCommandForCmd(command);
 
         generateToast(3, "Youtube download initiated...");
@@ -816,13 +813,13 @@ const Main = () => {
 
             const randomNumbers = Math.floor(Math.random() * 100000);
             const outName = `Chain_${randomNumbers}.mp4`;
-            const tasChainFolder = path.join(outputFolder.replace(/\\$/, ""), "/TAS-Chain");
+            const tasChainFolder = safePathJoin(ensureUtf8String(outputFolder).replace(/\\$/, ""), "TAS-Chain");
 
-            if (!fs.existsSync(tasChainFolder)) {
-                fs.mkdirSync(tasChainFolder, { recursive: true });
+            if (!safeExistsSync(tasChainFolder)) {
+                safeMkdirSync(tasChainFolder, { recursive: true });
             }
 
-            const outFile = path.join(outputFolder.replace(/\\$/, ""), "TAS-Chain", outName);
+            const outFile = safePathJoin(ensureUtf8String(outputFolder).replace(/\\$/, ""), "TAS-Chain", outName);
             const command = buildChainCommand(input, outFile);
 
             setIsProcessing(true);

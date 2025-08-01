@@ -79,13 +79,14 @@ export default function KeyframeGraphEditor() {
   });
   const [showAddPreset, setShowAddPreset] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
+  const [needsRedraw, setNeedsRedraw] = useState(true);
 
   const getViewportBounds = useCallback(() => {
     return {
-      minX: -0.3,
-      maxX: 1.3,
-      minY: -0.8,
-      maxY: 1.8
+      minX: -0.15,
+      maxX: 1.15,
+      minY: -0.15,
+      maxY: 1.15
     };
   }, []);
 
@@ -123,6 +124,8 @@ export default function KeyframeGraphEditor() {
 
 
   const draw = useCallback(() => {
+    if (!needsRedraw) return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -136,72 +139,71 @@ export default function KeyframeGraphEditor() {
 
     const bounds = getViewportBounds();
     
-    const gradient = ctx.createLinearGradient(0, 0, canvasSize.width, canvasSize.height);
-    gradient.addColorStop(0, '#1a1a1a');
-    gradient.addColorStop(1, '#0f0f0f');
-    ctx.fillStyle = gradient;
+    // Clear canvas with solid color instead of gradient for better performance
+    ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
     ctx.save();
     const padding = 0;
     
+    // Draw fine grid first
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
     
-    for (let x = -0.5; x <= 1.5; x += 0.1) {
-      const canvasX = bezierToCanvas(x, 0).x;
-      if (canvasX >= padding && canvasX <= canvasSize.width - padding) {
-        ctx.moveTo(canvasX, padding);
-        ctx.lineTo(canvasX, canvasSize.height - padding);
-      }
+    // Fine vertical lines (every 0.1 units within 0-1 range)
+    for (let x = 0; x <= 1; x += 0.1) {
+      const canvasPos = bezierToCanvas(x, 0);
+      ctx.moveTo(canvasPos.x, bezierToCanvas(0, 0).y);
+      ctx.lineTo(canvasPos.x, bezierToCanvas(0, 1).y);
     }
     
-    for (let y = -0.8; y <= 1.8; y += 0.1) {
-      const canvasY = bezierToCanvas(0, y).y;
-      if (canvasY >= padding && canvasY <= canvasSize.height - padding) {
-        ctx.moveTo(padding, canvasY);
-        ctx.lineTo(canvasSize.width - padding, canvasY);
-      }
+    // Fine horizontal lines (every 0.1 units within 0-1 range)
+    for (let y = 0; y <= 1; y += 0.1) {
+      const canvasPos = bezierToCanvas(0, y);
+      ctx.moveTo(bezierToCanvas(0, 0).x, canvasPos.y);
+      ctx.lineTo(bezierToCanvas(1, 0).x, canvasPos.y);
     }
     ctx.stroke();
-
+    
+    // Draw major grid lines
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1;
     
-    for (let x = -0.5; x <= 1.5; x += 0.5) {
-      const canvasX = bezierToCanvas(x, 0).x;
-      if (canvasX >= padding && canvasX <= canvasSize.width - padding) {
-        ctx.moveTo(canvasX, padding);
-        ctx.lineTo(canvasX, canvasSize.height - padding);
-      }
+    // Major vertical lines (every 0.25 units within 0-1 range)
+    for (let x = 0; x <= 1; x += 0.25) {
+      const canvasPos = bezierToCanvas(x, 0);
+      ctx.moveTo(canvasPos.x, bezierToCanvas(0, 0).y);
+      ctx.lineTo(canvasPos.x, bezierToCanvas(0, 1).y);
     }
     
-    for (let y = -0.5; y <= 1.5; y += 0.5) {
-      const canvasY = bezierToCanvas(0, y).y;
-      if (canvasY >= padding && canvasY <= canvasSize.height - padding) {
-        ctx.moveTo(padding, canvasY);
-        ctx.lineTo(canvasSize.width - padding, canvasY);
-      }
+    // Major horizontal lines (every 0.25 units within 0-1 range)
+    for (let y = 0; y <= 1; y += 0.25) {
+      const canvasPos = bezierToCanvas(0, y);
+      ctx.moveTo(bezierToCanvas(0, 0).x, canvasPos.y);
+      ctx.lineTo(bezierToCanvas(1, 0).x, canvasPos.y);
     }
     ctx.stroke();
 
+    // Draw axis lines (0,0 to 1,1 bounds)
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
     
-    if (bounds.minY <= 0 && bounds.maxY >= 0) {
-      const y0 = bezierToCanvas(0, 0).y;
-      ctx.moveTo(padding, y0);
-      ctx.lineTo(canvasSize.width - padding, y0);
-    }
+    // Horizontal axis at y=0
+    const y0 = bezierToCanvas(0, 0).y;
+    const x0 = bezierToCanvas(0, 0).x;
+    const x1 = bezierToCanvas(1, 0).x;
+    const y1 = bezierToCanvas(0, 1).y;
     
-    if (bounds.minX <= 0 && bounds.maxX >= 0) {
-      const x0 = bezierToCanvas(0, 0).x;
-      ctx.moveTo(x0, padding);
-      ctx.lineTo(x0, canvasSize.height - padding);
-    }
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y0);
+    
+    // Vertical axis at x=0
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0, y1);
+    
     ctx.stroke();
 
     const unitSquare = {
@@ -218,13 +220,8 @@ export default function KeyframeGraphEditor() {
     ctx.lineTo(unitSquare.topLeft.x, unitSquare.topLeft.y);
     ctx.closePath();
     
-    const unitGradient = ctx.createLinearGradient(
-      unitSquare.bottomLeft.x, unitSquare.bottomLeft.y,
-      unitSquare.topRight.x, unitSquare.topRight.y
-    );
-    unitGradient.addColorStop(0, 'rgba(124, 189, 250, 0.05)');
-    unitGradient.addColorStop(1, 'rgba(124, 189, 250, 0.12)');
-    ctx.fillStyle = unitGradient;
+    // Use solid color instead of gradient for better performance
+    ctx.fillStyle = 'rgba(124, 189, 250, 0.08)';
     ctx.fill();
     
     ctx.strokeStyle = 'rgba(124, 189, 250, 0.6)';
@@ -238,28 +235,17 @@ export default function KeyframeGraphEditor() {
     const bezier2X = point2.x / canvasSize.width;
     const bezier2Y = 1 - point2.y / canvasSize.height;
     
-    console.log(`Bezier curve: cubic-bezier(${bezier1X.toFixed(3)}, ${bezier1Y.toFixed(3)}, ${bezier2X.toFixed(3)}, ${bezier2Y.toFixed(3)})`);
     const start = bezierToCanvas(0, 0);
     const cp1 = bezierToCanvas(bezier1X, bezier1Y);
     const cp2 = bezierToCanvas(bezier2X, bezier2Y);
     const end = bezierToCanvas(1, 1);
     
-    ctx.save();
-    ctx.shadowColor = 'rgba(255, 107, 107, 0.5)';
-    ctx.shadowBlur = 8;
+    // Draw bezier curve without shadow for better performance
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
     ctx.strokeStyle = "#ff6b6b";
     ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-    ctx.strokeStyle = "#ff6b6b";
-    ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.beginPath();
@@ -281,93 +267,54 @@ export default function KeyframeGraphEditor() {
     ctx.strokeStyle = "rgba(124, 189, 250, 1)";
     ctx.lineWidth = 2;
     ctx.stroke();
-    const cp1OutOfBounds = bezier1X < 0 || bezier1X > 1 || bezier1Y < 0 || bezier1Y > 1;
-    const cp2OutOfBounds = bezier2X < 0 || bezier2X > 1 || bezier2Y < 0 || bezier2Y > 1;
+    const cp1OutOfBounds = bezier1X < 0 || bezier1X > 1;
+    const cp2OutOfBounds = bezier2X < 0 || bezier2X > 1;
+    
+    // Draw control points with solid colors for better performance
     const cp1Size = draggedPoint === 1 ? 10 : 8;
     ctx.beginPath();
     ctx.arc(cp1.x, cp1.y, cp1Size, 0, Math.PI * 2);
-    const cp1Gradient = ctx.createRadialGradient(cp1.x, cp1.y, 0, cp1.x, cp1.y, cp1Size);
-    if (cp1OutOfBounds) {
-      cp1Gradient.addColorStop(0, '#ffaa44');
-      cp1Gradient.addColorStop(1, '#ff8800');
-    } else {
-      cp1Gradient.addColorStop(0, draggedPoint === 1 ? '#66d9ff' : '#4bcffa');
-      cp1Gradient.addColorStop(1, draggedPoint === 1 ? '#0099cc' : '#1e90ff');
-    }
-    ctx.fillStyle = cp1Gradient;
+    ctx.fillStyle = cp1OutOfBounds ? '#ffaa44' : (draggedPoint === 1 ? '#66d9ff' : '#4bcffa');
     ctx.fill();
-    ctx.strokeStyle = cp1OutOfBounds ? '#ffcc66' : draggedPoint === 1 ? '#00ccff' : '#ffffff';
+    ctx.strokeStyle = cp1OutOfBounds ? '#ffcc66' : (draggedPoint === 1 ? '#00ccff' : '#ffffff');
     ctx.lineWidth = draggedPoint === 1 ? 3 : 2;
     ctx.stroke();
 
-    if (cp1OutOfBounds) {
-      ctx.beginPath();
-      ctx.arc(cp1.x, cp1.y, cp1Size + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 170, 68, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([2, 2]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
     const cp2Size = draggedPoint === 2 ? 10 : 8;
     ctx.beginPath();
     ctx.arc(cp2.x, cp2.y, cp2Size, 0, Math.PI * 2);
-    const cp2Gradient = ctx.createRadialGradient(cp2.x, cp2.y, 0, cp2.x, cp2.y, cp2Size);
-    if (cp2OutOfBounds) {
-      cp2Gradient.addColorStop(0, '#ffaa44');
-      cp2Gradient.addColorStop(1, '#ff8800');
-    } else {
-      cp2Gradient.addColorStop(0, draggedPoint === 2 ? '#66d9ff' : '#4bcffa');
-      cp2Gradient.addColorStop(1, draggedPoint === 2 ? '#0099cc' : '#1e90ff');
-    }
-    ctx.fillStyle = cp2Gradient;
+    ctx.fillStyle = cp2OutOfBounds ? '#ffaa44' : (draggedPoint === 2 ? '#66d9ff' : '#4bcffa');
     ctx.fill();
-    ctx.strokeStyle = cp2OutOfBounds ? '#ffcc66' : draggedPoint === 2 ? '#00ccff' : '#ffffff';
+    ctx.strokeStyle = cp2OutOfBounds ? '#ffcc66' : (draggedPoint === 2 ? '#00ccff' : '#ffffff');
     ctx.lineWidth = draggedPoint === 2 ? 3 : 2;
     ctx.stroke();
 
-    if (cp2OutOfBounds) {
-      ctx.beginPath();
-      ctx.arc(cp2.x, cp2.y, cp2Size + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 170, 68, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([2, 2]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
+    // Only show labels when dragging for better performance
     if (draggedPoint !== null) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.font = '12px system-ui';
       
-      const cp1Label = `P1: (${bezier1X.toFixed(2)}, ${bezier1Y.toFixed(2)})`;
-      const cp2Label = `P2: (${bezier2X.toFixed(2)}, ${bezier2Y.toFixed(2)})`;
-      const cp1LabelWidth = ctx.measureText(cp1Label).width;
-      ctx.fillRect(cp1.x - cp1LabelWidth/2 - 4, cp1.y - 30, cp1LabelWidth + 8, 16);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(cp1Label, cp1.x - cp1LabelWidth/2, cp1.y - 18);
-      const cp2LabelWidth = ctx.measureText(cp2Label).width;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.fillRect(cp2.x - cp2LabelWidth/2 - 4, cp2.y - 30, cp2LabelWidth + 8, 16);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(cp2Label, cp2.x - cp2LabelWidth/2, cp2.y - 18);
+      if (draggedPoint === 1) {
+        const cp1Label = `P1: (${bezier1X.toFixed(2)}, ${bezier1Y.toFixed(2)})`;
+        const cp1LabelWidth = ctx.measureText(cp1Label).width;
+        ctx.fillRect(cp1.x - cp1LabelWidth/2 - 4, cp1.y - 30, cp1LabelWidth + 8, 16);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(cp1Label, cp1.x - cp1LabelWidth/2, cp1.y - 18);
+      } else if (draggedPoint === 2) {
+        const cp2Label = `P2: (${bezier2X.toFixed(2)}, ${bezier2Y.toFixed(2)})`;
+        const cp2LabelWidth = ctx.measureText(cp2Label).width;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(cp2.x - cp2LabelWidth/2 - 4, cp2.y - 30, cp2LabelWidth + 8, 16);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(cp2Label, cp2.x - cp2LabelWidth/2, cp2.y - 18);
+      }
     }
 
 
 
     ctx.restore();
-    if (animationRef.current && canvasSize.width > 0 && canvasSize.height > 0) {
-      const x1 = Math.round((point1.x / canvasSize.width) * 100) / 100;
-      const y1 = Math.round((1 - point1.y / canvasSize.height) * 100) / 100;
-      const x2 = Math.round((point2.x / canvasSize.width) * 100) / 100;
-      const y2 = Math.round((1 - point2.y / canvasSize.height) * 100) / 100;
-      
-      if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
-        const curve = `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
-        animationRef.current.style.transition = `left ${animationDuration}s ${curve}`;
-      }
-    }
-  }, [point1, point2, canvasSize, bezierToCanvas, animationDuration]);
+    setNeedsRedraw(false);
+  }, [point1, point2, canvasSize, bezierToCanvas, draggedPoint, needsRedraw, getViewportBounds]);
   useEffect(() => {
     const initializeCanvas = () => {
       try {
@@ -446,8 +393,7 @@ export default function KeyframeGraphEditor() {
       try {
         canvasRef.current.width = canvasSize.width;
         canvasRef.current.height = canvasSize.height;
-        console.log("Canvas sized to:", canvasSize.width, canvasSize.height);
-        draw();
+        setNeedsRedraw(true);
       } catch (error) {
         console.error("Error updating canvas:", error);
       }
@@ -457,7 +403,32 @@ export default function KeyframeGraphEditor() {
     const timer = setTimeout(updateCanvas, 10);
     
     return () => clearTimeout(timer);
-  }, [canvasSize, draw, point1, point2]);
+  }, [canvasSize]);
+
+  // Separate effect for drawing
+  useEffect(() => {
+    if (needsRedraw) {
+      const timer = requestAnimationFrame(() => {
+        draw();
+      });
+      return () => cancelAnimationFrame(timer);
+    }
+  }, [needsRedraw, draw]);
+
+  // Update animation transition when points change
+  useEffect(() => {
+    if (animationRef.current && canvasSize.width > 0 && canvasSize.height > 0) {
+      const x1 = Math.round((point1.x / canvasSize.width) * 100) / 100;
+      const y1 = Math.round((1 - point1.y / canvasSize.height) * 100) / 100;
+      const x2 = Math.round((point2.x / canvasSize.width) * 100) / 100;
+      const y2 = Math.round((1 - point2.y / canvasSize.height) * 100) / 100;
+      
+      if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
+        const curve = `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
+        animationRef.current.style.transition = `left ${animationDuration}s ${curve}`;
+      }
+    }
+  }, [point1, point2, canvasSize, animationDuration]);
 
   // Set closest point - simplified
   const getClosestPoint = useCallback((canvasX: number, canvasY: number): number => {
@@ -494,7 +465,7 @@ export default function KeyframeGraphEditor() {
   }, [point1, point2, canvasSize, bezierToCanvas]);
 
   // Mouse event handlers - with proper coordinate scaling
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     try {
       const canvas = canvasRef.current;
       if (!canvas || canvasSize.width <= 0 || canvasSize.height <= 0) return;
@@ -506,19 +477,18 @@ export default function KeyframeGraphEditor() {
       const canvasX = (e.clientX - rect.left) * scaleX;
       const canvasY = (e.clientY - rect.top) * scaleY;
       
-      console.log("Mouse down at:", canvasX, canvasY, "scale:", scaleX, scaleY);
       setDragging(true);
       const closestPoint = getClosestPoint(canvasX, canvasY);
       setDraggedPoint(closestPoint);
-      console.log("Closest point set to:", closestPoint);
       setSelectedPreset(null);
+      setNeedsRedraw(true);
       e.preventDefault();
     } catch (error) {
       console.error("Error in handleMouseDown:", error);
     }
-  };
+  }, [canvasSize, getClosestPoint]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     try {
       const canvas = canvasRef.current;
       if (!canvas || canvasSize.width <= 0 || canvasSize.height <= 0) return;
@@ -531,8 +501,7 @@ export default function KeyframeGraphEditor() {
       const canvasY = (e.clientY - rect.top) * scaleY;
 
     if (!dragging) {
-      // Update cursor based on proximity to control points
-      const closestPoint = getClosestPoint(canvasX, canvasY);
+      // Throttle cursor updates for better performance
       const bezier1X = point1.x / canvasSize.width;
       const bezier1Y = 1 - point1.y / canvasSize.height;
       const bezier2X = point2.x / canvasSize.width;
@@ -563,10 +532,11 @@ export default function KeyframeGraphEditor() {
       y: (1 - bezierY) * canvasSize.height
     };
 
-    console.log("Moving point", draggedPoint, "to:", newPoint, "bezier:", clampedBezierX, bezierY);
-
-    if (draggedPoint === 1) setPoint1(newPoint);
-    else if (draggedPoint === 2) setPoint2(newPoint);
+    if (draggedPoint === 1) {
+      setPoint1(newPoint);
+    } else if (draggedPoint === 2) {
+      setPoint2(newPoint);
+    }
 
     // Update bezierInput to match new points
     const x1 = Math.round((draggedPoint === 1 ? newPoint.x : point1.x) / canvasSize.width * 100) / 100;
@@ -575,20 +545,22 @@ export default function KeyframeGraphEditor() {
     const y2 = Math.round((1 - (draggedPoint === 2 ? newPoint.y : point2.y) / canvasSize.height) * 100) / 100;
     setBezierInput(`${x1}, ${y1}, ${x2}, ${y2}`);
     
+    setNeedsRedraw(true);
     e.preventDefault();
     } catch (error) {
       console.error("Error in handleMouseMove:", error);
     }
-  };
+  }, [dragging, draggedPoint, canvasSize, canvasToBezier, bezierToCanvas, point1, point2]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     try {
       setDragging(false);
       setDraggedPoint(null);
+      setNeedsRedraw(true);
     } catch (error) {
       console.error("Error in handleMouseUp:", error);
     }
-  };
+  }, []);
 
 
 
@@ -604,6 +576,7 @@ export default function KeyframeGraphEditor() {
       const [a, b, c, d]: number[] = values;
       setPoint1({ x: a * canvasSize.width, y: (1 - b) * canvasSize.height });
       setPoint2({ x: c * canvasSize.width, y: (1 - d) * canvasSize.height });
+      setNeedsRedraw(true);
     }
     
     setSelectedPreset(preset);
@@ -647,18 +620,23 @@ export default function KeyframeGraphEditor() {
     const values = bezierInput.split(",").map((v) => parseFloat(v.trim()));
     if (values.length === 4 && values.every((v) => !isNaN(v))) {
       const [a, b, c, d] = values;
-      setPoint1({ x: a * canvasSize.width, y: (1 - b) * canvasSize.height });
-      setPoint2({ x: c * canvasSize.width, y: (1 - d) * canvasSize.height });
+      const newPoint1 = { x: a * canvasSize.width, y: (1 - b) * canvasSize.height };
+      const newPoint2 = { x: c * canvasSize.width, y: (1 - d) * canvasSize.height };
+      
+      // Only update if values actually changed
+      if (point1.x !== newPoint1.x || point1.y !== newPoint1.y || 
+          point2.x !== newPoint2.x || point2.y !== newPoint2.y) {
+        setPoint1(newPoint1);
+        setPoint2(newPoint2);
+        setNeedsRedraw(true);
+      }
       setInputError("");
     } else if (bezierInput.trim() !== "") {
       setInputError("Invalid format. Use: x1,y1,x2,y2");
     } else {
       setInputError("");
     }
-    // Do not clear selectedPreset here, so preset highlight remains until user clicks elsewhere
-    // Do not send to AE, just update the graph
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bezierInput, canvasSize.width, canvasSize.height]);
+  }, [bezierInput, canvasSize.width, canvasSize.height, point1, point2]);
 
   // Save custom presets to localStorage
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { generateRandomOutputPath } from "./outputUtils";
 import { quotePath, buildCommand } from "./helpers";
+import { ensureUtf8String } from "./utf8PathUtils";
 
 const removeBackgroundLogic = async (
     pathToTasExe: string,
@@ -9,20 +10,25 @@ const removeBackgroundLogic = async (
     backgroundMethod: string,
     aiPrecision: string
 ) => {
-    const outputPath = generateRandomOutputPath(pathToSave, "TAS-RemoveBG", "RmvBackground", ".mov");
+    const outputPath = generateRandomOutputPath(
+        ensureUtf8String(pathToSave), 
+        "TAS-RemoveBG", 
+        "RmvBackground", 
+        ".mov"
+    );
 
     const command = buildCommand([
-        quotePath(pathToTasExe),
-        quotePath(mainPyPath),
+        quotePath(ensureUtf8String(pathToTasExe)),
+        quotePath(ensureUtf8String(mainPyPath)),
         "--input",
-        quotePath(pathToVideo),
+        quotePath(ensureUtf8String(pathToVideo)),
         "--output",
         quotePath(outputPath),
         "--segment",
         "--segment_method",
-        backgroundMethod,
+        ensureUtf8String(backgroundMethod),
         "--half",
-        aiPrecision,
+        ensureUtf8String(aiPrecision),
         "--ae"
     ]);
 

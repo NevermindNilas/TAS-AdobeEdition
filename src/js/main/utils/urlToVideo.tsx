@@ -1,5 +1,6 @@
 import { generateRandomOutputPath } from "./outputUtils";
 import { quotePath, buildCommand } from "./helpers";
+import { ensureUtf8String } from "./utf8PathUtils";
 
 const youtubeDownloadLogic = (
     youtubeURL: string,
@@ -7,18 +8,22 @@ const youtubeDownloadLogic = (
     pathToTasExe: string,
     pathToSave: string
 ) => {
-    const outputPath = generateRandomOutputPath(pathToSave, "TAS-Youtube", "TAS", ".mp4");
+    const outputPath = generateRandomOutputPath(
+        ensureUtf8String(pathToSave), 
+        "TAS-Youtube", 
+        "TAS", 
+        ".mp4"
+    );
 
     const command = buildCommand([
-        quotePath(pathToTasExe),
-        quotePath(mainPyPath),
+        quotePath(ensureUtf8String(pathToTasExe)),
+        quotePath(ensureUtf8String(mainPyPath)),
         "--input",
-        youtubeURL,
+        ensureUtf8String(youtubeURL),
         "--output",
         quotePath(outputPath),
         "--ae"
     ]);
-
     return { command, outputPath };
 };
 

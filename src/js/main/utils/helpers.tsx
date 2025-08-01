@@ -1,6 +1,20 @@
 import { path, os } from "../../lib/cep/node";
 import { evalTS } from "../../lib/utils/bolt";
 import { generateToast } from "./generateToast";
+import { 
+    safePathJoin, 
+    safePathDirname, 
+    ensureUtf8String, 
+    quoteUtf8Path, 
+    buildUtf8Command,
+    safeExistsSync,
+    safeMkdirSync,
+    safeStatSync,
+    safeOpenSync,
+    safeReadSync,
+    safeCloseSync,
+    safeUnlinkSync
+} from "./utf8PathUtils";
 
 /**
  * Runs an AE command and handles errors/toasts.
@@ -83,16 +97,16 @@ export function runProcess(execFn: any, command: any, toastMsg: string, onSucces
 }
 
 /**
- * Gets standard TAS application paths.
+ * Gets standard TAS application paths with UTF-8 support.
  * @returns An object containing relevant TAS paths.
  */
 export function getTASPaths() {
-    const appDataPath = path.join(os.homedir(), "AppData", "Roaming");
-    const tasFolder = path.join(appDataPath, "TheAnimeScripter");
-    const tasAppDataPath = path.join(appDataPath, "TheAnimeScripter", "TAS-Portable");
-    const pythonExePath = path.join(tasAppDataPath, "python.exe");
-    const mainPyPath = path.join(tasAppDataPath, "main.py");
-    const tasRoamingPath = path.join(appDataPath, "TheAnimeScripter");
+    const appDataPath = safePathJoin(ensureUtf8String(os.homedir()), "AppData", "Roaming");
+    const tasFolder = safePathJoin(appDataPath, "TheAnimeScripter");
+    const tasAppDataPath = safePathJoin(appDataPath, "TheAnimeScripter", "TAS-Portable");
+    const pythonExePath = safePathJoin(tasAppDataPath, "python.exe");
+    const mainPyPath = safePathJoin(tasAppDataPath, "main.py");
+    const tasRoamingPath = safePathJoin(appDataPath, "TheAnimeScripter");
 
     return {
         appDataPath,
@@ -126,7 +140,7 @@ export async function getAELayerInfo(): Promise<any | null> {
 }
 
 /**
- * Gets the directory path of the current After Effects project.
+ * Gets the directory path of the current After Effects project with UTF-8 support.
  * Shows a toast if the project isn't saved.
  * @returns The project directory path or null if not saved.
  */
@@ -136,29 +150,28 @@ export async function getAEProjectFolderPath(): Promise<string | null> {
         generateToast(2, "Error: Please save or load a project before proceeding.");
         return null;
     }
-    // Use Node.js path module to get the directory name
-    return require("path").dirname(projectPath);
+    // Use UTF-8 safe path operations
+    return safePathDirname(ensureUtf8String(projectPath));
 }
 
 
 /**
- * Properly quotes a path for command line usage on Windows.
- * Handles paths with spaces and special characters.
+ * Properly quotes a path for command line usage with UTF-8 support.
+ * Handles paths with spaces, special characters, and international characters.
  * @param path - The path to quote
- * @returns The properly quoted path
+ * @returns The properly quoted UTF-8 path
  */
 export function quotePath(path: string): string {
-    // Remove any existing quotes and add new ones
-    return `"${path.replace(/"/g, '')}"`;
+    return quoteUtf8Path(path);
 }
 
 /**
- * Builds a command array with proper path quoting and joins it safely.
- * @param parts - Array of command parts where paths should be quoted
+ * Builds a command array with proper UTF-8 path quoting and joins it safely.
+ * @param parts - Array of command parts where paths should be UTF-8 safe
  * @returns The properly constructed command string
  */
 export function buildCommand(parts: string[]): string {
-    return parts.join(" ");
+    return buildUtf8Command(parts);
 }
 
 /**
@@ -208,7 +221,7 @@ export async function ensureProjectIsSaved(): Promise<boolean> {
 }
 
 /**
- * Validates AE project and layer selection, and gets project folder path.
+ * Validates AE project and layer selection, and gets project folder path with UTF-8 support.
  * Shows toasts for errors.
  * @returns {Promise<{layerInfo: any, projectFolderPath: string} | null>}
  */
@@ -223,7 +236,7 @@ export async function getValidatedAEContext(): Promise<{layerInfo: any, projectF
         generateToast(2, "Error: No layer selected. Please choose a layer and try again.");
         return null;
     }
-    const projectFolderPath = require("path").dirname(projectPath);
+    const projectFolderPath = safePathDirname(ensureUtf8String(projectPath));
     return { layerInfo, projectFolderPath };
 }
 
@@ -287,20 +300,20 @@ export function executeProcessHelper({
     let logWatcher: any = null;
     let exited = false;
 
-    const logTxtPath = path.join(tasFolder, "TAS-Log.log");
+    const logTxtPath = safePathJoin(tasFolder, "TAS-Log.log");
 
     try {
-        if (fs.existsSync(logTxtPath)) {
-            fs.unlinkSync(logTxtPath);
+        if (safeExistsSync(logTxtPath)) {
+            safeUnlinkSync(logTxtPath);
         }
     } catch (error) {
         console.warn("Could not delete existing log file:", error);
     }
 
     const readNewLogs = () => {
-        if (fs.existsSync(logTxtPath)) {
+        if (safeExistsSync(logTxtPath)) {
             try {
-                const stats = fs.statSync(logTxtPath);
+                const stats = safeStatSync(logTxtPath);
                 
                 if (stats.size < lastLogSize) {
                     lastLogSize = 0;
@@ -308,17 +321,17 @@ export function executeProcessHelper({
                 }
                 
                 if (stats.size > lastLogSize) {
-                    const fd = fs.openSync(logTxtPath, "r");
+                    const fd = safeOpenSync(logTxtPath, "r");
                     const buffer = Buffer.alloc(stats.size - lastLogSize);
-                    fs.readSync(fd, buffer, 0, buffer.length, lastLogSize);
-                    fs.closeSync(fd);
+                    safeReadSync(fd, buffer, 0, buffer.length, lastLogSize);
+                    safeCloseSync(fd);
 
                     const newContent = buffer.toString("utf8");
                     if (newContent.trim()) {
                         const newLines = newContent
                             .split(/\r?\n/)
                             .filter(line => line.trim())
-                            .map(line => line.trim());
+                            .map(line => ensureUtf8String(line.trim()));
                         
                         if (newLines.length > 0) {
                             localLogs.push(...newLines);
@@ -338,7 +351,7 @@ export function executeProcessHelper({
 
     // Add file watcher for log file updates (as fallback)
     const setupLogWatcher = () => {
-        if (fs.existsSync(logTxtPath)) {
+        if (safeExistsSync(logTxtPath)) {
             try {
                 logWatcher = fs.watch(logTxtPath, (eventType: string) => {
                     if (eventType === "change" && !processCancelledRef.current) {
@@ -355,14 +368,13 @@ export function executeProcessHelper({
     };
     
     setupLogWatcher();
-
     let process: any;
     try {
-        // Use exec instead of spawn for better command string handling
         process = child_process.exec(command, {
             shell: true,
-            maxBuffer: 1024 * 1024 * 10 // 10MB buffer
+            maxBuffer: 1024 * 1024 * 10
         });
+
 
         // Handle real-time stdout
         process.stdout?.on('data', (data: Buffer) => {
@@ -370,7 +382,9 @@ export function executeProcessHelper({
             
             const output = data.toString('utf8');
             if (output.trim()) {
-                const lines = output.split(/\r?\n/).filter(line => line.trim());
+                const lines = output.split(/\r?\n/)
+                    .filter(line => line.trim())
+                    .map(line => ensureUtf8String(line));
                 if (lines.length > 0) {
                     localLogs.push(...lines);
                     setFullLogs([...localLogs]);
@@ -384,7 +398,9 @@ export function executeProcessHelper({
             
             const output = data.toString('utf8');
             if (output.trim()) {
-                const lines = output.split(/\r?\n/).filter(line => line.trim());
+                const lines = output.split(/\r?\n/)
+                    .filter(line => line.trim())
+                    .map(line => ensureUtf8String(line));
                 if (lines.length > 0) {
                     localLogs.push(...lines);
                     setFullLogs([...localLogs]);
@@ -476,7 +492,7 @@ export function executeProcessHelper({
         try {
             if (!processCancelledRef.current) {
                 if (outputFile) {
-                    if (fs.existsSync(outputFile) && processSucceeded) {
+                    if (safeExistsSync(outputFile) && processSucceeded) {
                         if (typeof onSuccess === "function") {
                             onSuccess();
                         }
@@ -520,8 +536,8 @@ export function executeProcessHelper({
             if (!deletePreRender) {
                 if (inputFile) {
                     try {
-                        if (fs.existsSync(inputFile)) {
-                            fs.unlinkSync(inputFile);
+                        if (safeExistsSync(inputFile)) {
+                            safeUnlinkSync(inputFile);
                         }
                     } catch (error) {
                         generateToast(

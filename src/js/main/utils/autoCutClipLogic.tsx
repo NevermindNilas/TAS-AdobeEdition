@@ -1,4 +1,5 @@
 import { quotePath, buildCommand } from "./helpers";
+import { ensureUtf8String } from "./utf8PathUtils";
 
 // src/js/main/utils/autoCutClipLogic.tsx
 const autoCutLogic = async (
@@ -6,21 +7,15 @@ const autoCutLogic = async (
     mainPyPath: string,
     pathToVideo: string,
     autoCutClipSens: any,
-    inpoint: any,
-    outpoint: any
 ): Promise<string> => {
     const command = buildCommand([
-        quotePath(pathToTasExe),
-        quotePath(mainPyPath),
+        quotePath(ensureUtf8String(pathToTasExe)),
+        quotePath(ensureUtf8String(mainPyPath)),
         "--input",
-        quotePath(pathToVideo),
+        quotePath(ensureUtf8String(pathToVideo)),
         "--autoclip",
         "--autoclip_sens",
         String(autoCutClipSens * 100),
-        "--inpoint",
-        String(inpoint),
-        "--outpoint",
-        String(outpoint)
     ]);
 
     return command;

@@ -1,9 +1,10 @@
 import { path, os, fs, child_process } from "../../lib/cep/node";
 import { generateToast } from "./generateToast";
+import { safePathJoin, ensureUtf8String, safeExistsSync, safeMkdirSync } from "./utf8PathUtils";
 
 const getFolderPath = () => {
-    const homeDir = os.homedir();
-    return path.join(homeDir, "AppData", "Roaming", "TheAnimeScripter");
+    const homeDir = ensureUtf8String(os.homedir());
+    return safePathJoin(homeDir, "AppData", "Roaming", "TheAnimeScripter");
 };
 
 const openTasFolder = async () => {
@@ -13,8 +14,8 @@ const openTasFolder = async () => {
         const folderPath = getFolderPath();
         
         // Create directory if it doesn't exist
-        if (!fs.existsSync(folderPath)) {
-            fs.mkdirSync(folderPath, { recursive: true });
+        if (!safeExistsSync(folderPath)) {
+            safeMkdirSync(folderPath, { recursive: true });
             console.log("Folder created:", folderPath);
         }
 

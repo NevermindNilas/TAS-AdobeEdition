@@ -1,5 +1,6 @@
 import { path, fs, https, http, child_process } from "../../lib/cep/node";
 import { generateToast } from "./generateToast";
+import { safePathJoin, ensureUtf8String, safeExistsSync, quoteUtf8Path } from "./utf8PathUtils";
 
 interface GitHubAsset {
     name: string;
@@ -17,7 +18,7 @@ const downloadTASCLI = async (
 ) => {
     try {
         const sevenZPath = await download7zExe(tasAppDataPath);
-        const tasPath = path.join(tasAppDataPath);
+        const tasPath = safePathJoin(ensureUtf8String(tasAppDataPath));
         const latestReleaseUrl =
             "https://api.github.com/repos/NevermindNilas/TheAnimeScripter/releases/latest";
 
@@ -46,7 +47,7 @@ const downloadTASCLI = async (
 
                     if (tasAsset) {
                         console.log(`Selected asset: ${tasAsset.name}`);
-                        const downloadPath = path.join(tasPath, tasAsset.name);
+                        const downloadPath = safePathJoin(tasPath, ensureUtf8String(tasAsset.name));
 
                         await downloadFileWithRetries(
                             tasAsset.browser_download_url,
@@ -228,9 +229,9 @@ const downloadFile = (url: string, savePath: string, onProgress: (percentage: nu
 // Function to download 7zr.exe if it doesn't already exist
 const download7zExe = async (tasAppDataPath: string) => {
     const url = "https://www.7-zip.org/a/7zr.exe";
-    const savePath = path.join(tasAppDataPath, "7zr.exe");
+    const savePath = safePathJoin(ensureUtf8String(tasAppDataPath), "7zr.exe");
 
-    if (!fs.existsSync(savePath)) {
+    if (!safeExistsSync(savePath)) {
         await downloadFileWithRetries(url, savePath, () => {});
     }
 
@@ -240,7 +241,7 @@ const download7zExe = async (tasAppDataPath: string) => {
 // Function to extract .7z file using 7zr.exe with multi-threading enabled
 const extract7z = (sevenZPath: string, archivePath: string, outputPath: string) => {
     return new Promise<void>((resolve, reject) => {
-        const command = `"${sevenZPath}" x "${archivePath}" -o"${outputPath}" -y -mmt`;
+        const command = `${quoteUtf8Path(sevenZPath)} x ${quoteUtf8Path(archivePath)} -o${quoteUtf8Path(outputPath)} -y -mmt`;
         child_process.exec(command, (error, stdout, stderr) => {
             if (error) {
                 console.error("Error extracting .7z file:", stderr);
@@ -258,10 +259,10 @@ const downloadRequirements = async (
     tasPythonExecPath: string,
     onLog?: (logs: string[]) => void
 ) => {
-    const mainPyPath = path.join(tasAppDataPath, "main.py");
+    const mainPyPath = safePathJoin(ensureUtf8String(tasAppDataPath), "main.py");
 
     // run python.exe with main.py and --download_requirements argument
-    const command = `"${tasPythonExecPath}" "${mainPyPath}" --download_requirements`;
+    const command = `${quoteUtf8Path(tasPythonExecPath)} ${quoteUtf8Path(mainPyPath)} --download_requirements`;
     return new Promise<void>((resolve, reject) => {
         const process = child_process.exec(command);
 
@@ -270,7 +271,7 @@ const downloadRequirements = async (
             const lines = data
                 .toString()
                 .split("\n")
-                .filter(line => line.trim() !== "");
+                .filter((line: string) => line.trim() !== "");
             if (lines.length > 0 && onLog) {
                 onLog(lines);
             }
@@ -281,10 +282,10 @@ const downloadRequirements = async (
             const lines = data
                 .toString()
                 .split("\n")
-                .filter(line => line.trim() !== "");
+                .filter((line: string) => line.trim() !== "");
             if (lines.length > 0 && onLog) {
                 // Mark errors to make them stand out in the log
-                const errorLines = lines.map(line => `ERROR: ${line}`);
+                const errorLines = lines.map((line: string) => `ERROR: ${line}`);
                 onLog(errorLines);
             }
         });

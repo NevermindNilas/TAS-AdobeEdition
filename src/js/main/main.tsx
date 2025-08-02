@@ -4065,297 +4065,307 @@ const Main = () => {
                                                                     </>
                                                                 )}
                                                             </Flex>
-                                                            <Picker
-                                                                label="AI Precision"
-                                                                selectedKey={aiPrecision}
-                                                                onSelectionChange={handleSelectionChange(
-                                                                    setAiPrecision
-                                                                )}
-                                                                contextualHelp={createPickerContextualHelp(
-                                                                    "AI Precision",
-                                                                    "Choose the precision for AI processing. Higher precision may marginally improve quality ( typically in Depth Maps ) but increase processing time."
-                                                                )}
-                                                                width={"100%"}
-                                                            >
-                                                                <Item key="true">
+                                                            <Flex direction="row" wrap gap={8} width="100%">
+                                                                <Picker
+                                                                    flex="1 1 240px"
+                                                                    minWidth="240px"
+                                                                    label="AI Precision"
+                                                                    selectedKey={aiPrecision}
+                                                                    onSelectionChange={handleSelectionChange(
+                                                                        setAiPrecision
+                                                                    )}
+                                                                    contextualHelp={createPickerContextualHelp(
+                                                                        "AI Precision",
+                                                                        "Choose the precision for AI processing. Higher precision may marginally improve quality ( typically in Depth Maps ) but increase processing time."
+                                                                    )}
+                                                                    width="100%"
+                                                                >
+                                                                    <Item key="true">
+                                                                        <Gauge5 />
+                                                                        <Text>FP16</Text>
+                                                                        <Text slot="description">
+                                                                            Everyone should prefer this.
+                                                                        </Text>
+                                                                    </Item>
+                                                                    <Item key="false">
+                                                                        <Gauge1 />
+                                                                        <Text>FP32</Text>
+                                                                        <Text slot="description">
+                                                                            Fallback in case of black frame
+                                                                            issues / Lower End GPUs / Depth Maps may see a boost in quality with a compatible 10bit encoder
+                                                                        </Text>
+                                                                    </Item>
+                                                                </Picker>
+                                                                <Picker
+                                                                    flex="1 1 240px"
+                                                                    minWidth="240px"
+                                                                    label="Encoding Codec"
+                                                                    selectedKey={encodeAlgorithm}
+                                                                    onSelectionChange={handleSelectionChange(
+                                                                        setEncodeAlgorithm
+                                                                    )}
+                                                                    contextualHelp={createPickerContextualHelp(
+                                                                        "Encoding Codecs",
+                                                                        "Choose the encoding codec for the video output. Different codecs may provide better performance depending on the hardware configuration."
+                                                                    )}
+                                                                    width="100%"
+                                                                >
+                                                                    <Section title="All CPUs">
+                                                                        <Item key="x264">
+                                                                            <Gauge5 />
+                                                                            <Text>x264</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="x264_10bit">
+                                                                            <Gauge4 />
+                                                                            <Text>x264 10 Bit</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Requires 16bpc
+                                                                                Bit Depth
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="x264_animation">
+                                                                            <Gauge5 />
+                                                                            <Text>x264 Animation</Text>
+                                                                            <Text slot="description">
+                                                                                Anime
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="x264_animation_10bit">
+                                                                            <Gauge1 />
+                                                                            <Text>
+                                                                                x264 Animation 10 Bit
+                                                                            </Text>
+                                                                            <Text slot="description">
+                                                                                Anime / Requires 16bpc Bit
+                                                                                Depth
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="x265">
+                                                                            <Gauge4 />
+                                                                            <Text>x265</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="x265_10bit">
+                                                                            <Gauge3 />
+                                                                            <Text>x265 10 Bit</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Requires 16bpc
+                                                                                Bit Depth
+                                                                            </Text>
+                                                                        </Item>
+                                                                        {/*
+                                                                            <Item key="prores">
+                                                                            <Gauge2 />
+                                                                            <Text>ProRes 444 HQ</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Very Large
+                                                                                Filesizes
+                                                                            </Text>
+                                                                        </Item>
+                                                                        */}
+                                                                        <Item key="slow_x264">
+                                                                            <Gauge1 />
+                                                                            <Text>Slow x264</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Very Slow /
+                                                                                Small Filesizes
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="slow_x265">
+                                                                            <Gauge1 />
+                                                                            <Text>Slow x265</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Very Slow /
+                                                                                Small Filesizes
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="lossless">
+                                                                            <Gauge5 />
+                                                                            <Text>Lossless</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Very Fast /
+                                                                                Large Filesizes
+                                                                            </Text>
+                                                                        </Item>
+                                                                        {/*
+                                                                <Item key="png">
                                                                     <Gauge5 />
-                                                                    <Text>FP16</Text>
-                                                                    <Text slot="description">
-                                                                        Everyone should prefer this.
-                                                                    </Text>
+                                                                    <Text>PNG</Text>
+                                                                    <Text slot="description">Universal / Very Large Filesizes</Text>
                                                                 </Item>
-                                                                <Item key="false">
-                                                                    <Gauge1 />
-                                                                    <Text>FP32</Text>
-                                                                    <Text slot="description">
-                                                                        Fallback in case of black frame
-                                                                        issues / Lower End GPUs / Depth Maps may see a boost in quality with a compatible 10bit encoder
-                                                                    </Text>
-                                                                </Item>
-                                                            </Picker>
-                                                            <Picker
-                                                                label="Encoding Codec"
-                                                                selectedKey={encodeAlgorithm}
-                                                                onSelectionChange={handleSelectionChange(
-                                                                    setEncodeAlgorithm
-                                                                )}
-                                                                contextualHelp={createPickerContextualHelp(
-                                                                    "Encoding Codecs",
-                                                                    "Choose the encoding codec for the video output. Different codecs may provide better performance depending on the hardware configuration."
-                                                                )}
-                                                                width={"100%"}
-                                                            >
-                                                                <Section title="All CPUs">
-                                                                    <Item key="x264">
+                                                                */}
+                                                                    </Section>
+                                                                    <Section title="NVIDIA GPUs">
+                                                                        <Item key="nvenc_h264">
+                                                                            <Gauge5 />
+                                                                            <Text>NVENC h264</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="nvenc_h265">
+                                                                            <Gauge5 />
+                                                                            <Text>NVENC h265</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="nvenc_h265_10bit">
+                                                                            <Gauge4 />
+                                                                            <Text>NVENC h265 10 Bit</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Requires 16bpc
+                                                                                Bit Depth
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="slow_nvenc_h264">
+                                                                            <Gauge1 />
+                                                                            <Text>Slow NVENC h264</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Very Slow /
+                                                                                Small Filesizes
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="slow_nvenc_h265">
+                                                                            <Gauge1 />
+                                                                            <Text>Slow NVENC h265</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Very Slow /
+                                                                                Small Filesizes
+                                                                            </Text>
+                                                                        </Item>
+                                                                    </Section>
+                                                                    <Section title="AMD GPUs">
+                                                                        <Item key="h264_amf">
+                                                                            <Gauge5 />
+                                                                            <Text>AMF h264</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="hevc_amf">
+                                                                            <Gauge4 />
+                                                                            <Text>AMF h265</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="hevc_amf_10bit">
+                                                                            <Gauge4 />
+                                                                            <Text>AMF h265 10 Bit</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Requires 16bpc
+                                                                                Bit Depth
+                                                                            </Text>
+                                                                        </Item>
+                                                                    </Section>
+                                                                    <Section title="Intel iGPUs">
+                                                                        <Item key="qsv_h264">
+                                                                            <Gauge5 />
+                                                                            <Text>QSV h264</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="qsv_h265">
+                                                                            <Gauge4 />
+                                                                            <Text>QSV h265</Text>
+                                                                            <Text slot="description">
+                                                                                Universal
+                                                                            </Text>
+                                                                        </Item>
+                                                                        <Item key="qsv_h265_10bit">
+                                                                            <Gauge1 />
+                                                                            <Text>QSV h265 10 Bit</Text>
+                                                                            <Text slot="description">
+                                                                                Universal / Requires 16bpc
+                                                                                Bit Depth
+                                                                            </Text>
+                                                                        </Item>
+                                                                    </Section>
+                                                                </Picker>
+                                                            </Flex>
+                                                            <Flex direction="row" wrap gap={8} width="100%">
+                                                                <Picker
+                                                                    flex="1 1 240px"
+                                                                    minWidth="240px"
+                                                                    label="Bit Depth"
+                                                                    selectedKey={bitDepth}
+                                                                    onSelectionChange={handleSelectionChange(
+                                                                        setBitDepth
+                                                                    )}
+                                                                    defaultSelectedKey={"8bit"}
+                                                                    contextualHelp={createPickerContextualHelp(
+                                                                        "Bit Depth",
+                                                                        <>
+                                                                            Choose the bit depth for the
+                                                                            video output workflow. Higher
+                                                                            bit depths may provide better
+                                                                            color accuracy at a significant
+                                                                            cost in performance.
+                                                                            <br />
+                                                                            <br />
+                                                                            This is recommended for
+                                                                            <strong>Depth Maps.</strong>
+                                                                        </>
+                                                                    )}
+                                                                    width="100%"
+                                                                >
+                                                                    <Item key="8bit">
                                                                         <Gauge5 />
-                                                                        <Text>x264</Text>
+                                                                        <Text>8 Bits Per Channel</Text>
                                                                         <Text slot="description">
-                                                                            Universal
+                                                                            99.9% of users will be happy
+                                                                            with this
                                                                         </Text>
                                                                     </Item>
-                                                                    <Item key="x264_10bit">
-                                                                        <Gauge4 />
-                                                                        <Text>x264 10 Bit</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Requires 16bpc
-                                                                            Bit Depth
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="x264_animation">
-                                                                        <Gauge5 />
-                                                                        <Text>x264 Animation</Text>
-                                                                        <Text slot="description">
-                                                                            Anime
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="x264_animation_10bit">
+                                                                    <Item key="16bit">
                                                                         <Gauge1 />
-                                                                        <Text>
-                                                                            x264 Animation 10 Bit
-                                                                        </Text>
+                                                                        <Text>16 Bits Per Channel</Text>
                                                                         <Text slot="description">
-                                                                            Anime / Requires 16bpc Bit
-                                                                            Depth
+                                                                            Very Slow / Must use a matching
+                                                                            encoder / Enables HDR
+                                                                            compatibility
                                                                         </Text>
                                                                     </Item>
-                                                                    <Item key="x265">
-                                                                        <Gauge4 />
-                                                                        <Text>x265</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="x265_10bit">
-                                                                        <Gauge3 />
-                                                                        <Text>x265 10 Bit</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Requires 16bpc
-                                                                            Bit Depth
-                                                                        </Text>
-                                                                    </Item>
-                                                                    {/*
-
-                                                                        <Item key="prores">
-                                                                        <Gauge2 />
-                                                                        <Text>ProRes 444 HQ</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Very Large
-                                                                            Filesizes
-                                                                        </Text>
-                                                                    </Item>
-                                                                    */
-                                                                    }
-                                                                    <Item key="slow_x264">
-                                                                        <Gauge1 />
-                                                                        <Text>Slow x264</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Very Slow /
-                                                                            Small Filesizes
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="slow_x265">
-                                                                        <Gauge1 />
-                                                                        <Text>Slow x265</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Very Slow /
-                                                                            Small Filesizes
-                                                                        </Text>
-                                                                    </Item>
+                                                                </Picker>
+                                                                <Picker
+                                                                    flex="1 1 240px"
+                                                                    minWidth="240px"
+                                                                    label="Pre-Render Codec"
+                                                                    selectedKey={preRenderAlgorithm}
+                                                                    onSelectionChange={handleSelectionChange(
+                                                                        setPreRenderAlgorithm
+                                                                    )}
+                                                                    contextualHelp={createPickerContextualHelp(
+                                                                        "Pre-Render Codec",
+                                                                        "Select the desired encoding codec for the pre-rendered video."
+                                                                    )}
+                                                                    width="100%"
+                                                                >
                                                                     <Item key="lossless">
                                                                         <Gauge5 />
                                                                         <Text>Lossless</Text>
                                                                         <Text slot="description">
-                                                                            Universal / Very Fast /
-                                                                            Large Filesizes
+                                                                            Large File Size | After Effects
+                                                                            2020+
                                                                         </Text>
                                                                     </Item>
-                                                                    {/*
-                                                            <Item key="png">
-                                                                <Gauge5 />
-                                                                <Text>PNG</Text>
-                                                                <Text slot="description">Universal / Very Large Filesizes</Text>
-                                                            </Item>
-                                                            */}
-                                                                </Section>
-                                                                <Section title="NVIDIA GPUs">
-                                                                    <Item key="nvenc_h264">
-                                                                        <Gauge5 />
-                                                                        <Text>NVENC h264</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="nvenc_h265">
-                                                                        <Gauge5 />
-                                                                        <Text>NVENC h265</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="nvenc_h265_10bit">
+                                                                    <Item key="high">
                                                                         <Gauge4 />
-                                                                        <Text>NVENC h265 10 Bit</Text>
+                                                                        <Text>Quicktime</Text>
                                                                         <Text slot="description">
-                                                                            Universal / Requires 16bpc
-                                                                            Bit Depth
+                                                                            Medium File Size | After Effects
+                                                                            2022+
                                                                         </Text>
                                                                     </Item>
-                                                                    <Item key="slow_nvenc_h264">
-                                                                        <Gauge1 />
-                                                                        <Text>Slow NVENC h264</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Very Slow /
-                                                                            Small Filesizes
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="slow_nvenc_h265">
-                                                                        <Gauge1 />
-                                                                        <Text>Slow NVENC h265</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Very Slow /
-                                                                            Small Filesizes
-                                                                        </Text>
-                                                                    </Item>
-                                                                </Section>
-                                                                <Section title="AMD GPUs">
-                                                                    <Item key="h264_amf">
-                                                                        <Gauge5 />
-                                                                        <Text>AMF h264</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="hevc_amf">
-                                                                        <Gauge4 />
-                                                                        <Text>AMF h265</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="hevc_amf_10bit">
-                                                                        <Gauge4 />
-                                                                        <Text>AMF h265 10 Bit</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Requires 16bpc
-                                                                            Bit Depth
-                                                                        </Text>
-                                                                    </Item>
-                                                                </Section>
-                                                                <Section title="Intel iGPUs">
-                                                                    <Item key="qsv_h264">
-                                                                        <Gauge5 />
-                                                                        <Text>QSV h264</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="qsv_h265">
-                                                                        <Gauge4 />
-                                                                        <Text>QSV h265</Text>
-                                                                        <Text slot="description">
-                                                                            Universal
-                                                                        </Text>
-                                                                    </Item>
-                                                                    <Item key="qsv_h265_10bit">
-                                                                        <Gauge1 />
-                                                                        <Text>QSV h265 10 Bit</Text>
-                                                                        <Text slot="description">
-                                                                            Universal / Requires 16bpc
-                                                                            Bit Depth
-                                                                        </Text>
-                                                                    </Item>
-                                                                </Section>
-                                                            </Picker>
-                                                            <Picker
-                                                                label="Bit Depth"
-                                                                selectedKey={bitDepth}
-                                                                onSelectionChange={handleSelectionChange(
-                                                                    setBitDepth
-                                                                )}
-                                                                defaultSelectedKey={"8bit"}
-                                                                contextualHelp={createPickerContextualHelp(
-                                                                    "Bit Depth",
-                                                                    <>
-                                                                        Choose the bit depth for the
-                                                                        video output workflow. Higher
-                                                                        bit depths may provide better
-                                                                        color accuracy at a significant
-                                                                        cost in performance.
-                                                                        <br />
-                                                                        <br />
-                                                                        This is recommended for
-                                                                        <strong>Depth Maps.</strong>
-                                                                    </>
-                                                                )}
-                                                                width={"100%"}
-                                                            >
-                                                                <Item key="8bit">
-                                                                    <Gauge5 />
-                                                                    <Text>8 Bits Per Channel</Text>
-                                                                    <Text slot="description">
-                                                                        99.9% of users will be happy
-                                                                        with this
-                                                                    </Text>
-                                                                </Item>
-                                                                <Item key="16bit">
-                                                                    <Gauge1 />
-                                                                    <Text>16 Bits Per Channel</Text>
-                                                                    <Text slot="description">
-                                                                        Very Slow / Must use a matching
-                                                                        encoder / Enables HDR
-                                                                        compatibility
-                                                                    </Text>
-                                                                </Item>
-                                                            </Picker>
-                                                            <Picker
-                                                                label="Pre-Render Codec"
-                                                                selectedKey={preRenderAlgorithm}
-                                                                onSelectionChange={handleSelectionChange(
-                                                                    setPreRenderAlgorithm
-                                                                )}
-                                                                contextualHelp={createPickerContextualHelp(
-                                                                    "Pre-Render Codec",
-                                                                    "Select the desired encoding codec for the pre-rendered video."
-                                                                )}
-                                                                width={"100%"}
-                                                            >
-                                                                <Item key="lossless">
-                                                                    <Gauge5 />
-                                                                    <Text>Lossless</Text>
-                                                                    <Text slot="description">
-                                                                        Large File Size | After Effects
-                                                                        2020+
-                                                                    </Text>
-                                                                </Item>
-                                                                <Item key="high">
-                                                                    <Gauge4 />
-                                                                    <Text>Quicktime</Text>
-                                                                    <Text slot="description">
-                                                                        Medium File Size | After Effects
-                                                                        2022+
-                                                                    </Text>
-                                                                </Item>
-                                                            </Picker>
+                                                                </Picker>
+                                                            </Flex>
                                                             <Flex direction={"row"} width={"100%"}>
 
                                                                 <Picker

@@ -36,8 +36,35 @@ const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: s
 
 // No longer needed: SupporterCard
 
-const SupportersSection = () => {
+
+import React from 'react';
+
+const SupportersSection = React.memo(() => {
     const { usernames, loading, error } = useSupporterUsernames();
+
+    // Helper to render a username as a pill/badge
+    const renderUsername = (username: string, index: number) => (
+        <View
+            key={username + index}
+            backgroundColor="static-black"
+            borderRadius="large"
+            paddingX="size-150"
+            paddingY="size-65"
+            marginY="size-50"
+            UNSAFE_style={{
+                color: '#f5f5f5',
+                fontWeight: 500,
+                fontSize: '1em',
+                boxShadow: '0 1px 4px 0 rgba(0,0,0,0.10)',
+                border: '1px solid #222',
+                display: 'inline-block',
+                userSelect: 'text',
+            }}
+        >
+            {username}
+        </View>
+    );
+
     return (
         <View
             backgroundColor="gray-75"
@@ -45,43 +72,63 @@ const SupportersSection = () => {
             borderRadius="medium"
             marginY="size-50"
             width="100%"
+            aria-label="Supporters section"
         >
             <Flex direction="column" alignItems="center" gap="size-100">
                 {loading ? (
                     <Flex direction="row" alignItems="center" gap="size-100">
-                        <ProgressCircle size="S" isIndeterminate />
-                        <Text>Loading supporters...</Text>
+                        <ProgressCircle size="S" isIndeterminate aria-label="Loading supporters" />
+                        <Text>Loading supporters…</Text>
                     </Flex>
                 ) : error ? (
                     <Flex direction="column" alignItems="center" gap="size-100">
-                        <Text UNSAFE_style={{ color: "#d73502" }}>
+                        <Text UNSAFE_style={{ color: "#d73502", fontWeight: 600 }}>
                             Failed to load supporters (using cached data)
                         </Text>
-                        <View>
-                            <Text>No supporter usernames available.</Text>
-                        </View>
+                        <Text UNSAFE_style={{ color: "gray" }}>No supporter usernames available.</Text>
                     </Flex>
                 ) : (
                     <View
                         UNSAFE_style={{
                             display: 'flex',
                             flexWrap: 'wrap',
-                            gap: '8px',
+                            gap: '6px',
                             width: '100%',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
+                            alignItems: 'center',
                         }}
+                        aria-label="Supporter usernames"
                     >
-                        {usernames.map((username, index) => (
-                            
-                            <Text>{username}</Text>
-                        ))}
-                        <Text UNSAFE_style={{ color: "gray" }}>Your Name?</Text>
+                        {usernames && usernames.length > 0 ? (
+                            usernames.map(renderUsername)
+                        ) : (
+                            <Text UNSAFE_style={{ color: "gray" }}>No supporters yet.</Text>
+                        )}
+                        <View
+                            backgroundColor="static-black"
+                            borderRadius="large"
+                            paddingX="size-150"
+                            paddingY="size-65"
+                            marginY="size-50"
+                            UNSAFE_style={{
+                                color: '#888',
+                                fontWeight: 400,
+                                fontSize: '1em',
+                                opacity: 0.7,
+                                border: '1px dashed #444',
+                                display: 'inline-block',
+                                marginLeft: '8px',
+                                userSelect: 'none',
+                            }}
+                        >
+                            Your Name?
+                        </View>
                     </View>
                 )}
             </Flex>
         </View>
     );
-};
+});
 
 export function aboutTab(tasVersion: string) {
     return (

@@ -27,13 +27,6 @@ html {
 }
 
 
-
-
-
-
-
-
-
 /* Prevent scrollbar jumping */
 body.spectrum-modal-is-open {
   overflow: hidden;
@@ -109,47 +102,6 @@ body.spectrum-modal-is-open {
 .socialIcon:focus {
   filter: brightness(var(--brightness-normal));
 }
-
-
-
-.spectrum-ProgressBar-fill {
-  /* Add a subtle gradient that matches the theme */
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.9) 0%, 
-    rgba(255, 255, 255, 0.8) 50%, 
-    rgba(255, 255, 255, 0.9) 100%);
-}
-
-.spectrum-ProgressBar-track {
-  /* Enhance the track with a subtle border */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--border-radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.spectrum-ProgressBar-label {
-  /* Improve label readability */
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.spectrum-ProgressBar-percentage {
-  /* Style the percentage text */
-  color: rgba(255, 255, 255, 0.8);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Indeterminate progress bar styling */
-.spectrum-ProgressBar.is-indeterminate .spectrum-ProgressBar-fill {
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.6) 50%, 
-    transparent 100%);
-}
-
 
 
 .left {

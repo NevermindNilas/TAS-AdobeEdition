@@ -1150,27 +1150,21 @@ const Main = () => {
                         <TabList>
                             <Item key="Chain">
                                 <LinkIcon />
-                                <Text>Chain</Text>
                             </Item>
                             <Item key="Extra">
                                 <Effects />
-                                <Text>Extra</Text>
                             </Item>
                             <Item key="Toolbox">
                                 <Beaker />
-                                <Text>Toolbox</Text>
                             </Item>
                             <Item key="Graph">
                                 <Asterisk />
-                                <Text>Graph</Text>
                             </Item>
                             <Item key="Logs">
                                 <Inbox />
-                                <Text>Logs</Text>
                             </Item>
                             <Item key="About">
                                 <Info />
-                                <Text>About</Text>
                             </Item>
                         </TabList>
                         <div

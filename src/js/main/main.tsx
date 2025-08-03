@@ -617,6 +617,17 @@ const Main = () => {
             if (!aeContext) return;
             const { layerInfo, projectFolderPath } = aeContext;
 
+            // Check encoder compatibility with composition dimensions
+            const dimensions = await evalTS("getCompDimensions");
+            if (dimensions && dimensions.width && dimensions.height) {
+                const { width, height } = dimensions;
+                if ((width % 2 !== 0 || height % 2 !== 0) && !upscale) {
+                    generateToast(2, `Desired Comp res: ${width}x${height} is non divisble by 2. Please update the composition settings.`);
+                    return;
+                }
+            }
+
+
             const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
             generateToast(3, "Initiating the pre-render step...");
 
@@ -791,6 +802,16 @@ const Main = () => {
         try {
             const aeContext = await getValidatedAEContext();
             if (!aeContext) return;
+
+            // Check encoder compatibility with composition dimensions
+            const dimensions = await evalTS("getCompDimensions");
+            if (dimensions && dimensions.width && dimensions.height) {
+                const { width, height } = dimensions;
+                if ((width % 2 !== 0 || height % 2 !== 0) && !upscale) {
+                    generateToast(2, `Desired Comp res: ${width}x${height} is non divisble by 2. Please update the composition settings.`);
+                    return;
+                }
+            }
 
             const renderAlgo = preRenderAlgorithm || DEFAULT.preRenderAlgorithm;
             generateToast(3, "Initiating the pre-render step...");

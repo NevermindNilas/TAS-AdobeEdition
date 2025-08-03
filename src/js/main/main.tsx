@@ -179,6 +179,12 @@ const Main = () => {
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
     const [progressBarState, setProgressBarState] = useState("indeterminate");
+    const [downloadInfo, setDownloadInfo] = useState<{
+        speed?: string;
+        size?: string;
+        eta?: number;
+        phase?: string;
+    }>({});
     const [showDownloadDialog, setShowDownloadDialog] = useState(false);
     const [CurrentVersionOfExe, setCurrentVersionOfExe] = useState<string | "Not Available">(
         "Not Available"
@@ -459,10 +465,16 @@ const Main = () => {
         setisBackendAvailable(true);
         setShowDownloadDialog(false);
         setIsDownloading(true);
-        downloadTASCLI(tasAppDataPath, pythonExePath, (progress, progressBarState, isDone) => {
-            setDownloadProgress(progress);
-            setProgressBarState(progressBarState);
-            setIsDownloading(!isDone);
+        downloadTASCLI(tasAppDataPath, pythonExePath, (progressInfo) => {
+            setDownloadProgress(progressInfo.percentage);
+            setProgressBarState(progressInfo.status);
+            setDownloadInfo({
+                speed: progressInfo.formattedSpeed,
+                size: progressInfo.formattedSize,
+                eta: progressInfo.eta,
+                phase: progressInfo.phase
+            });
+            setIsDownloading(!progressInfo.isDone);
         });
     }, [tasAppDataPath, pythonExePath]);
 
@@ -474,7 +486,12 @@ const Main = () => {
             // Only create and attach the event listener when downloading
             handleLogEvent = ((event: CustomEvent) => {
                 const { logs } = event.detail;
-                setFullLogs(currentLogs => [...currentLogs, ...logs]);
+                // Use functional update to avoid stale closure issues and batch updates
+                setFullLogs(currentLogs => {
+                    const newLogs = [...currentLogs, ...logs];
+                    // Limit log history to prevent memory issues (keep last 1000 lines)
+                    return newLogs.length > 1000 ? newLogs.slice(-1000) : newLogs;
+                });
             }) as EventListener;
 
             window.addEventListener("tas-log", handleLogEvent);
@@ -4461,6 +4478,7 @@ const Main = () => {
                         disableProgressBar={disableProgressBar}
                         downloadProgress={downloadProgress}
                         progressBarState={progressBarState}
+                        downloadInfo={downloadInfo}
                         progressState={progressState}
                         formatETA={formatETA}
                         onCancel={cancelProcessing}

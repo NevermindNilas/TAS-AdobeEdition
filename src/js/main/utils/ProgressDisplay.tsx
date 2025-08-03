@@ -16,6 +16,12 @@ interface ProgressDisplayProps {
     disableProgressBar: boolean;
     downloadProgress: number;
     progressBarState: string;
+    downloadInfo?: {
+        speed?: string;
+        size?: string;
+        eta?: number;
+        phase?: string;
+    };
     progressState: {
         currentFrame: number;
         totalFrames: number;
@@ -25,7 +31,7 @@ interface ProgressDisplayProps {
         isProcessing: boolean;
     };
     formatETA: (seconds: number) => string;
-    onCancel: () => void;
+    onCancel?: () => void;
 }
 
 const ProgressDisplay = memo(({
@@ -34,6 +40,7 @@ const ProgressDisplay = memo(({
     disableProgressBar,
     downloadProgress,
     progressBarState,
+    downloadInfo = {},
     progressState,
     formatETA,
     onCancel
@@ -91,11 +98,35 @@ const ProgressDisplay = memo(({
                                     UNSAFE_style={{
                                         fontSize: "11px",
                                         opacity: 0.7,
+                                        fontWeight: "medium",
                                     }}
                                 >
-                                    {downloadProgress > 0
-                                        ? "Check logs for details"
-                                        : "Please wait, this will take a moment..."}
+                                    {(() => {
+                                        const parts = [];
+                                        
+                                        if (downloadInfo.size && downloadProgress > 0 && downloadProgress < 100) {
+                                            parts.push(downloadInfo.size);
+                                        }
+                                        
+                                        if (downloadInfo.speed && downloadProgress > 0 && downloadProgress < 100) {
+                                            parts.push(downloadInfo.speed);
+                                        }
+                                        
+                                        if (downloadInfo.eta && downloadInfo.eta > 0 && downloadProgress > 0 && downloadProgress < 100) {
+                                            parts.push(formatETA(downloadInfo.eta));
+                                        }
+                                        
+                                        return parts.length > 0 ? parts.join(' • ') : 
+                                            downloadProgress === 100 ? "Processing..." : "Initializing...";
+                                    })()}
+                                </Text>
+                                <Text
+                                    UNSAFE_style={{
+                                        fontSize: "11px",
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    Check Logs tab for details
                                 </Text>
                             </Flex>
                         </div>
@@ -154,7 +185,7 @@ const ProgressDisplay = memo(({
                                 isQuiet
                                 onPress={() => {
                                     try {
-                                        onCancel();
+                                        onCancel?.();
                                     } catch (error) {
                                         console.error("Cancel button error:", error);
                                     }

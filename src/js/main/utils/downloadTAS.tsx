@@ -10,7 +10,6 @@ interface GitHubAsset {
 const MAX_RETRIES = 3;
 const PROGRESS_TIMEOUT = 10000; // 10 seconds
 
-// Function to download the latest TAS release and extract it
 const downloadTASCLI = async (
     tasAppDataPath: string,
     tasPythonExecPath: string,
@@ -112,19 +111,17 @@ const downloadTASCLI = async (
                         console.error(
                             "Appropriate TAS .7z file not found in the latest release assets."
                         );
-                        alert(
-                            "Failed to find the appropriate TAS download. Please check for updates or try again later."
-                        );
+                        generateToast(2, "Failed to find the appropriate TAS download. Please check for updates or try again later.");
                     }
                 });
             })
             .on("error", err => {
                 console.error("Error fetching the latest TAS release:", err);
-                alert("Failed to download TAS. Please try again later.");
+                generateToast(2, "Failed to download TAS. Please try again later.");
             });
     } catch (error) {
         console.error("Error in downloadTAS:", error);
-        alert("Failed to download and extract TAS. Please try again later.");
+        generateToast(2, "Failed to download and extract TAS. Please try again later.");
     }
 };
 

@@ -48,6 +48,8 @@ export const DEFAULT_VALUES = {
     interpolateFactor: "2",
     resizeFactor: "2",
     resize: false,
+    postResize: false,
+    postResizeResolution: "1920x1080",
     uiScale: "medium",
     tabListOrientation: "horizontal",
     

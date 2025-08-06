@@ -49,12 +49,8 @@ import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
 import Inbox from "@spectrum-icons/workflow/Inbox";
 import Info from "@spectrum-icons/workflow/Info";
-import Layers from "@spectrum-icons/workflow/Layers";
 import LinkIcon from "@spectrum-icons/workflow/Link";
 import Settings from "@spectrum-icons/workflow/Settings";
-import SortOrderDown from "@spectrum-icons/workflow/SortOrderDown";
-import SortOrderUp from "@spectrum-icons/workflow/SortOrderUp";
-import Wrench from "@spectrum-icons/workflow/Wrench";
 import Asterisk from "@spectrum-icons/workflow/Asterisk";
 import Alert from "@spectrum-icons/workflow/Alert";
 
@@ -108,9 +104,6 @@ import {
 } from "./utils/ConsistentContextualHelp";
 
 
-
-
-
 // TAS Paths
 const {
     tasAppDataPath,
@@ -133,6 +126,8 @@ const Main = () => {
     const [restore, setRestore] = useState(false);
     const [upscale, setUpscale] = useState(false);
     const [sharpening, setSharpening] = useState(false);
+    const [postResize, setPostResize] = useState(false);
+    const [postResizeResolution, setPostResizeResolution] = useState<string | null>("1920x1080");
     const [deduplicateMethod, setDeduplicateMethod] = useState<string | null>("ssim");
     const [encodeAlgorithm, setEncodeAlgorithm] = useState<string | null>("x264");
     const [restoreModel, setRestoreModel] = useState<string | null>("anime1080fixer");
@@ -798,6 +793,11 @@ const Main = () => {
             );
         }
 
+        if (postResize && postResizeResolution) {
+            const [width, height] = postResizeResolution.split('x');
+            attempt.push("--output_scale", `${width}x${height}`);
+        }
+
         if (aiPrecision) {
             attempt.push("--half", aiPrecision || DEFAULT.aiPrecision);
         }
@@ -807,12 +807,12 @@ const Main = () => {
         pythonExePath, mainPyPath, enablePreview, encodeAlgorithm, bitDepth, resize, resizeFactor,
         interpolate, interpolateFactor, interpolationModel, slowMotion, rifeensemble, dynamicScale,
         upscale, upscaleModel, forceStatic, deduplicate, deduplicateSensitivity, deduplicateMethod,
-        restore, restoreModel, sharpening, sharpeningSensitivity, aiPrecision
+        restore, restoreModel, sharpening, sharpeningSensitivity, postResize, postResizeResolution, aiPrecision
     ]);
 
     const hasProcessingOptions = useMemo(() =>
-        interpolate || upscale || deduplicate || restore || sharpening || resize,
-        [interpolate, upscale, deduplicate, restore, sharpening, resize]
+        interpolate || upscale || deduplicate || restore || sharpening || resize || postResize,
+        [interpolate, upscale, deduplicate, restore, sharpening, resize, postResize]
     );
 
     const startChain = useCallback(async () => {
@@ -956,6 +956,8 @@ const Main = () => {
             setSlowMotion(parsedSettings.slowMotion);
             setResize(parsedSettings.resize);
             setResizeFactor(parsedSettings.resizeFactor);
+            setPostResize(parsedSettings.postResize);
+            setPostResizeResolution(parsedSettings.postResizeResolution);
             setUIScale(parsedSettings.uiScale);
             setAiPrecision(parsedSettings.aiPrecision);
             if (parsedSettings.selectedTab && tabKeys.includes(parsedSettings.selectedTab)) {
@@ -1007,6 +1009,8 @@ const Main = () => {
         slowMotion,
         resize,
         resizeFactor,
+        postResize,
+        postResizeResolution,
         uiScale,
         aiPrecision,
         selectedTab,
@@ -1046,6 +1050,8 @@ const Main = () => {
         slowMotion,
         resize,
         resizeFactor,
+        postResize,
+        postResizeResolution,
         uiScale,
         aiPrecision,
         selectedTab,
@@ -1230,7 +1236,7 @@ const Main = () => {
                                                                 isEmphasized
                                                                 width={"100%"}
                                                             >
-                                                                <Text>Resize</Text>
+                                                                <Text>Resize Input</Text>
                                                             </ToggleButton>
                                                             <DialogTrigger
                                                                 isDismissable
@@ -1244,7 +1250,7 @@ const Main = () => {
                                                                     <ActionButton>
                                                                         <Settings />
                                                                     </ActionButton>
-                                                                    <Tooltip>Resize Settings</Tooltip>
+                                                                    <Tooltip>Resize Input Settings</Tooltip>
                                                                 </TooltipTrigger>
                                                                 {close => (
                                                                     <Dialog
@@ -1325,7 +1331,6 @@ const Main = () => {
                                                                                 direction="column"
                                                                                 gap={10}
                                                                             >
-
                                                                                 <Picker
                                                                                     label="Resize Factor"
                                                                                     selectedKey={
@@ -2895,6 +2900,223 @@ const Main = () => {
                                                                 )}
                                                             </DialogTrigger>
                                                         </Flex>
+                                                        <Flex direction="row" gap={8} width={"100%"}>
+                                                            <ToggleButton
+                                                                isSelected={postResize}
+                                                                onChange={setPostResize}
+                                                                aria-label="Resize-Output"
+                                                                isEmphasized
+                                                                width={"100%"}
+                                                            >
+                                                                <Text>Resize Output</Text>
+                                                            </ToggleButton>
+                                                            <DialogTrigger
+                                                                isDismissable
+                                                                onOpenChange={(isOpen) => {
+                                                                    if (isOpen) {
+                                                                        getCompositionDimensions();
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <TooltipTrigger delay={0}>
+                                                                    <ActionButton>
+                                                                        <Settings />
+                                                                    </ActionButton>
+                                                                    <Tooltip>Resize Output Settings</Tooltip>
+                                                                </TooltipTrigger>
+                                                                {close => (
+                                                                    <Dialog
+                                                                        UNSAFE_className="alertDialogBorder"
+                                                                        maxWidth={"100%"}
+                                                                    >
+                                                                        <Heading>
+                                                                            <Flex
+                                                                                direction={"row"}
+                                                                                gap={8}
+                                                                                width={"100%"}
+                                                                            >
+                                                                                <Text>
+                                                                                    Resize Output Settings
+                                                                                </Text>
+                                                                                {createGeneralContextualHelp(
+                                                                                    "Resize Output",
+                                                                                    "Resize the video to a specific resolution after all processing is complete. This is useful if your system can't handle 4K Layers at the cost of some of the benefits coming from Upscaling."
+                                                                                )}
+                                                                            </Flex>
+                                                                        </Heading>
+                                                                        <Divider />
+                                                                        <Content>
+                                                                            <View
+                                                                                backgroundColor="gray-75"
+                                                                                padding="size-150"
+                                                                                borderRadius="medium"
+                                                                                marginBottom="size-200"
+                                                                            >
+                                                                                <Flex direction="column" gap="size-100">
+                                                                                    {isDimensionsLoading ? (
+                                                                                        <Flex direction="row" justifyContent="center" alignItems="center" minHeight="size-600">
+                                                                                            <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.7 }}>
+                                                                                                Getting composition dimensions...
+                                                                                            </Text>
+                                                                                        </Flex>
+                                                                                    ) : (
+                                                                                        <Flex direction="row" justifyContent="space-between" alignItems="center">
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Input:
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
+                                                                                                    fontWeight: "medium",
+                                                                                                    color: compDimensions ? "#ffffff" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {compDimensions
+                                                                                                        ? `${compDimensions.width}×${compDimensions.height}`
+                                                                                                        : "No composition active"
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                            <Text UNSAFE_style={{ fontSize: "18px", opacity: 0.6 }}>
+                                                                                                →
+                                                                                            </Text>
+                                                                                            <Flex direction="column" gap="size-50">
+                                                                                                <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                    Output:
+                                                                                                </Text>
+                                                                                                <Text UNSAFE_style={{
+                                                                                                    fontSize: "14px",
+                                                                                                    fontWeight: "medium",
+                                                                                                    color: postResizeResolution ? "#4CAF50" : "#ff9800"
+                                                                                                }}>
+                                                                                                    {postResizeResolution 
+                                                                                                        ? postResizeResolution.replace('x', '×')
+                                                                                                        : "Select resolution"}
+                                                                                                </Text>
+                                                                                            </Flex>
+                                                                                        </Flex>
+                                                                                    )}
+                                                                                </Flex>
+                                                                            </View>
+
+                                                                            <Flex
+                                                                                direction="column"
+                                                                                gap={10}
+                                                                            >
+                                                                                <Picker
+                                                                                    label="Output Resolution"
+                                                                                    selectedKey={
+                                                                                        postResizeResolution
+                                                                                    }
+                                                                                    onSelectionChange={handleSelectionChange(
+                                                                                        setPostResizeResolution
+                                                                                    )}
+                                                                                    contextualHelp={createPickerContextualHelp(
+                                                                                        "Choosing Output Resolution",
+                                                                                        <>
+                                                                                            Select the final output resolution for your video.
+                                                                                            <br />
+                                                                                            <br />
+                                                                                            <Text>
+                                                                                                16:9 resolutions are ideal for YouTube and most platforms.
+                                                                                                21:9 for ultrawide displays, and 4:3 for classic formats.
+                                                                                            </Text>
+                                                                                        </>
+                                                                                    )}
+                                                                                    width={"100%"}
+                                                                                >
+                                                                                    <Section title="16:9 Resolutions">
+                                                                                        <Item key="1280x720">
+                                                                                            <Text>
+                                                                                                1280×720 (HD)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="1920x1080">
+                                                                                            <Text>
+                                                                                                1920×1080 (Full HD)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="2560x1440">
+                                                                                            <Text>
+                                                                                                2560×1440 (2K)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="3840x2160">
+                                                                                            <Text>
+                                                                                                3840×2160 (4K)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                    </Section>
+                                                                                    <Section title="21:9 Resolutions">
+
+                                                                                        <Item key="1720x720">
+                                                                                            <Text>
+                                                                                                1720×720 (Ultrawide HD)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="2560x1080">
+                                                                                            <Text>
+                                                                                                2560×1080 (Ultrawide FHD)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="3440x1440">
+                                                                                            <Text>
+                                                                                                3440×1440 (Ultrawide 2K)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="5120x2160">
+                                                                                            <Text>
+                                                                                                5120×2160 (Ultrawide 4K)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                    </Section>
+                                                                                    <Section title="32:9 Resolutions">
+
+                                                                                        <Item key="2560x720">
+                                                                                            <Text>
+                                                                                                2560×720 (Super Ultrawide HD)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="3840x1080">
+                                                                                            <Text>
+                                                                                                3840×1080 (Super Ultrawide FHD)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="5120x1440">
+                                                                                            <Text>
+                                                                                                5120×1440 (Super Ultrawide 2K)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="7680x2160">
+                                                                                            <Text>
+                                                                                                7680×2160 (Super Ultrawide 4K)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                    </Section>
+                                                                                    <Section title="4:3 Resolutions">
+                                                                                        <Item key="1024x768">
+                                                                                            <Text>
+                                                                                                1024×768 (XGA)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="1600x1200">
+                                                                                            <Text>
+                                                                                                1600×1200 (UXGA)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="2048x1536">
+                                                                                            <Text>
+                                                                                                2048×1536 (QXGA)
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                    </Section>
+                                                                                </Picker>
+                                                                            </Flex>
+                                                                        </Content>
+                                                                    </Dialog>
+                                                                )}
+                                                            </DialogTrigger>
+                                                        </Flex>
+                                                        
                                                         <Divider size="S" />
                                                         <Flex direction="row" gap={8} width={"100%"}>
                                                             <ActionButton

@@ -102,7 +102,7 @@ const ProgressDisplay = memo(({
                                     }}
                                 >
                                     {(() => {
-                                        const parts = [];
+                                        const parts: string[] = [];
                                         
                                         if (downloadInfo.size && downloadProgress > 0 && downloadProgress < 100) {
                                             parts.push(downloadInfo.size);

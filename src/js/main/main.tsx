@@ -181,6 +181,7 @@ const Main = () => {
         phase?: string;
     }>({});
     const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+    const [enableCompression, setEnableCompression] = useState(false);
     const [CurrentVersionOfExe, setCurrentVersionOfExe] = useState<string | "Not Available">(
         "Not Available"
     );
@@ -470,21 +471,17 @@ const Main = () => {
                 phase: progressInfo.phase
             });
             setIsDownloading(!progressInfo.isDone);
-        });
-    }, [tasAppDataPath, pythonExePath]);
+        }, enableCompression);
+    }, [tasAppDataPath, pythonExePath, enableCompression]);
 
-    // Modify the useEffect to only attach the event listener when downloading
     useEffect(() => {
         let handleLogEvent: EventListener | null = null;
 
         if (isDownloading) {
-            // Only create and attach the event listener when downloading
             handleLogEvent = ((event: CustomEvent) => {
                 const { logs } = event.detail;
-                // Use functional update to avoid stale closure issues and batch updates
                 setFullLogs(currentLogs => {
                     const newLogs = [...currentLogs, ...logs];
-                    // Limit log history to prevent memory issues (keep last 1000 lines)
                     return newLogs.length > 1000 ? newLogs.slice(-1000) : newLogs;
                 });
             }) as EventListener;
@@ -1100,7 +1097,7 @@ const Main = () => {
                                 <Text UNSAFE_style={{ fontSize: 13 }}>
                                     A download of <strong>~35MB</strong> is required (
                                     <Text UNSAFE_style={{ color: "#4CAF50", fontWeight: 600, display: "inline" }}>
-                                        {isNvidia === "LITE" ? "~800MB" : "~8GB"}
+                                        {isNvidia === "LITE" ? "~1GB" : "~10GB"}
                                     </Text>
                                     {" "}after full installation). <strong>This is a one time download!</strong>
                                 </Text>
@@ -1142,14 +1139,55 @@ const Main = () => {
                                     </Text>
                                 </Flex>
                             )}
-                            {(freeSpace !== undefined && freeSpace < 9 * 1024 * 1024 * 1024) && (
+                            {(freeSpace !== undefined && freeSpace < 10 * 1024 * 1024 * 1024) && (
                                 <Flex direction="row" alignItems="center" gap="size-100">
                                     <Alert color="negative" size="XS" />
                                     <Text UNSAFE_style={{ color: "#FF9800", fontWeight: 600 }}>
-                                        Warning: Less than 8.5GB of free space available. The download WILL fail!
+                                        Warning: Less than 10GB of free space available. The download WILL fail!
                                     </Text>
                                 </Flex>
                             )}
+                            
+                            <Divider size="S" />
+                            
+                            <Flex direction="row" alignItems="center">
+                                <Checkbox
+                                    isSelected={enableCompression}
+                                    onChange={setEnableCompression}
+                                >
+                                    Enable XPRESS 8K Compression ( Experimental! )
+                                </Checkbox>
+                                {createGeneralContextualHelp(
+                                    "XPRESS 8K Compression",
+                                    <>
+                                        <Text>
+                                            <strong>What it does:</strong> Applies Windows 10 XPRESS with Huffman encoding compression to the TAS-Portable folder after installation.
+                                        </Text>
+                                        <br />
+                                        <br />
+                                        <Text>
+                                            <strong>Benefits:</strong>
+                                        </Text>
+                                        <ul>
+                                            <li>Reduces disk space usage by approximately 30-50%</li>
+                                            <li>Files remain accessible and executable</li>
+                                            <li>Transparent compression - no manual decompression needed</li>
+                                            <li>Uses native Windows compression API</li>
+                                        </ul>
+                                        <Text>
+                                            <strong>Potential drawbacks:</strong>
+                                        </Text>
+                                        <ul>
+                                            <li>Slightly slower file access times (usually negligible)</li>
+                                            <li>Small CPU overhead during file operations</li>
+                                        </ul>
+                                        <br />
+                                        <Text>
+                                            <em>Recommended for users with limited disk space or for users with old HDDs / SSDs.</em>
+                                        </Text>
+                                    </>
+                                )}
+                            </Flex>
                                 
                         </Flex>
                     </AlertDialog>

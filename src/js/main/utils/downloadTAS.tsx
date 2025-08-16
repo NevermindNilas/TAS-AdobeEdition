@@ -52,11 +52,13 @@ interface DownloadProgressInfo {
  * @param tasAppDataPath - where to save TAS files
  * @param tasPythonExecPath - path to python executable
  * @param onProgress - callback function to report progress status
+ * @param enableCompression - whether to apply XPRESS 8K compression after installation
  */
 const downloadTASCLI = async (
     tasAppDataPath: string,
     tasPythonExecPath: string,
-    onProgress: (progressInfo: DownloadProgressInfo) => void
+    onProgress: (progressInfo: DownloadProgressInfo) => void,
+    enableCompression: boolean = false
 ) => {
     try {
         const sevenZPath = await download7zExe(tasAppDataPath);
@@ -182,14 +184,47 @@ const downloadTASCLI = async (
                                     });
                                 }
                             );
-                            onProgress({
-                                percentage: 100,
-                                status: "Installation complete",
-                                isDone: true,
-                                phase: 'complete'
-                            });
+                            // Apply compression if requested
+                            if (enableCompression) {
+                                onProgress({
+                                    percentage: 100,
+                                    status: "Applying XPRESS 8K compression...",
+                                    isDone: false,
+                                    phase: 'complete'
+                                });
 
-                            generateToast(1, "Backend successfully downloaded!");
+                                try {
+                                    await applyXPRESS8KCompression(tasAppDataPath);
+                                    
+                                    // Verify compression worked
+                                    const compressionStats = await verifyCompression(tasAppDataPath);
+                                    
+                                    onProgress({
+                                        percentage: 100,
+                                        status: `Compression applied successfully${compressionStats ? ` (${compressionStats})` : ''}`,
+                                        isDone: true,
+                                        phase: 'complete'
+                                    });
+                                    generateToast(1, `Backend downloaded and compressed successfully!${compressionStats ? ` ${compressionStats}` : ''}`);
+                                } catch (compressionError) {
+                                    console.error("Compression failed:", compressionError);
+                                    onProgress({
+                                        percentage: 100,
+                                        status: "Installation complete (compression failed)",
+                                        isDone: true,
+                                        phase: 'complete'
+                                    });
+                                    generateToast(2, "Backend downloaded successfully, but compression failed. Files are still functional.");
+                                }
+                            } else {
+                                onProgress({
+                                    percentage: 100,
+                                    status: "Installation complete",
+                                    isDone: true,
+                                    phase: 'complete'
+                                });
+                                generateToast(1, "Backend successfully downloaded!");
+                            }
                         } else {
                             throw new Error(
                                 `Downloaded file is not a valid archive: ${downloadPath}`
@@ -561,4 +596,184 @@ const downloadRequirements = async (
         });
     });
 };
+
+/**
+ * Apply XPRESS 8K compression to the TAS installation folder
+ * Uses Windows Compression API via the compact command
+ * @param tasAppDataPath - path to TAS installation folder
+ */
+const applyXPRESS8KCompression = (tasAppDataPath: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const logToUI = (logs: string[]) => {
+            try {
+                window.dispatchEvent(
+                    new CustomEvent("tas-log", {
+                        detail: { logs },
+                    })
+                );
+            } catch (error) {
+                console.error('Error dispatching compression log event:', error);
+            }
+        };
+
+        console.log(`Starting compression for: ${tasAppDataPath}`);
+        logToUI([`[COMPRESSION] Starting XPRESS 8K compression for: ${tasAppDataPath}`]);
+        
+        let compactCommand = `compact /C /S /F /I /Q /EXE:XPRESS8K "${tasAppDataPath}\\*"`;
+        logToUI([`[COMPRESSION] Executing command: ${compactCommand}`]);
+        
+        child_process.exec(compactCommand, { 
+            timeout: 300000, 
+            maxBuffer: 50 * 1024 * 1024
+        }, (error, stdout, stderr) => {
+            console.log("Compression command output:");
+            console.log("stdout:", stdout);
+            console.log("stderr:", stderr);
+            
+            // Log all output to UI
+            if (stdout) {
+                const stdoutLines = stdout.split('\n').filter(line => line.trim());
+                logToUI(stdoutLines.map(line => `[COMPRESSION] ${line}`));
+            }
+            if (stderr) {
+                const stderrLines = stderr.split('\n').filter(line => line.trim());
+                logToUI(stderrLines.map(line => `[COMPRESSION ERROR] ${line}`));
+            }
+            
+            if (error) {
+                console.error("XPRESS 8K compression failed, trying fallback:", error);
+                logToUI([`[COMPRESSION] XPRESS 8K failed: ${error.message}`]);
+                logToUI([`[COMPRESSION] Trying fallback to standard NTFS compression...`]);
+                
+                // Fallback to standard NTFS compression if XPRESS 8K fails
+                const fallbackCommand = `compact /C /S /F /I /Q "${tasAppDataPath}\\*"`;
+                console.log(`Trying fallback command: ${fallbackCommand}`);
+                logToUI([`[COMPRESSION] Fallback command: ${fallbackCommand}`]);
+                
+                child_process.exec(fallbackCommand, { 
+                    timeout: 300000, 
+                    maxBuffer: 50 * 1024 * 1024 // 50MB buffer for large output
+                }, (fallbackError, fallbackStdout, fallbackStderr) => {
+                    console.log("Fallback compression output:");
+                    console.log("stdout:", fallbackStdout);
+                    console.log("stderr:", fallbackStderr);
+                    
+                    if (fallbackStdout) {
+                        const stdoutLines = fallbackStdout.split('\n').filter(line => line.trim());
+                        logToUI(stdoutLines.map(line => `[COMPRESSION FALLBACK] ${line}`));
+                    }
+                    if (fallbackStderr) {
+                        const stderrLines = fallbackStderr.split('\n').filter(line => line.trim());
+                        logToUI(stderrLines.map(line => `[COMPRESSION FALLBACK ERROR] ${line}`));
+                    }
+                    
+                    if (fallbackError) {
+                        console.error("Fallback compression also failed:", fallbackError);
+                        logToUI([`[COMPRESSION] Both XPRESS 8K and standard compression failed: ${fallbackError.message}`]);
+                        reject(new Error(`Both XPRESS 8K and standard compression failed: ${fallbackError.message}`));
+                    } else {
+                        console.log("Standard NTFS compression completed successfully");
+                        logToUI([`[COMPRESSION] Standard NTFS compression completed successfully`]);
+                        resolve();
+                    }
+                });
+            } else {
+                console.log("XPRESS 8K compression completed successfully");
+                logToUI([`[COMPRESSION] XPRESS 8K compression completed successfully`]);
+                
+                if (stdout.includes("files within") || stdout.includes("compressed") || stdout.includes("ratio")) {
+                    console.log("Compression appears to have processed files successfully");
+                    logToUI([`[COMPRESSION] Compression appears to have processed files successfully`]);
+                } else {
+                    console.warn("Compression command completed but may not have processed any files");
+                    logToUI([`[COMPRESSION WARNING] Command completed but may not have processed any files`]);
+                }
+                
+                resolve();
+            }
+        });
+    });
+};
+
+/**
+ * Verify that compression was applied by checking compression status
+ * @param tasAppDataPath - path to TAS installation folder
+ * @returns Promise with compression statistics or null if verification fails
+ */
+const verifyCompression = (tasAppDataPath: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+        // Send logs to UI
+        const logToUI = (logs: string[]) => {
+            try {
+                window.dispatchEvent(
+                    new CustomEvent("tas-log", {
+                        detail: { logs },
+                    })
+                );
+            } catch (error) {
+                console.error('Error dispatching verification log event:', error);
+            }
+        };
+
+        const verifyCommand = `compact /Q "${tasAppDataPath}"`;
+        logToUI([`[COMPRESSION VERIFY] Checking compression status: ${verifyCommand}`]);
+        
+        child_process.exec(verifyCommand, (error, stdout, stderr) => {
+            if (error) {
+                console.error("Compression verification failed:", error);
+                logToUI([`[COMPRESSION VERIFY] Verification failed: ${error.message}`]);
+                resolve(null);
+                return;
+            }
+            
+            console.log("Compression verification output:", stdout);
+            
+            if (stdout) {
+                const stdoutLines = stdout.split('\n').filter(line => line.trim());
+                logToUI(stdoutLines.map(line => `[COMPRESSION VERIFY] ${line}`));
+            }
+            if (stderr) {
+                const stderrLines = stderr.split('\n').filter(line => line.trim());
+                logToUI(stderrLines.map(line => `[COMPRESSION VERIFY ERROR] ${line}`));
+            }
+            
+            const lines = stdout.split('\n');
+            let compressedFiles = 0;
+            let totalFiles = 0;
+            let compressionRatio = '';
+            
+            for (const line of lines) {
+                if (line.includes('files within')) {
+                    const match = line.match(/(\d+)\s+files\s+within/);
+                    if (match) {
+                        totalFiles = parseInt(match[1]);
+                    }
+                }
+                if (line.includes('are compressed')) {
+                    const match = line.match(/(\d+)\s+are\s+compressed/);
+                    if (match) {
+                        compressedFiles = parseInt(match[1]);
+                    }
+                }
+                if (line.includes('compression ratio')) {
+                    const match = line.match(/compression\s+ratio\s+(\d+\.\d+)\s+to\s+1/);
+                    if (match) {
+                        compressionRatio = match[1];
+                    }
+                }
+            }
+            
+            if (compressedFiles > 0) {
+                const percentage = totalFiles > 0 ? Math.round((compressedFiles / totalFiles) * 100) : 0;
+                const stats = `${compressedFiles}/${totalFiles} files compressed (${percentage}%)${compressionRatio ? `, ratio ${compressionRatio}:1` : ''}`;
+                logToUI([`[COMPRESSION VERIFY] Result: ${stats}`]);
+                resolve(stats);
+            } else {
+                logToUI([`[COMPRESSION VERIFY] No compressed files found`]);
+                resolve(null);
+            }
+        });
+    });
+};
+
 export default downloadTASCLI;

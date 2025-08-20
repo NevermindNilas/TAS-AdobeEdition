@@ -90,6 +90,149 @@ export const setViewportZoom = (zoom: number) => {
     }
 };
 
+function renderActiveComp(renderMethod: string): any | string {
+    try {
+        var comp = app.project.activeItem;
+        var originalCompName = (comp && comp instanceof CompItem) ? comp.name : null;
+
+        var projectPath = getPath();
+        if (projectPath == null) {
+            return null;
+        }
+        projectPath = projectPath.replace(/[^\\]+$/, "");
+        var preRendersPath = projectPath + "TAS-PreRenders\\";
+        var preRendersDir = new Folder(preRendersPath);
+        if (!preRendersDir.exists) preRendersDir.create();
+
+        if (!comp || !(comp instanceof CompItem)) {
+            return "RENDER ERROR: No active composition selected. Please select a composition in the Project panel and make it active.";
+        }
+
+        var originalWorkAreaStart = comp.workAreaStart;
+        var originalWorkAreaDuration = comp.workAreaDuration;
+
+        var qualityKey = "lossless";
+        renderMethod = (renderMethod || "").toLowerCase();
+        if (renderMethod === "high") qualityKey = "high"; else if (renderMethod === "draft") qualityKey = "draft";
+
+        var outputContainer = ".avi";
+        if (qualityKey === "draft") outputContainer = ".mp4"; else if (qualityKey === "high") outputContainer = ".mov";
+
+        if (comp.selectedLayers.length > 0) {
+            var layerStart = comp.selectedLayers[0].inPoint;
+            var layerEnd = comp.selectedLayers[0].outPoint;
+            for (var s = 0; s < comp.selectedLayers.length; s++) {
+                var sel = comp.selectedLayers[s];
+                layerStart = Math.min(layerStart, sel.inPoint);
+                layerEnd = Math.max(layerEnd, sel.outPoint);
+            }
+            comp.workAreaStart = Math.max(layerStart, 0);
+            var calculatedDuration = (layerStart < 0) ? layerEnd : (layerEnd - layerStart);
+            var minDuration = comp.frameDuration;
+            var workAreaDuration = Math.max(calculatedDuration, minDuration);
+            var maxAllowedDuration = comp.duration - comp.workAreaStart;
+            workAreaDuration = Math.min(workAreaDuration, maxAllowedDuration);
+            comp.workAreaDuration = workAreaDuration;
+        }
+
+        earliestInPoint = comp.workAreaStart;
+        var renderQueueItem = app.project.renderQueue.items.add(comp);
+        var chars = "ABCDEFGHIJKLMNOPQRSTVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var randomId = "";
+        for (var r = 0; r < 5; r++) randomId += chars.charAt(Math.floor(Math.random() * chars.length));
+
+        var outputName;
+        if (comp.selectedLayers.length === 1) {
+            var layerName = comp.selectedLayers[0].name;
+            if (layerName.match(/\.(mp4|mov|avi|mkv)$/i)) layerName = layerName.replace(/\.(mp4|mov|avi|mkv)$/i, "");
+            var cleanLayerName = layerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+            outputName = cleanLayerName + "_" + randomId + outputContainer;
+        } else {
+            outputName = "Prerender_" + randomId + outputContainer;
+        }
+        var outputPath = preRendersPath + outputName;
+        var outputModule = renderQueueItem.outputModule(1);
+
+        var norm = function (str: string): string {
+            return (str || "")
+                .toLowerCase()
+                .replace(/[àáâãäå]/g, "a")
+                .replace(/[èéêë]/g, "e")
+                .replace(/[ìíîï]/g, "i")
+                .replace(/[òóôõö]/g, "o")
+                .replace(/[ùúûü]/g, "u")
+                .replace(/[^a-z0-9]/g, "");
+        };
+        var TEMPLATE_ALIASES: { [k: string]: string[] } = {
+            lossless: ["lossless", "verlustfrei", "sinperdida", "sinperdidas", "sansperte", "senza", "ロスレス", "無損失"],
+            high: ["highquality", "high", "hochqualitat", "hohequalitat", "alta", "altaqualidad", "hautequalite", "altaqualita", "高品質"],
+            draft: ["draft", "entwurf", "borrador", "brouillon", "bozza", "ドラフト", "下書き"]
+        };
+        try {
+            var availableTemplates: string[] = [];
+            try { availableTemplates = (outputModule as any).templates || []; } catch (e) { }
+            var chosen: string | null = null;
+            var aliases = TEMPLATE_ALIASES[qualityKey] || [];
+            for (var t = 0; t < availableTemplates.length && !chosen; t++) {
+                var templ = availableTemplates[t];
+                var n = norm(templ);
+                for (var a = 0; a < aliases.length && !chosen; a++) {
+                    if (n.indexOf(aliases[a]) !== -1) chosen = templ;
+                }
+            }
+            if (!chosen && qualityKey !== "lossless") {
+                for (var t2 = 0; t2 < availableTemplates.length && !chosen; t2++) {
+                    var n2 = norm(availableTemplates[t2]);
+                    if (n2.indexOf("lossless") !== -1 || n2.indexOf("verlustfrei") !== -1) chosen = availableTemplates[t2];
+                }
+            }
+            if (chosen) {
+                try { (outputModule as any).applyTemplate(chosen); } catch (applyErr) { }
+            }
+        } catch (locErr) { }
+
+        outputModule.file = new File(outputPath);
+
+        app.project.renderQueue.render();
+        app.project.renderQueue.showWindow(false);
+
+        if (originalCompName) {
+            for (var idx = 1; idx <= app.project.numItems; idx++) {
+                var item = app.project.item(idx);
+                if (item && item instanceof CompItem && item.name === originalCompName) {
+                    try { item.openInViewer(); } catch (e2) { }
+                    break;
+                }
+            }
+        }
+
+        comp.workAreaStart = originalWorkAreaStart;
+        comp.workAreaDuration = originalWorkAreaDuration;
+
+        var info = {
+            input: outputPath,
+            inpoint: 0,
+            outpoint: 0,
+            name: outputName,
+            layerIndex: comp.selectedLayers[0].index,
+            layerInpoint: comp.selectedLayers[0].inPoint
+        };
+        currentComp = comp;
+        currentLayer = comp.selectedLayers[0] as AVLayer;
+        return info;
+    } catch (error: any) {
+        return "RENDER CRITICAL ERROR: " + error.toString();
+    }
+}
+
+function clearCache(): string | void {
+    try {
+        app.purge(PurgeTarget.ALL_CACHES);
+    } catch (error: any) {
+        return "CACHE ERROR: Failed to clear After Effects cache. " + error.toString() + ". This may affect performance but is not critical.";
+    }
+}
+
 function importOutput(outPath: string): string | void {
     try {
         if (!app) {
@@ -138,164 +281,6 @@ function importOutput(outPath: string): string | void {
         currentComp = null;
     } catch (error: any) {
         return "IMPORT CRITICAL ERROR: " + error.toString();
-    }
-}
-
-function renderActiveComp(renderMethod: string): any | string {
-    try {
-        // Store the name of the current active comp before rendering
-        var comp = app.project.activeItem;
-        var originalCompName = (comp && comp instanceof CompItem) ? comp.name : null;
-
-        var projectPath = getPath();
-        if (projectPath == null) {
-            return null;
-        }
-
-        projectPath = projectPath.replace(/[^\\]+$/, "");
-        var preRendersPath = projectPath + "TAS-PreRenders\\";
-        var preRendersDir = new Folder(preRendersPath);
-        if (!preRendersDir.exists) {
-            preRendersDir.create();
-        }
-
-        if (!comp || !(comp instanceof CompItem)) {
-            return "RENDER ERROR: No active composition selected. Please select a composition in the Project panel and make it active.";
-        }
-
-        var originalWorkAreaStart = comp.workAreaStart;
-        var originalWorkAreaDuration = comp.workAreaDuration;
-
-        var template = "Draft";
-        var outputContainer = ".mp4";
-        renderMethod = renderMethod.toLowerCase();
-
-        if (renderMethod === "high") {
-            template = "High Quality";
-            outputContainer = ".mov";
-        } else if (renderMethod === "lossless") {
-            template = "Lossless";
-            outputContainer = ".avi";
-        } else {
-            template = "Lossless";
-            outputContainer = ".avi";
-        }
-
-        if (comp.selectedLayers.length > 0) {
-            var selectedLayers = comp.selectedLayers;
-            var layerStart = selectedLayers[0].inPoint;
-            var layerEnd = selectedLayers[0].outPoint;
-
-            for (var i = 0; i < selectedLayers.length; i++) {
-                var selectedLayer = selectedLayers[i];
-                layerStart = Math.min(layerStart, selectedLayer.inPoint);
-                layerEnd = Math.max(layerEnd, selectedLayer.outPoint);
-            }
-
-            comp.workAreaStart = Math.max(layerStart, 0);
-
-            var calculatedDuration;
-            if (layerStart < 0) {
-                calculatedDuration = layerEnd;
-            } else {
-                calculatedDuration = layerEnd - layerStart;
-            }
-
-            var minDuration = comp.frameDuration;
-            var workAreaDuration = Math.max(calculatedDuration, minDuration);
-
-            var maxAllowedDuration = comp.duration - comp.workAreaStart;
-            workAreaDuration = Math.min(workAreaDuration, maxAllowedDuration);
-
-            comp.workAreaDuration = workAreaDuration;
-        }
-
-        earliestInPoint = comp.workAreaStart;
-        var renderQueueItem = app.project.renderQueue.items.add(comp);
-        var chars = "ABCDEFGHIJKLMNOPQRSTVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var randomId = "";
-        for (var i = 0; i < 5; i++) {
-            randomId += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-
-        var outputName: string;
-        if (comp.selectedLayers.length === 1) {
-            var layerName = comp.selectedLayers[0].name;
-
-            // if layer name ends with a .mp4 or alike extension, remove it
-            if (layerName.match(/\.(mp4|mov|avi|mkv)$/i)) {
-                layerName = layerName.replace(/\.(mp4|mov|avi|mkv)$/i, "");
-            }
-
-            // make sure it its utf-8 safe
-            var cleanLayerName = layerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
-            outputName = cleanLayerName + "_" + randomId + outputContainer;
-        } else {
-            outputName = "Prerender_" + randomId + outputContainer;
-        }
-        var outputPath = preRendersPath + outputName;
-        var outputModule = renderQueueItem.outputModule(1);
-
-        try {
-            outputModule.applyTemplate(template);
-        } catch (error: any) {
-            if (template === "High Quality") {
-                template = "Lossless";
-                outputContainer = ".avi";
-                outputName = outputName.replace(".mov", ".avi");
-                outputPath = preRendersPath + outputName;
-                outputModule.applyTemplate(template);
-            } else {
-                return "RENDER ERROR: Failed to apply render template '" + template + "'. " + error.toString() + ". Please check your render queue templates.";
-            }
-        }
-
-        outputModule.file = new File(outputPath);
-
-        app.project.renderQueue.render();
-        app.project.renderQueue.showWindow(false);
-
-        // Restore focus to the original comp by name if possible
-        if (originalCompName) {
-            for (var idx = 1; idx <= app.project.numItems; idx++) {
-                var item = app.project.item(idx);
-                if (item && item instanceof CompItem && item.name === originalCompName) {
-                    try {
-                        item.openInViewer();
-                    } catch (e) {
-                        // ignore if fails
-                    }
-                    break;
-                }
-            }
-        }
-
-        comp.workAreaStart = originalWorkAreaStart;
-        comp.workAreaDuration = originalWorkAreaDuration;
-
-        var info = {
-            input: outputPath,
-            inpoint: 0,
-            outpoint: 0,
-            name: outputName,
-            layerIndex: comp.selectedLayers[0].index,
-            layerInpoint: comp.selectedLayers[0].inPoint,
-        };
-
-        currentComp = comp;
-        currentLayer = comp.selectedLayers[0] as AVLayer;
-
-        return info;
-    } catch (error: any) {
-        return "RENDER CRITICAL ERROR: " + error.toString();
-    }
-}
-
-function clearCache(): string | void {
-    try {
-        app.purge(PurgeTarget.ALL_CACHES);
-    } catch (error: any) {
-        return "CACHE ERROR: Failed to clear After Effects cache. " + error.toString() + ". This may affect performance but is not critical.";
     }
 }
 
@@ -534,7 +519,6 @@ function precomposeSelectedLayers(name?: string): boolean | string {
         app.beginUndoGroup("Precompose Layers");
 
         const newComp = comp.layers.precompose(layerIndices, precompName, true);
-
         newComp.duration = timeSpan;
 
         for (let i = 1; i <= newComp.numLayers; i++) {

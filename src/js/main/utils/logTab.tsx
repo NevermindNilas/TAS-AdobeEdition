@@ -7,6 +7,9 @@ import {
     Tooltip,
     TooltipTrigger,
     Divider,
+    IllustratedMessage,
+    Content,
+    Switch,
 } from "@adobe/react-spectrum";
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Delete from "@spectrum-icons/workflow/Delete";
@@ -19,17 +22,10 @@ import { generateToast } from "./generateToast";
 import { openReportIssue } from "./Socials";
 
 const LogContainerStyle = {
-    borderRadius: "4px",
-    border: "1px solid var(--spectrum-global-color-gray-300)",
-    backgroundColor: "var(--spectrum-global-color-gray-75)",
-    fontFamily: "monospace",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
     whiteSpace: "pre-wrap",
-    overflowY: "auto",
-    overflowX: "hidden",
     wordBreak: "break-word",
     fontSize: "13px",
-    position: "relative",
-    padding: "12px",
 } as any;
 
 const LogLevelColors = {
@@ -79,24 +75,26 @@ export function logTab(data: string[], setData: React.Dispatch<React.SetStateAct
     const logRef = useRef<HTMLDivElement>(null);
     const [copySuccess, setCopySuccess] = useState(false);
     const shouldAutoScrollRef = useRef(true);
+    const [autoScroll, setAutoScroll] = useState(true);
 
     const scrollToBottom = useCallback(() => {
-        if (logRef.current && shouldAutoScrollRef.current) {
+        if (logRef.current && shouldAutoScrollRef.current && autoScroll) {
             logRef.current.scrollTop = logRef.current.scrollHeight;
         }
-    }, []);
+    }, [autoScroll]);
 
     useEffect(() => {
         scrollToBottom();
     }, [data, scrollToBottom]);
 
     const handleScroll = useCallback(() => {
+        if (!autoScroll) return;
         if (logRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = logRef.current;
             const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
             shouldAutoScrollRef.current = isAtBottom;
         }
-    }, []);
+    }, [autoScroll]);
 
     const clearLogs = useCallback(() => {
         setData([]);
@@ -197,53 +195,40 @@ export function logTab(data: string[], setData: React.Dispatch<React.SetStateAct
                         )}
                     </Flex>
                     <Divider size="S" />
-                    <View
-                        height="calc(75vh - 100px)"
-                        UNSAFE_style={LogContainerStyle}
-                        aria-live="polite"
-                    >
-                        <div 
-                            ref={logRef} 
-                            style={{ height: "100%", overflowY: "auto" }}
-                            onScroll={handleScroll}
-                        >
-                            {data.map((line, index) => (
-                                <LogLine key={`${index}-${line.slice(0, 20)}`} line={line} index={index} />
-                            ))}
-                        </div>
-                        {data.length === 0 && (
-                            <Flex
-                                direction="column"
-                                alignItems="center"
-                                justifyContent="center"
-                                height="100%"
-                                UNSAFE_style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                }}
-                            >
+                    <View height="calc(75vh - 100px)" backgroundColor="gray-75" borderRadius="regular" padding="size-200">
+                        {data.length === 0 ? (
+                            <IllustratedMessage>
                                 <InfoOutline size="L" />
-                                <Heading level={4} margin={0} marginTop="size-100">
-                                    No logs available yet
-                                </Heading>
-                                <Text
-                                    marginTop="size-50"
-                                    UNSAFE_style={{
-                                        textAlign: "center",
-                                        maxWidth: "80%",
-                                    }}
+                                <Heading>No logs yet</Heading>
+                                <Content>
+                                    Process logs will appear here once a task starts.
+                                </Content>
+                            </IllustratedMessage>
+                        ) : (
+                            <View height="100%" aria-live="polite" UNSAFE_style={LogContainerStyle}>
+                                <div
+                                    ref={logRef}
+                                    style={{ height: "100%", overflowY: "auto" }}
+                                    onScroll={handleScroll}
                                 >
-                                    Process logs will appear here as they are generated, run a
-                                    processing task from the Chain or Extra tab to generate logs
-                                </Text>
-                            </Flex>
+                                    {data.map((line, index) => (
+                                        <LogLine key={`${index}-${line.slice(0, 20)}`} line={line} index={index} />
+                                    ))}
+                                </div>
+                            </View>
                         )}
                     </View>
                     <Flex direction="row" alignItems="center" justifyContent="space-between">
-                        <Flex gap="size-100">
+                        <Flex gap="size-100" alignItems="center">
+                            <Switch isSelected={autoScroll} onChange={(v) => {
+                                setAutoScroll(v);
+                                if (v) {
+                                    shouldAutoScrollRef.current = true;
+                                    scrollToBottom();
+                                }
+                            }}>
+                                Auto-scroll
+                            </Switch>
                             <TooltipTrigger delay={0}>
                                 <ActionButton isQuiet onPress={copyLogs} aria-label="Copy logs">
                                     {copySuccess ? <CheckmarkCircle /> : <Copy />}

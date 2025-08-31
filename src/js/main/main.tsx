@@ -612,7 +612,6 @@ const Main = () => {
             projectFolderPath
         );
         command = wrapCommandForCmd(command);
-
         generateToast(3, "Youtube download initiated...");
 
         runProcess(executeProcess, command, "Youtube download", () => {
@@ -848,7 +847,8 @@ const Main = () => {
             if (!outputFolder) return;
 
             const randomNumbers = Math.floor(Math.random() * 100000);
-            const outName = `Chain_${randomNumbers}.mp4`;
+            const ext = (encodeAlgorithm?.toLowerCase() === "prores") ? ".mov" : ".mp4";
+            const outName = `Chain_${randomNumbers}${ext}`;
             const tasChainFolder = safePathJoin(ensureUtf8String(outputFolder).replace(/\\$/, ""), "TAS-Chain");
 
             if (!safeExistsSync(tasChainFolder)) {
@@ -4450,7 +4450,6 @@ const Main = () => {
                                                                                 Bit Depth
                                                                             </Text>
                                                                         </Item>
-                                                                        {/*
                                                                             <Item key="prores">
                                                                             <Gauge2 />
                                                                             <Text>ProRes 444 HQ</Text>
@@ -4459,7 +4458,6 @@ const Main = () => {
                                                                                 Filesizes
                                                                             </Text>
                                                                         </Item>
-                                                                        */}
                                                                         <Item key="slow_x264">
                                                                             <Gauge1 />
                                                                             <Text>Slow x264</Text>

@@ -182,8 +182,7 @@ export function buildCommand(parts: string[]): string {
  */
 export function wrapCommandForCmd(command: string): string {
     // Escape inner quotes and wrap the whole command
-    const escapedCommand = command.replace(/"/g, '\\"');
-    return `start /wait cmd /c "${escapedCommand}"`;
+    return `start /wait cmd /c "${command}"`;
 }
 
 /**

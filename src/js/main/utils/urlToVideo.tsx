@@ -1,6 +1,7 @@
 import { generateRandomOutputPath } from "./outputUtils";
 import { quotePath, buildCommand } from "./helpers";
 import { ensureUtf8String } from "./utf8PathUtils";
+import { child_process, fs, path } from "../../lib/cep/node";
 
 const youtubeDownloadLogic = (
     youtubeURL: string,
@@ -22,8 +23,8 @@ const youtubeDownloadLogic = (
         ensureUtf8String(youtubeURL),
         "--output",
         quotePath(outputPath),
-        "--ae"
     ]);
+
     return { command, outputPath };
 };
 

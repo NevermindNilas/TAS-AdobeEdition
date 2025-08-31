@@ -30,6 +30,7 @@ import {
     Tooltip,
     TooltipTrigger,
     View,
+    Breadcrumbs,
 } from "@adobe/react-spectrum";
 import { ToastContainer } from "@react-spectrum/toast";
 import { Key } from "@react-types/shared";
@@ -264,6 +265,7 @@ const Main = () => {
         }
     }, []);
 
+
     const getCompositionFPS = useCallback(async () => {
         setIsFPSLoading(true);
         try {
@@ -280,6 +282,109 @@ const Main = () => {
             setIsFPSLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        if (selectedTab === "Chain") {
+            void getCompositionDimensions();
+            if (interpolate) {
+                void getCompositionFPS();
+            }
+        }
+    }, [selectedTab, interpolate, getCompositionDimensions, getCompositionFPS]);
+
+    useEffect(() => {
+        if (selectedTab === "Chain" && (resize || upscale || postResize)) {
+            void getCompositionDimensions();
+        }
+    }, [selectedTab, resize, upscale, postResize, getCompositionDimensions]);
+
+
+    const resolutionSteps = useMemo(() => {
+        if (!compDimensions) return [] as string[];
+
+        const formatFpsNum = (fps: number) => {
+            const fixed = fps.toFixed(3);
+            return fixed.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+        };
+
+        let cleaned = "";
+        let parsedFactor = NaN;
+        let hasValidFactor = false;
+        if (interpolate) {
+            const rawFactor = (interpolateFactor || DEFAULT.interpolateFactor) as string;
+            cleaned = rawFactor.endsWith("x") ? rawFactor.slice(0, -1) : rawFactor;
+            parsedFactor = parseFloat(cleaned);
+            hasValidFactor = !isNaN(parsedFactor) && parsedFactor > 0;
+        }
+
+    const steps: string[] = [];
+    const w0 = compDimensions.width;
+    const h0 = compDimensions.height;
+    let curW = w0;
+    let curH = h0;
+
+        const baseFpsLabel = (interpolate && compFPS && compFPS > 0)
+            ? ` | ${formatFpsNum(compFPS)} fps`
+            : "";
+    steps.push(`${w0}x${h0}${baseFpsLabel} ( Input )`);
+
+        if (resize && resizeFactor) {
+            const f = parseFloat(resizeFactor);
+            if (!isNaN(f) && f > 0) {
+                const w1 = Math.round(w0 * f);
+                const h1 = Math.round(h0 * f);
+                steps.push(`${w1}x${h1}${baseFpsLabel} ( Re ${f}x )`);
+                curW = w1; curH = h1;
+            }
+        }
+
+        let effectiveFps: number | null = null;
+        if (interpolate && compFPS && compFPS > 0 && hasValidFactor) {
+            effectiveFps = compFPS * parsedFactor;
+            const factorDisplay = cleaned || String(parsedFactor);
+            steps.push(`${curW}x${curH} | ${formatFpsNum(effectiveFps)} fps ( Int ${factorDisplay}x )`);
+        }
+
+        const subsequentFpsLabel = (interpolate && effectiveFps)
+            ? ` | ${formatFpsNum(effectiveFps)} fps`
+            : "";
+
+        if (upscale) {
+            const w2 = curW * 2;
+            const h2 = curH * 2;
+            steps.push(`${w2}x${h2}${subsequentFpsLabel} ( Up 2x )`);
+            curW = w2; curH = h2;
+        }
+
+        if (postResize && postResizeResolution) {
+            const [tw, th] = postResizeResolution.split('x');
+            const tW = parseInt(tw, 10);
+            const tH = parseInt(th, 10);
+            if (!isNaN(tW) && !isNaN(tH)) {
+                steps.push(`${tW}x${tH}${subsequentFpsLabel} ( Output )`);
+            }
+        }
+        return steps;
+    }, [
+        compDimensions,
+        compFPS,
+        resize,
+        resizeFactor,
+        upscale,
+        postResize,
+        postResizeResolution,
+        interpolate,
+        interpolateFactor,
+    ]);
+
+    useEffect(() => {
+        if ((resize || upscale || postResize || interpolate) && !compDimensions) {
+            void getCompositionDimensions();
+        }
+        if (interpolate && (compFPS === null)) {
+            void getCompositionFPS();
+        }
+    }, [resize, upscale, postResize, interpolate, compDimensions, compFPS, getCompositionDimensions, getCompositionFPS]);
 
 
 
@@ -964,7 +1069,6 @@ const Main = () => {
     }, []);
 
 
-    // Debounced save settings
     const debouncedSaveSettings = useDebounce((settingsToSave: any) => {
         localStorage.setItem("settings", JSON.stringify(settingsToSave));
         console.log("Settings saved via debounce"); // Optional: for debugging
@@ -2093,14 +2197,12 @@ const Main = () => {
                                                                                         interpolateFactor
                                                                                     }
                                                                                     onInputChange={value => {
-                                                                                        // Make sure to store just the value without 'x' if needed
                                                                                         setInterpolateFactor(
                                                                                             value
                                                                                         );
                                                                                     }}
                                                                                     onSelectionChange={selected => {
                                                                                         if (selected) {
-                                                                                            // When selecting from dropdown, get the value from the selected item
                                                                                             const selectedItem =
                                                                                                 DEFAULT.interpolationFactorList.find(
                                                                                                     item =>
@@ -3168,6 +3270,13 @@ const Main = () => {
                                                                 <Text>Run Chain</Text>
                                                             </ActionButton>
                                                         </Flex>
+                                                        {(resize || upscale || postResize || interpolate) && resolutionSteps.length > 1 && (
+                                                            <Breadcrumbs size="S" marginStart={-6}>
+                                                                {resolutionSteps.map((s, idx) => (
+                                                                    <Item key={`step-${idx}`}>{s}</Item>
+                                                                ))}
+                                                            </Breadcrumbs>
+                                                        )}
                                                     </Flex>
                                                 </View>
                                             </Flex>

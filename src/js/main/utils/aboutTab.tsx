@@ -15,6 +15,8 @@ import {
     StatusLight,
     ActionGroup,
     Item,
+    InlineAlert,
+    Content,
 } from "@adobe/react-spectrum";
 
 import Info from "@spectrum-icons/workflow/Info";
@@ -110,20 +112,12 @@ export function aboutTab(tasVersion: string) {
                         <SupportersSection />
                     </Flex>
                 </Well>
-                <View
-                    backgroundColor="gray-75"
-                    padding="size-150"
-                    borderRadius="medium"
-                    marginY="size-50"
-                >
-                    <Flex direction="row" gap="size-100" alignItems="center">
-                        <Info size="S" />
-                        <Text>
-                            Please adjust the settings to match your preferences and system before
-                            starting.
-                        </Text>
-                    </Flex>
-                </View>
+                <InlineAlert variant="notice" marginY="size-50">
+                    <Heading level={4} margin={0}>Setup reminder</Heading>
+                    <Content>
+                        Please adjust the settings to match your preferences and system before starting.
+                    </Content>
+                </InlineAlert>
                 <Divider size="S" />
                 <Accordion isQuiet>
                     <Disclosure id="system-requirements">

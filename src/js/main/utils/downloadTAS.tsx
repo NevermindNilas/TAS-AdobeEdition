@@ -240,11 +240,11 @@ const downloadTASCLI = async (
             })
             .on("error", err => {
                 console.error("Error fetching the latest TAS release:", err);
-                generateToast(2, "Failed to download TAS. Please try again later.");
+                generateToast(2, "Failed to download TAS. Please follow the manual installation instructions.");
             });
     } catch (error) {
         console.error("Error in downloadTAS:", error);
-        generateToast(2, "Failed to download and extract TAS. Please try again later.");
+        generateToast(2, "Failed to download and extract TAS. Please follow the manual installation instructions.");
     }
 };
 

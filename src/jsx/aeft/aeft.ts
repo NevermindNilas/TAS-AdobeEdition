@@ -467,15 +467,218 @@ export const sequenceLayers = (order: string): boolean | string => {
 };
 
 export const takeAScreenshot = (output: string): boolean | string => {
+    // Renders a single PNG frame via Render Queue to ensure all effects (incl. 3rd-party like Deep Glow) are applied.
     try {
         if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
             return "SCREENSHOT ERROR: No composition selected. Please open and select a composition.";
         }
-        const comp = app.project.activeItem as CompItem;
-        comp.saveFrameToPng(comp.time, new File(output));
 
-        return true;
+    var comp = app.project.activeItem as CompItem;
+    var originalCompName = comp && comp.name ? comp.name : null;
+
+        var outFile = new File(output);
+        var outFolder = outFile.parent as Folder;
+        if (!outFolder.exists) {
+            try { outFolder.create(); } catch (e) { /* ignore */ }
+        }
+
+        var outName = outFile.name;
+        var dotIdx = outName.lastIndexOf(".");
+        var baseName = dotIdx >= 0 ? outName.substring(0, dotIdx) : outName;
+        var ext = dotIdx >= 0 ? outName.substring(dotIdx + 1) : "png";
+        if ((ext + "").toLowerCase() !== "png") {
+            ext = "png";
+        }
+
+        var originalTime = comp.time;
+        var originalWorkAreaStart = comp.workAreaStart;
+        var originalWorkAreaDuration = comp.workAreaDuration;
+        var oneFrame = comp.frameDuration;
+
+        var t = Math.max(0, Math.min(originalTime, Math.max(0, comp.duration - oneFrame)));
+
+        var uniqueId = (new Date().getTime()).toString(36);
+        var tempPrefix = baseName + "__tas_shot_" + uniqueId + "_"; // we'll render to tempPrefix + [#####].png
+
+        try {
+            var stale = outFolder.getFiles(tempPrefix + "*.png");
+            for (var si = 0; si < stale.length; si++) {
+                try { (stale[si] as File).remove(); } catch (re) { /* ignore */ }
+            }
+        } catch (glErr) { /* ignore */ }
+
+        comp.workAreaStart = t;
+        comp.workAreaDuration = oneFrame;
+
+        var rq = app.project.renderQueue;
+        var rqItem = rq.items.add(comp);
+
+        try {
+            var rs = (rqItem as any).getSettings && (rqItem as any).getSettings(GetSettingsFormat.STRING_SETTABLE);
+            if (rs) {
+                rs["Time Span"] = "Work Area Only";
+                if (!rs["Quality"]) rs["Quality"] = "Best";
+                if (!rs["Resolution"]) rs["Resolution"] = "Full";
+                try { (rqItem as any).setSettings(rs); } catch (eSetRS) { /* ignore */ }
+            }
+        } catch (eRS2) { /* ignore */ }
+
+        try {
+            var rqTemplates = (rqItem as any).templates || [];
+            var bestName: string | null = null;
+            var norm = function (s: string): string {
+                return (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            };
+            var bestAliases = ["bestsettings", "besteinstellungen", "meilleuresparametres", "mejoresajustes", "migliorimpostazioni"];
+            for (var rt = 0; rt < rqTemplates.length && !bestName; rt++) {
+                var n = norm(rqTemplates[rt]);
+                for (var ra = 0; ra < bestAliases.length && !bestName; ra++) {
+                    if (n.indexOf(bestAliases[ra]) !== -1) bestName = rqTemplates[rt];
+                }
+            }
+            if (bestName) {
+                try { (rqItem as any).applyTemplate(bestName); } catch (eApplyBest) { /* ignore */ }
+            }
+        } catch (eRS) { /* ignore */ }
+
+        var om = rqItem.outputModule(1);
+        var pngCapable = false;
+        try {
+            var omTemplates = (om as any).templates || [];
+            var chosenOM: string | null = null;
+            var norm2 = function (s: string): string { return (s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); };
+            for (var i = 0; i < omTemplates.length && !chosenOM; i++) {
+                var n2 = norm2(omTemplates[i]);
+                if (n2.indexOf("png") !== -1) chosenOM = omTemplates[i];
+            }
+            if (chosenOM) {
+                try { (om as any).applyTemplate(chosenOM); pngCapable = true; } catch (eApplyOM) { /* ignore */ }
+            }
+            if (!pngCapable) {
+                try {
+                    var omSet = (om as any).getSettings && (om as any).getSettings(GetSettingsFormat.STRING_SETTABLE);
+                    if (omSet) {
+                        omSet["Format"] = "PNG Sequence";
+                        (om as any).setSettings(omSet);
+                        pngCapable = true;
+                    }
+                } catch (forceOM) { /* ignore */ }
+            }
+        } catch (eOM) { /* ignore */ }
+
+        if (!pngCapable) {
+            comp.workAreaStart = originalWorkAreaStart;
+            comp.workAreaDuration = originalWorkAreaDuration;
+            try { (rqItem as any).remove(); } catch (eRm0) { /* ignore */ }
+            try {
+                comp.saveFrameToPng(originalTime, outFile);
+                return true;
+            } catch (fbOM) {
+                return "SCREENSHOT ERROR: No PNG output module available and fallback failed.";
+            }
+        }
+
+        var patternName = tempPrefix + "[#####].png";
+        var patternFile = new File(outFolder.fsName + "/" + patternName);
+        om.file = patternFile;
+
+        var prevRenderFlags: boolean[] = [];
+        try {
+            var totalItems = rq.numItems;
+            for (var qi = 1; qi <= totalItems; qi++) {
+                var it = rq.item(qi);
+                prevRenderFlags[qi] = it.render;
+                if (it !== rqItem) it.render = false;
+            }
+        } catch (flagErr) { /* ignore */ }
+
+        rq.showWindow(false);
+        rq.render();
+        try { rq.showWindow(false); } catch (eHide) { /* ignore */ }
+        try {
+            if (originalCompName) {
+                try { comp.openInViewer(); } catch (eOpen1) {
+                    for (var idx = 1; idx <= app.project.numItems; idx++) {
+                        var item = app.project.item(idx);
+                        if (item && item instanceof CompItem && item.name === originalCompName) {
+                            try { item.openInViewer(); } catch (eOpen2) { /* ignore */ }
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (eFocus) { /* ignore */ }
+
+        try {
+            var totalItems2 = rq.numItems;
+            for (var qj = 1; qj <= totalItems2; qj++) {
+                var it2 = rq.item(qj);
+                // @ts-ignore
+                if (typeof prevRenderFlags[qj] !== "undefined") it2.render = prevRenderFlags[qj];
+            }
+        } catch (flagRestoreErr) { /* ignore */ }
+
+        var produced: any[] = outFolder.getFiles(tempPrefix + "*.png");
+        if (!produced || produced.length < 1) {
+            try {
+                comp.saveFrameToPng(originalTime, outFile);
+                // Restore state
+                comp.workAreaStart = originalWorkAreaStart;
+                comp.workAreaDuration = originalWorkAreaDuration;
+                try { comp.openInViewer(); } catch (eOpenFB) { /* ignore */ }
+                return true;
+            } catch (fallbackErr) {
+                // Restore state
+                comp.workAreaStart = originalWorkAreaStart;
+                comp.workAreaDuration = originalWorkAreaDuration;
+                return "SCREENSHOT ERROR: Render produced no PNG and fallback failed: " + fallbackErr;
+            }
+        }
+
+        var pick = produced[0] as File;
+        if (produced.length > 1) {
+            var newestIdx = 0;
+            var newestTime = (produced[0] as File).modified.getTime();
+            for (var pf = 1; pf < produced.length; pf++) {
+                var mt = (produced[pf] as File).modified.getTime();
+                if (mt > newestTime) { newestTime = mt; newestIdx = pf; }
+            }
+            pick = produced[newestIdx] as File;
+        }
+
+        var finalOut = new File(outFolder.fsName + "/" + baseName + "." + ext);
+        if (outFile.fsName && outFile.fsName.length > 0) {
+            finalOut = outFile;
+        }
+
+        if (finalOut.exists) { try { finalOut.remove(); } catch (er) { /* ignore */ } }
+        var copied = pick.copy(finalOut.fsName);
+        // Clean up temp file
+        try { pick.remove(); } catch (er2) { /* ignore */ }
+
+        comp.workAreaStart = originalWorkAreaStart;
+        comp.workAreaDuration = originalWorkAreaDuration;
+        try { (rqItem as any).remove(); } catch (eRm) { /* ignore */ }
+    try { comp.openInViewer(); } catch (eOpen3) { /* ignore */ }
+
+        if (copied) return true;
+        try {
+            comp.saveFrameToPng(originalTime, outFile);
+            // Ensure comp viewer is active
+            try { comp.openInViewer(); } catch (eOpen4) { /* ignore */ }
+            return true;
+        } catch (fb2) {
+            return "SCREENSHOT ERROR: Could not move rendered frame to destination (and fallback failed).";
+        }
     } catch (error: any) {
+        try {
+            if (app.project && app.project.activeItem && app.project.activeItem instanceof CompItem) {
+                var comp2 = app.project.activeItem as CompItem;
+                comp2.saveFrameToPng(comp2.time, new File(output));
+                try { comp2.openInViewer(); } catch (eOpen5) { /* ignore */ }
+                return true;
+            }
+        } catch (e2) { /* ignore */ }
         return "SCREENSHOT ERROR: Failed to save screenshot. " + error.toString();
     }
 };

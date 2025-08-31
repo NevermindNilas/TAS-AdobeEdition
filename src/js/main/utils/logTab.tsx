@@ -180,7 +180,7 @@ export function logTab(data: string[], setData: React.Dispatch<React.SetStateAct
                     <Flex direction="row" gap={8} alignItems="center">
                         <Inbox size="S" />
                         <Heading level={4} margin={0}>
-                            Process Logs ({data.length})
+                            Process Logs
                         </Heading>
                         {createGeneralContextualHelp(
                             "Process Logs",

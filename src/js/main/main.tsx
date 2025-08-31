@@ -1977,7 +1977,7 @@ const Main = () => {
                                                                                                 available
                                                                                                 with
                                                                                                 Rife
-                                                                                                GTX.
+                                                                                                Cuda.
                                                                                             </>
                                                                                         )}
                                                                                     </Flex>
@@ -3793,7 +3793,7 @@ const Main = () => {
                                                                                             affects the
                                                                                             <strong>
                                                                                                 NVIDIA
-                                                                                                GTX
+                                                                                                Cuda
                                                                                                 Models!
                                                                                             </strong>
                                                                                             <br />

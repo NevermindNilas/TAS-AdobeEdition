@@ -1,5 +1,6 @@
 import { path, fs, https, http, child_process } from "../../lib/cep/node";
 import { generateToast } from "./generateToast";
+import { addPortToCommand } from "./helpers";
 import { safePathJoin, ensureUtf8String, safeExistsSync, quoteUtf8Path } from "./utf8PathUtils";
 
 interface GitHubAsset {
@@ -450,7 +451,9 @@ const downloadRequirements = async (
 ) => {
     const mainPyPath = safePathJoin(ensureUtf8String(tasAppDataPath), "main.py");
 
-    const command = `${quoteUtf8Path(tasPythonExecPath)} -u ${quoteUtf8Path(mainPyPath)} --download_requirements`;
+    // Ensure the AE communications URL is provided to the backend via --ae
+    const baseCommand = `${quoteUtf8Path(tasPythonExecPath)} -u ${quoteUtf8Path(mainPyPath)} --download_requirements`;
+    const command = addPortToCommand(baseCommand);
     return new Promise<void>((resolve, reject) => {
         const childProcess = child_process.exec(command, {
             env: {

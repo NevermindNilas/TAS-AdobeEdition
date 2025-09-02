@@ -1,3 +1,4 @@
+// DEPRECATED CODE!!!!!!!!!!
 import { generateRandomOutputPath } from "./outputUtils";
 
 const animeDownloadLogic = (pathToTasExe: string, pathToSave: string) => {

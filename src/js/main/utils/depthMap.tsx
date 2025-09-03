@@ -1,6 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
 import { quotePath, buildCommand } from "./helpers";
-import { ensureUtf8String } from "./utf8PathUtils";
 
 const depthMapExtractionLogic = async (
     pathToTasExe: string,
@@ -13,28 +12,28 @@ const depthMapExtractionLogic = async (
     aiPrecision: string
 ) => {
     const outputPath = generateRandomOutputPath(
-        ensureUtf8String(pathToSave), 
+        pathToSave, 
         "TAS-Depth", 
         "Depth", 
         ".mp4"
     );
 
     const command = buildCommand([
-        quotePath(ensureUtf8String(pathToTasExe)),
-        quotePath(ensureUtf8String(mainPyPath)),
+        quotePath(pathToTasExe),
+        quotePath(mainPyPath),
         "--input",
-        quotePath(ensureUtf8String(pathToVideo)),
+        quotePath(pathToVideo),
         "--output",
         quotePath(outputPath),
         "--depth",
         "--depth_method",
-        ensureUtf8String(depthMethod),
+        depthMethod,
         "--bit_depth",
-        ensureUtf8String(bitDepth),
+        bitDepth,
         "--depth_quality",
-        ensureUtf8String(depthQuality),
+        depthQuality,
         "--half",
-        ensureUtf8String(aiPrecision),
+        aiPrecision,
         "--ae"
     ]);
 

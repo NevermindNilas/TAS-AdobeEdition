@@ -1,7 +1,6 @@
 import { path, fs, https, http, child_process } from "../../lib/cep/node";
 import { generateToast } from "./generateToast";
 import { addPortToCommand } from "./helpers";
-import { safePathJoin, ensureUtf8String, safeExistsSync, quoteUtf8Path } from "./utf8PathUtils";
 
 interface GitHubAsset {
     name: string;
@@ -63,7 +62,7 @@ const downloadTASCLI = async (
 ) => {
     try {
         const sevenZPath = await download7zExe(tasAppDataPath);
-        const tasPath = safePathJoin(ensureUtf8String(tasAppDataPath));
+        const tasPath = path.join(tasAppDataPath);
         const latestReleaseUrl =
             "https://api.github.com/repos/NevermindNilas/TheAnimeScripter/releases/latest";
 
@@ -96,7 +95,7 @@ const downloadTASCLI = async (
 
                     if (tasAsset) {
                         console.log(`Selected asset: ${tasAsset.name}`);
-                        const downloadPath = safePathJoin(tasPath, ensureUtf8String(tasAsset.name));
+                        const downloadPath = path.join(tasPath, tasAsset.name);
 
                         await downloadFileWithRetries(
                             tasAsset.browser_download_url,
@@ -404,9 +403,9 @@ const downloadFile = (url: string, savePath: string, onProgress: (progressData: 
  */
 const download7zExe = async (tasAppDataPath: string) => {
     const url = "https://www.7-zip.org/a/7zr.exe";
-    const savePath = safePathJoin(ensureUtf8String(tasAppDataPath), "7zr.exe");
+    const savePath = path.join(tasAppDataPath, "7zr.exe");
 
-    if (!safeExistsSync(savePath)) {
+    if (!fs.existsSync(savePath)) {
         await downloadFileWithRetries(url, savePath, () => {});
     }
 
@@ -422,7 +421,7 @@ const download7zExe = async (tasAppDataPath: string) => {
  */
 const extract7z = (sevenZPath: string, archivePath: string, outputPath: string) => {
     return new Promise<void>((resolve, reject) => {
-        const command = `${quoteUtf8Path(sevenZPath)} x ${quoteUtf8Path(archivePath)} -o${quoteUtf8Path(outputPath)} -y -mmt`;
+        const command = `"${sevenZPath}" x "${archivePath}" -o"${outputPath}" -y -mmt`;
         child_process.exec(command, (error, stdout, stderr) => {
             if (error) {
                 console.error("Error extracting .7z file:", stderr);
@@ -449,10 +448,10 @@ const downloadRequirements = async (
     onLog?: (logs: string[]) => void,
     onProgress?: (status: string) => void
 ) => {
-    const mainPyPath = safePathJoin(ensureUtf8String(tasAppDataPath), "main.py");
+    const mainPyPath = path.join(tasAppDataPath, "main.py");
 
     // Ensure the AE communications URL is provided to the backend via --ae
-    const baseCommand = `${quoteUtf8Path(tasPythonExecPath)} -u ${quoteUtf8Path(mainPyPath)} --download_requirements`;
+    const baseCommand = `"${tasPythonExecPath}" -u "${mainPyPath}" --download_requirements`;
     const command = addPortToCommand(baseCommand);
     return new Promise<void>((resolve, reject) => {
         const childProcess = child_process.exec(command, {

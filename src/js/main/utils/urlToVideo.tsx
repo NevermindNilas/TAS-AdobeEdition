@@ -1,6 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
 import { quotePath, buildCommand } from "./helpers";
-import { ensureUtf8String } from "./utf8PathUtils";
 import { child_process, fs, path } from "../../lib/cep/node";
 
 const youtubeDownloadLogic = (
@@ -10,17 +9,17 @@ const youtubeDownloadLogic = (
     pathToSave: string
 ) => {
     const outputPath = generateRandomOutputPath(
-        ensureUtf8String(pathToSave), 
+        pathToSave, 
         "TAS-Youtube", 
         "TAS", 
         ".mp4"
     );
 
     const command = buildCommand([
-        quotePath(ensureUtf8String(pathToTasExe)),
-        quotePath(ensureUtf8String(mainPyPath)),
+        quotePath(pathToTasExe),
+        quotePath(mainPyPath),
         "--input",
-        ensureUtf8String(youtubeURL),
+        youtubeURL,
         "--output",
         quotePath(outputPath),
     ]);

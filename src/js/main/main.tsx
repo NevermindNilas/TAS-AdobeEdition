@@ -73,7 +73,6 @@ import { openChangelog, openGitHubWiki } from "./utils/Socials";
 import execTakeScreenshot from "./utils/takeScreenshot";
 import { youtubeDownloadLogic } from "./utils/urlToVideo";
 import { useDebounce } from "./utils/useDebounce";
-import { safePathJoin, safeExistsSync, safeMkdirSync, ensureUtf8String } from "./utils/utf8PathUtils";
 import { depthMapExtractionLogic } from "./utils/depthMap";
 import { removeBackgroundLogic } from "./utils/removeBackground";
 import { checkDiskSpace } from "./utils/checkDiskSpace";
@@ -921,7 +920,6 @@ const Main = () => {
             const aeContext = await getValidatedAEContext();
             if (!aeContext) return;
 
-            // Check encoder compatibility with composition dimensions
             const dimensions = await evalTS("getCompDimensions");
             if (dimensions && dimensions.width && dimensions.height) {
                 const { width, height } = dimensions;
@@ -954,13 +952,14 @@ const Main = () => {
             const randomNumbers = Math.floor(Math.random() * 100000);
             const ext = (encodeAlgorithm?.toLowerCase() === "prores") ? ".mov" : ".mp4";
             const outName = `Chain_${randomNumbers}${ext}`;
-            const tasChainFolder = safePathJoin(ensureUtf8String(outputFolder).replace(/\\$/, ""), "TAS-Chain");
+            
+            const tasChainFolder = outputFolder + "\\TAS-Chain";
 
-            if (!safeExistsSync(tasChainFolder)) {
-                safeMkdirSync(tasChainFolder, { recursive: true });
+            if (!fs.existsSync(tasChainFolder)) {
+                fs.mkdirSync(tasChainFolder, { recursive: true });
             }
 
-            const outFile = safePathJoin(ensureUtf8String(outputFolder).replace(/\\$/, ""), "TAS-Chain", outName);
+            const outFile = outputFolder + "\\TAS-Chain\\" + outName;
             const command = buildChainCommand(input, outFile);
 
             setIsProcessing(true);

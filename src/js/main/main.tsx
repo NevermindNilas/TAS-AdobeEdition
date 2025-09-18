@@ -658,13 +658,6 @@ const Main = () => {
         });
     }, [resetProgress, setFullLogs, setIsProcessCancelled, deletePreRender]);
 
-    const handleCloseDialog = useCallback(() => {
-        if (!isBackendAvailable) {
-            setisBackendAvailable(true);
-        }
-        setShowDownloadDialog(false);
-    }, [isBackendAvailable]);
-
     const startAutoCut = useCallback(async () => {
         try {
             const aeContext = await getValidatedAEContext();
@@ -1216,12 +1209,10 @@ const Main = () => {
                 <DialogTrigger isOpen={showDownloadDialog}>
                     <ActionButton isHidden>Open Dialog</ActionButton>
                     <AlertDialog
-                        title="Download TAS Dependencies"
+                        title={CurrentVersionOfExe !== "Not Available" ? "Update TAS Dependencies" : "Download TAS Dependencies"}
                         variant="confirmation"
-                        primaryActionLabel="Yes"
+                        primaryActionLabel={CurrentVersionOfExe !== "Not Available" ? "Update" : "Download"}
                         onPrimaryAction={handleDownloadTAS}
-                        cancelLabel="No"
-                        onCancel={handleCloseDialog}
                         onSecondaryAction={openGitHubWiki}
                         secondaryActionLabel="Manual Method"
                         UNSAFE_className="alertDialogBorder"
@@ -1230,7 +1221,7 @@ const Main = () => {
                             <Flex direction="row" alignItems="center" gap="size-100">
                                 <Info color="notice" size="XS" />
                                 <Text UNSAFE_style={{ color: "#FFD700", fontWeight: 600 }}>
-                                    Anime Scripter dependencies were <strong>not found</strong>
+                                    Anime Scripter dependencies {CurrentVersionOfExe !== "Not Available" ? (<strong>are outdated</strong>) : (<strong>were not found</strong>)}
                                 </Text>
                             </Flex>
                             <View borderRadius="medium"  borderWidth="thin" borderColor="dark" padding="size-150" marginBottom="size-100">

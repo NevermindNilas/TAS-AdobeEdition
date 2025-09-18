@@ -37,6 +37,7 @@ type ToolboxTabProps = {
     sortLayerMethod: string | null;
     setSortLayerMethod: React.Dispatch<React.SetStateAction<string | null>>;
     startSortLayersLogic: () => void;
+    startSortLayersLogicWith: (order: 'topDown' | 'bottomUp') => void;
     execTakeScreenshot: () => void;
     execPrecompose: () => void;
     execClearCache: () => void;
@@ -60,6 +61,7 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
     sortLayerMethod,
     setSortLayerMethod,
     startSortLayersLogic,
+    startSortLayersLogicWith,
     execTakeScreenshot,
     execPrecompose,
     execClearCache,
@@ -265,34 +267,21 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                 </ActionButton>
                             </Flex>
                         </Flex>
-                        {/* Divider between creation and sorting controls */}
                         <Divider size="S" />
-                        {/* Sorting Controls (no header/contextual help) */}
-                        <Flex direction="column" gap={8}>
-                            <Picker
-                                width="100%"
-                                selectedKey={sortLayerMethod}
-                                onSelectionChange={handleSelectionChange(setSortLayerMethod) as (key: import("@react-types/shared").Key | null) => void}
-                                label="Sort Layers Order"
-                                contextualHelp={createPickerContextualHelp(
-                                    "Sort Direction",
-                                    "Choose the direction to sort selected layers."
-                                )}
-                            >
-                                <Item key="topDown">
-                                    <SortOrderDown />
-                                    <Text>Top to Bottom</Text>
-                                </Item>
-                                <Item key="bottomUp">
-                                    <SortOrderUp />
-                                    <Text>Bottom to Top</Text>
-                                </Item>
-                            </Picker>
+                        <Flex direction="row" gap={8}>
                             <ActionButton
-                                onPress={() => { void startSortLayersLogic(); }}
+                                onPress={() => { void startSortLayersLogicWith('topDown'); }}
                                 width="100%"
                             >
-                                <Text>Sort Layers</Text>
+                                <SortOrderDown />
+                                <Text>Sort Top to Bottom</Text>
+                            </ActionButton>
+                            <ActionButton
+                                onPress={() => { void startSortLayersLogicWith('bottomUp'); }}
+                                width="100%"
+                            >
+                                <SortOrderUp />
+                                <Text>Sort Bottom to Top</Text>
                             </ActionButton>
                         </Flex>
                     </Flex>

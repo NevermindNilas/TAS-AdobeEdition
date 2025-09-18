@@ -1016,6 +1016,18 @@ const Main = () => {
         }
     }, [sortLayerMethod]);
 
+    const startSortLayersLogicWith = useCallback(async (order: 'topDown' | 'bottomUp') => {
+        const isSaved = await ensureProjectIsSaved();
+        if (isSaved) {
+            const result = await evalTS("sortLayers", order);
+            if (result) {
+                generateToast(3, `Sorting layers (${order === 'topDown' ? 'Top to Bottom' : 'Bottom to Top'})...`);
+            } else {
+                generateToast(2, "Error: Please select at least 2 layers.");
+            }
+        }
+    }, []);
+
     const startTrimToWorkAreaLogic = useCallback(async () => {
         if (await ensureProjectIsSaved()) {
             const result = await evalTS("trimToWorkArea");
@@ -4883,6 +4895,7 @@ const Main = () => {
                                             sortLayerMethod={sortLayerMethod}
                                             setSortLayerMethod={setSortLayerMethod}
                                             startSortLayersLogic={startSortLayersLogic}
+                                            startSortLayersLogicWith={startSortLayersLogicWith}
                                             execTakeScreenshot={execTakeScreenshot}
                                             execPrecompose={execPrecompose}
                                             execClearCache={execClearCache}

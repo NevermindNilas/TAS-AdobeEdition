@@ -161,8 +161,7 @@ export function aboutTab(tasVersion: string) {
                                     • <strong>NCNN & DirectML models:</strong> All GPU types.
                                 </Text>
                                 <Text>
-                                    • <strong>CUDA models:</strong> Compatible with Nvidia GTX
-                                    1000+ and RTX cards.
+                                    • <strong>CUDA models:</strong> Compatible with NVIDIA Turing GPUS ( incl 16xx series ) and above
                                 </Text>
                             </Flex>
                         </DisclosurePanel>

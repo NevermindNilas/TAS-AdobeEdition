@@ -1457,3 +1457,82 @@ export const trimToWorkArea = (): boolean | string => {
         return "TRIM ERROR: " + e.toString();
     }
 };
+
+export const freezeOnCurrentFrame = (): boolean | string => {
+    try {
+        if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+            return "Please open a composition.";
+        }
+        const comp = app.project.activeItem as CompItem;
+        if (comp.selectedLayers.length < 1) {
+            return "Please select at least one layer.";
+        }
+
+        const t = comp.time;
+        const frame = comp.frameDuration;
+        app.beginUndoGroup("Freeze on Current Frame");
+
+        const originalHideShy = comp.hideShyLayers;
+        if (originalHideShy) {
+            try { comp.hideShyLayers = false; } catch (eHS) { /* ignore */ }
+        }
+        const shyStates: boolean[] = [];
+        for (let li = 1; li <= comp.numLayers; li++) {
+            const L = comp.layer(li) as Layer;
+            shyStates[li] = !!(L as any).shy;
+            try { (L as any).shy = false; } catch (eAll) { /* ignore */ }
+        }
+
+        for (let i = 0; i < comp.selectedLayers.length; i++) {
+            const layer = comp.selectedLayers[i] as AVLayer;
+            if ((layer as any).locked) continue;
+            if (!(layer instanceof AVLayer)) continue;
+
+            if (layer.canSetTimeRemapEnabled) {
+                try { layer.timeRemapEnabled = true; } catch (eTREn) { /* ignore */ }
+
+                const tr = layer.property("ADBE Time Remapping") as Property;
+                let valAtT: any = tr.valueAtTime(t, true);
+                const valNum = (typeof valAtT === "number") ? valAtT : Number(valAtT);
+
+                const n = tr.numKeys;
+                const inT = Math.max(layer.inPoint, 0);
+                const outT = Math.max(inT + frame, Math.min(layer.outPoint, comp.duration));
+                try {
+                    if (n >= 2) {
+                        tr.setValueAtKey(1, valNum);
+                        tr.setValueAtKey(n, valNum);
+                    } else if (n === 1) {
+                        const k2 = tr.addKey(outT);
+                        tr.setValueAtKey(1, valNum);
+                        tr.setValueAtKey(k2, valNum);
+                    } else {
+                        const k1 = tr.addKey(inT);
+                        const k2 = tr.addKey(outT);
+                        tr.setValueAtKey(k1, valNum);
+                        tr.setValueAtKey(k2, valNum);
+                    }
+                } catch (eSet) {
+                    try {
+                        tr.setValueAtTime(inT, valNum);
+                        tr.setValueAtTime(outT, valNum);
+                    } catch (eSetTime) { /* ignore */ }
+                }
+            }
+        }
+
+        for (let li = 1; li <= comp.numLayers; li++) {
+            const L = comp.layer(li) as Layer;
+            try { (L as any).shy = shyStates[li]; } catch (eRestore) { /* ignore */ }
+        }
+        if (originalHideShy) {
+            try { comp.hideShyLayers = true; } catch (eHS2) { /* ignore */ }
+        }
+
+        app.endUndoGroup();
+        return true;
+    } catch (e: any) {
+        try { app.endUndoGroup(); } catch (e2) { /* ignore */ }
+        return "FREEZE ERROR: " + e.toString();
+    }
+};

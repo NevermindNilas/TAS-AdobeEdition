@@ -1029,6 +1029,19 @@ const Main = () => {
         }
     }, []);
 
+    const startFreezeOnCurrentFrameLogic = useCallback(async () => {
+        if (await ensureProjectIsSaved()) {
+            const result = await evalTS("freezeOnCurrentFrame");
+            if (result === true) {
+                generateToast(3, "Freeze-frame created.");
+            } else if (typeof result === "string") {
+                generateToast(2, result);
+            } else {
+                generateToast(2, "Error: Please select at least one layer.");
+            }
+        }
+    }, []);
+
 
 
     useEffect(() => {
@@ -4830,6 +4843,7 @@ const Main = () => {
                                             execClearCache={execClearCache}
                                             startDeduplicateLayerTimemapLogic={startDeduplicateLayerTimemapLogic}
                                             startTrimToWorkAreaLogic={startTrimToWorkAreaLogic}
+                                            startFreezeOnCurrentFrameLogic={startFreezeOnCurrentFrameLogic}
                                         />
                                     </Item>
                                     <Item key="Logs">

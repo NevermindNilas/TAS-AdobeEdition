@@ -42,6 +42,7 @@ type ToolboxTabProps = {
     execClearCache: () => void;
     startDeduplicateLayerTimemapLogic: () => void;
     startTrimToWorkAreaLogic: () => void;
+    startFreezeOnCurrentFrameLogic: () => void;
 };
 
 const ToolboxTab: React.FC<ToolboxTabProps> = ({
@@ -64,6 +65,7 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
     execClearCache,
     startDeduplicateLayerTimemapLogic,
     startTrimToWorkAreaLogic,
+    startFreezeOnCurrentFrameLogic,
 }) => {
     return (
         <div style={{ width: '100%' }}>
@@ -172,6 +174,12 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                     width="100%"
                                 >
                                     <Text>Trim to Work Area</Text>
+                                </ActionButton>
+                                <ActionButton
+                                    onPress={startFreezeOnCurrentFrameLogic}
+                                    width="100%"
+                                >
+                                    <Text>Freeze on Current Frame</Text>
                                 </ActionButton>
                             </Flex>
                         </Flex>

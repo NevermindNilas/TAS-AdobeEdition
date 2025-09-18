@@ -4406,7 +4406,7 @@ const Main = () => {
                                                                                 Offline Mode:
                                                                             </strong>
                                                                             Download all models for
-                                                                            offline use (~7GB)
+                                                                            offline use (~8GB)
                                                                         </li>
                                                                         <li>
                                                                             <strong>TAS Folder:</strong>

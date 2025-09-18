@@ -131,7 +131,7 @@ const Main = () => {
     const [deduplicateMethod, setDeduplicateMethod] = useState<string | null>("ssim");
     const [encodeAlgorithm, setEncodeAlgorithm] = useState<string | null>("x264");
     const [restoreModel, setRestoreModel] = useState<string | null>("anime1080fixer");
-    const [upscaleModel, setUpscaleModel] = useState<string | null>("shufflecugan");
+    const [upscaleModel, setUpscaleModel] = useState<string | null>("fallin_soft");
     const [forceStatic, setForceStatic] = useState(false);
     const [disableDonatePopup, setDisableDonatePopup] = useState(false);
     const [depthModel, setDepthModel] = useState<string | null>(DEFAULT.depthModel);

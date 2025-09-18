@@ -29,7 +29,7 @@ export const DEFAULT_VALUES = {
     deduplicateMethod: "ssim",
     encodeAlgorithm: "x264",
     restoreModel: "anime1080fixer",
-    upscaleModel: "shufflecugan",
+    upscaleModel: "fallin_soft",
     interpolationModel: "rife4.6",
     depthModel: "og_distill_small_v2",
     

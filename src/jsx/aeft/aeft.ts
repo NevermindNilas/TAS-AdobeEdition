@@ -1382,3 +1382,78 @@ export const getCompFPS = () => {
         return null;
     }
 };
+
+export const trimToWorkArea = (): boolean | string => {
+    try {
+        if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+            return "Please open a composition.";
+        }
+
+        const comp = app.project.activeItem as CompItem;
+        const workStart = comp.workAreaStart;
+        const workEnd = comp.workAreaStart + comp.workAreaDuration;
+        const frame = comp.frameDuration;
+
+        app.beginUndoGroup("Trim to Work Area");
+
+        if (comp.selectedLayers.length > 0) {
+            for (let i = 0; i < comp.selectedLayers.length; i++) {
+                const layer = comp.selectedLayers[i] as Layer;
+                if ((layer as any).locked) continue;
+
+                let newIn = Math.max(layer.inPoint, workStart);
+                let newOut = Math.min(layer.outPoint, workEnd);
+
+                if (newOut - newIn < frame) {
+                    newIn = Math.max(workStart, Math.min(layer.outPoint - frame, newIn));
+                    newOut = newIn + frame;
+                    if (newOut > comp.duration) {
+                        newOut = Math.min(workEnd, comp.duration);
+                        newIn = Math.max(0, newOut - frame);
+                    }
+                }
+
+                layer.inPoint = newIn;
+                layer.outPoint = newOut;
+            }
+        } else {
+            const shift = workStart;
+            const newDuration = Math.max(frame, comp.workAreaDuration);
+
+            for (let i = 1; i <= comp.numLayers; i++) {
+                const layer = comp.layer(i) as Layer;
+                const wasLocked = (layer as any).locked === true;
+                if (wasLocked) { try { (layer as any).locked = false; } catch (e) { /* ignore */ } }
+
+                const offset = -shift;
+                layer.startTime += offset;
+                layer.inPoint += offset;
+                layer.outPoint += offset;
+
+                if (layer.inPoint < 0) layer.inPoint = 0;
+                if (layer.outPoint > newDuration) layer.outPoint = newDuration;
+                if (layer.outPoint - layer.inPoint < frame) {
+                    if (layer.inPoint + frame <= newDuration) {
+                        layer.outPoint = layer.inPoint + frame;
+                    } else {
+                        layer.inPoint = Math.max(0, newDuration - frame);
+                        layer.outPoint = newDuration;
+                    }
+                }
+
+                if (wasLocked) { try { (layer as any).locked = true; } catch (e2) { /* ignore */ } }
+            }
+
+            comp.duration = newDuration;
+            comp.workAreaStart = 0;
+            comp.workAreaDuration = newDuration;
+            try { comp.time = Math.min(Math.max(comp.time - shift, 0), newDuration - frame); } catch (e3) { /* ignore */ }
+        }
+
+        app.endUndoGroup();
+        return true;
+    } catch (e: any) {
+        try { app.endUndoGroup(); } catch (e2) { /* ignore */ }
+        return "TRIM ERROR: " + e.toString();
+    }
+};

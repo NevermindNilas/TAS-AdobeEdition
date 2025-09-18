@@ -1016,6 +1016,19 @@ const Main = () => {
         }
     }, [sortLayerMethod]);
 
+    const startTrimToWorkAreaLogic = useCallback(async () => {
+        if (await ensureProjectIsSaved()) {
+            const result = await evalTS("trimToWorkArea");
+            if (result === true) {
+                generateToast(3, "Trimmed to work area.");
+            } else if (typeof result === "string") {
+                generateToast(2, result);
+            } else {
+                generateToast(2, "Error: No active comp found.");
+            }
+        }
+    }, []);
+
 
 
     useEffect(() => {
@@ -4816,6 +4829,7 @@ const Main = () => {
                                             execPrecompose={execPrecompose}
                                             execClearCache={execClearCache}
                                             startDeduplicateLayerTimemapLogic={startDeduplicateLayerTimemapLogic}
+                                            startTrimToWorkAreaLogic={startTrimToWorkAreaLogic}
                                         />
                                     </Item>
                                     <Item key="Logs">

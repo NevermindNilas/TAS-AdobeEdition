@@ -41,6 +41,7 @@ type ToolboxTabProps = {
     execPrecompose: () => void;
     execClearCache: () => void;
     startDeduplicateLayerTimemapLogic: () => void;
+    startTrimToWorkAreaLogic: () => void;
 };
 
 const ToolboxTab: React.FC<ToolboxTabProps> = ({
@@ -62,6 +63,7 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
     execPrecompose,
     execClearCache,
     startDeduplicateLayerTimemapLogic,
+    startTrimToWorkAreaLogic,
 }) => {
     return (
         <div style={{ width: '100%' }}>
@@ -162,6 +164,14 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                     width="100%"
                                 >
                                     <Text>Remove Dead Frames</Text>
+                                </ActionButton>
+                            </Flex>
+                            <Flex direction={"row"} gap={8} width={"100%"}>
+                                <ActionButton
+                                    onPress={startTrimToWorkAreaLogic}
+                                    width="100%"
+                                >
+                                    <Text>Trim to Work Area</Text>
                                 </ActionButton>
                             </Flex>
                         </Flex>

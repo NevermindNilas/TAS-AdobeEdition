@@ -2712,15 +2712,6 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="span">
-                                                                                        <Gauge3 />
-                                                                                        <Text>
-                                                                                            SPAN Cuda
-                                                                                        </Text>
-                                                                                        <Text slot="description">
-                                                                                            Anime
-                                                                                        </Text>
-                                                                                    </Item>
                                                                                     <Item key="compact">
                                                                                         <Gauge1 />
                                                                                         <Text>
@@ -2800,16 +2791,6 @@ const Main = () => {
                                                                                         <Gauge4 />
                                                                                         <Text>
                                                                                             ShuffleCugan
-                                                                                            TensorRT
-                                                                                        </Text>
-                                                                                        <Text slot="description">
-                                                                                            Anime
-                                                                                        </Text>
-                                                                                    </Item>
-                                                                                    <Item key="span-tensorrt">
-                                                                                        <Gauge4 />
-                                                                                        <Text>
-                                                                                            SPAN
                                                                                             TensorRT
                                                                                         </Text>
                                                                                         <Text slot="description">

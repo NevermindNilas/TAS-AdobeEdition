@@ -155,13 +155,13 @@ export function aboutTab(tasVersion: string) {
                         <DisclosurePanel>
                             <Flex direction="column" gap="size-75" marginStart="size-250">
                                 <Text>
+                                    • <strong>CUDA models:</strong> Compatible with NVIDIA Turing GPUS ( incl. 16xx series ) and above
+                                </Text>
+                                <Text>
                                     • <strong>TensorRT models:</strong> NVIDIA RTX GPUs only.
                                 </Text>
                                 <Text>
                                     • <strong>NCNN & DirectML models:</strong> All GPU types.
-                                </Text>
-                                <Text>
-                                    • <strong>CUDA models:</strong> Compatible with NVIDIA Turing GPUS ( incl 16xx series ) and above
                                 </Text>
                             </Flex>
                         </DisclosurePanel>

@@ -2668,6 +2668,28 @@ const Main = () => {
                                                                                 width={"100%"}
                                                                             >
                                                                                 <Section title="NVIDIA GPUs">
+                                                                                    <Item key="fallin_soft">
+                                                                                        <Gauge3 />
+                                                                                        <Text>
+                                                                                            Fallin Soft
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime | Denoise + Soft Sharpen
+                                                                                        </Text>
+                                                                                    </Item>
+
+                                                                                    <Item key="fallin_strong">
+                                                                                        <Gauge3 />
+                                                                                        <Text>
+                                                                                            Fallin
+                                                                                            Strong
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime | Denoise + Strong Sharpen
+                                                                                        </Text>
+                                                                                    </Item>
+
+
                                                                                     <Item key="shufflecugan">
                                                                                         <Gauge3 />
                                                                                         <Text>
@@ -2739,6 +2761,29 @@ const Main = () => {
                                                                                     </Item>
                                                                                 </Section>
                                                                                 <Section title="NVIDIA RTX GPUs">
+                                                                                    <Item key="fallin_soft-tensorrt">
+                                                                                        <Gauge4 />
+                                                                                        <Text>
+                                                                                            Fallin Soft
+                                                                                            TensorRT
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime | Denoise + Soft Sharpen
+                                                                                        </Text>
+                                                                                    </Item>
+
+                                                                                    <Item key="fallin_strong-tensorrt">
+                                                                                        <Gauge5 />
+                                                                                        <Text>
+                                                                                            Fallin
+                                                                                            Strong
+                                                                                            TensorRT
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime | Denoise + Strong Sharpen
+                                                                                        </Text>
+                                                                                    </Item>
+
                                                                                     <Item key="shufflecugan-tensorrt">
                                                                                         <Gauge4 />
                                                                                         <Text>

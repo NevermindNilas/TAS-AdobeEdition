@@ -183,7 +183,12 @@ function renderActiveComp(renderMethod: string): any | string {
             if (!chosen && qualityKey !== "lossless") {
                 for (var t2 = 0; t2 < availableTemplates.length && !chosen; t2++) {
                     var n2 = norm(availableTemplates[t2]);
-                    if (n2.indexOf("lossless") !== -1 || n2.indexOf("verlustfrei") !== -1) chosen = availableTemplates[t2];
+                    if (n2.indexOf("lossless") !== -1 || n2.indexOf("verlustfrei") !== -1) {
+                        chosen = availableTemplates[t2];
+                        outputContainer = ".avi";
+                        outputName = outputName.replace(/\.(mov|mp4|avi)$/i, outputContainer);
+                        outputPath = preRendersPath + outputName;
+                    }
                 }
             }
             if (chosen) {

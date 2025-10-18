@@ -61,7 +61,6 @@ const downloadTASCLI = async (
     enableCompression: boolean = false
 ) => {
     try {
-        const sevenZPath = await download7zExe(tasAppDataPath);
         const tasPath = path.join(tasAppDataPath);
         const latestReleaseUrl =
             "https://api.github.com/repos/NevermindNilas/TheAnimeScripter/releases/latest";
@@ -87,7 +86,7 @@ const downloadTASCLI = async (
                         const name = asset.name.toLowerCase();
                         return (
                             name.includes("windows") &&
-                            name.endsWith(".7z") &&
+                            name.endsWith(".zip") &&
                             !name.includes("linux") &&
                             !name.includes("adobeedition")
                         );
@@ -135,7 +134,7 @@ const downloadTASCLI = async (
                                 });
                             }, 300);
 
-                            await extract7z(sevenZPath, downloadPath, tasPath);
+                            await extractZip(downloadPath, tasPath);
                             clearInterval(extractProgressInterval);
                             onProgress({
                                 percentage: 100,
@@ -395,36 +394,12 @@ const downloadFile = (url: string, savePath: string, onProgress: (progressData: 
     });
 };
 
-/**
- * Download 7zip extractor tool if not exist already
- * This tool is needed for extract TAS archive file
- * @param tasAppDataPath - folder where to save 7zr.exe
- * @returns path to 7zr.exe file
- */
-const download7zExe = async (tasAppDataPath: string) => {
-    const url = "https://www.7-zip.org/a/7zr.exe";
-    const savePath = path.join(tasAppDataPath, "7zr.exe");
-
-    if (!fs.existsSync(savePath)) {
-        await downloadFileWithRetries(url, savePath, () => {});
-    }
-
-    return savePath;
-};
-
-/**
- * Extract 7z archive file using 7zr.exe tool
- * Use multi-thread for faster extraction speed
- * @param sevenZPath - path to 7zr.exe extractor
- * @param archivePath - path to .7z file for extract
- * @param outputPath - folder where to extract files
- */
-const extract7z = (sevenZPath: string, archivePath: string, outputPath: string) => {
+const extractZip = (archivePath: string, outputPath: string) => {
     return new Promise<void>((resolve, reject) => {
-        const command = `"${sevenZPath}" x "${archivePath}" -o"${outputPath}" -y -mmt`;
+        const command = `powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${outputPath}' -Force"`;
         child_process.exec(command, (error, stdout, stderr) => {
             if (error) {
-                console.error("Error extracting .7z file:", stderr);
+                console.error("Error extracting .zip file:", stderr);
                 reject(error);
             } else {
                 console.log("Extraction complete:", stdout);
@@ -434,14 +409,6 @@ const extract7z = (sevenZPath: string, archivePath: string, outputPath: string) 
     });
 };
 
-/**
- * Install Python dependencies using pip command
- * This function run Python script to download required libraries
- * @param tasAppDataPath - path to TAS installation folder
- * @param tasPythonExecPath - path to Python executable
- * @param onLog - callback for log messages
- * @param onProgress - callback for progress status updates
- */
 const downloadRequirements = async (
     tasAppDataPath: string,
     tasPythonExecPath: string,

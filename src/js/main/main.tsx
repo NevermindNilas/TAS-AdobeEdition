@@ -1229,7 +1229,7 @@ const Main = () => {
                                 <Text UNSAFE_style={{ fontSize: 13 }}>
                                     A download of <strong>~35MB</strong> is required (
                                     <Text UNSAFE_style={{ color: "#4CAF50", fontWeight: 600, display: "inline" }}>
-                                        {isNvidia === "LITE" ? "~1GB" : "~10GB"}
+                                        {isNvidia === "LITE" ? "~1GB" : "~5GB"}
                                     </Text>
                                     {" "}after full installation). <strong>This is a one time download!</strong>
                                 </Text>
@@ -1271,11 +1271,11 @@ const Main = () => {
                                     </Text>
                                 </Flex>
                             )}
-                            {(freeSpace !== undefined && freeSpace < 10 * 1024 * 1024 * 1024) && (
+                            {(freeSpace !== undefined && freeSpace < 6 * 1024 * 1024 * 1024) && (
                                 <Flex direction="row" alignItems="center" gap="size-100">
                                     <Alert color="negative" size="XS" />
                                     <Text UNSAFE_style={{ color: "#FF9800", fontWeight: 600 }}>
-                                        Warning: Less than 10GB of free space available. The download WILL fail!
+                                        Warning: Less than 6GB of free space available. The download WILL fail!
                                     </Text>
                                 </Flex>
                             )}
@@ -1842,6 +1842,28 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
+                                                                                    <Item key="deh264_real">
+                                                                                        <Gauge1 />
+                                                                                        <Text>
+                                                                                            DeH264 Real
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            IRL / Video /
+                                                                                            DeH264
+                                                                                            Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
+                                                                                    <Item key="deh264_span">
+                                                                                        <Gauge2 />
+                                                                                        <Text>
+                                                                                            DeH264 Span
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime /
+                                                                                            DeH264
+                                                                                            Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
                                                                                 </Section>
                                                                                 <Section title="NVIDIA RTX GPUs">
                                                                                     <Item key="scunet-tensorrt">
@@ -1884,6 +1906,30 @@ const Main = () => {
                                                                                             Darken Lines
                                                                                         </Text>
                                                                                     </Item>
+                                                                                    <Item key="deh264_real-tensorrt">
+                                                                                        <Gauge1 />
+                                                                                        <Text>
+                                                                                            DeH264 Real
+                                                                                            TensorRT
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            IRL / Video /
+                                                                                            DeH264
+                                                                                            Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
+                                                                                    <Item key="deh264_span-tensorrt">
+                                                                                        <Gauge3 />
+                                                                                        <Text>
+                                                                                            DeH264 Span
+                                                                                            TensorRT
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime Video /
+                                                                                            DeH264
+                                                                                            Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
                                                                                 </Section>
                                                                                 <Section title="ALL GPUS">
                                                                                     <Item key="anime1080fixer-directml">
@@ -1910,6 +1956,30 @@ const Main = () => {
                                                                                             Anime /
                                                                                             Fixes Video
                                                                                             Compression
+                                                                                            Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
+                                                                                    <Item key="deh264_real-directml">
+                                                                                        <Gauge1 />
+                                                                                        <Text>
+                                                                                            DeH264 Real
+                                                                                            DirectML
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            IRL / Video /
+                                                                                            DeH264
+                                                                                            Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
+                                                                                    <Item key="deh264_span-directml">
+                                                                                        <Gauge1 />
+                                                                                        <Text>
+                                                                                            DeH264 Span
+                                                                                            DirectML
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime /
+                                                                                            DeH264
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
@@ -3912,7 +3982,7 @@ const Main = () => {
                                                                                             </Text>
                                                                                         </Item>
                                                                                         <Item key="distill_small_v2-directml">
-                                                                                            <Gauge4 />
+                                                                                            <Gauge2 />
                                                                                             <Text>
                                                                                                 Distilled Small V2 DirectML
                                                                                             </Text>
@@ -3921,7 +3991,7 @@ const Main = () => {
                                                                                             </Text>
                                                                                         </Item>
                                                                                         <Item key="distill_base_v2-directml">
-                                                                                            <Gauge3 />
+                                                                                            <Gauge1 />
                                                                                             <Text>
                                                                                                 Distilled Base V2 DirectML
                                                                                             </Text>
@@ -3930,7 +4000,7 @@ const Main = () => {
                                                                                             </Text>
                                                                                         </Item>
                                                                                         <Item key="distill_large_v2-directml">
-                                                                                            <Gauge2 />
+                                                                                            <Gauge1 />
                                                                                             <Text>
                                                                                                 Distilled Large V2 DirectML
                                                                                             </Text>

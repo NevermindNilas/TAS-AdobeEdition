@@ -139,7 +139,7 @@ export function aboutTab(tasVersion: string) {
                                     • <strong>GPU VRAM:</strong> 4GB minimum, 8GB recommended.
                                 </Text>
                                 <Text>
-                                    • <strong>Storage:</strong> 10GB minimum free space for NVIDIA users / 1GB for AMD/Intel.
+                                    • <strong>Storage:</strong> 5GB minimum free space for NVIDIA users / 1GB for AMD/Intel.
                                 </Text>
                             </Flex>
                         </DisclosurePanel>

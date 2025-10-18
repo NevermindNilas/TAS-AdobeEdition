@@ -26,7 +26,7 @@ import Gauge1 from "@spectrum-icons/workflow/Gauge1";
 import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
 
-import { socialsPanel, openBuyMeACoffee, openReportIssue, openParameters } from "./Socials";
+import { socialsPanel, openBuyMeACoffee, openGitHubSponsors, openReportIssue, openParameters } from "./Socials";
 import { useSupporterUsernames } from "./supporterUtils";
 
 const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
@@ -103,12 +103,20 @@ export function aboutTab(tasVersion: string) {
                         <Heading level={4} margin={0}>
                             Thank you to everyone who supports TAS!
                         </Heading>
-                        <Button
-                            variant="primary"
-                            onPress={openBuyMeACoffee}
-                        >
-                            <Text>Buy Me a Coffee</Text>
-                        </Button>
+                        <Flex direction="row" gap="size-150">
+                            <Button
+                                variant="primary"
+                                onPress={openBuyMeACoffee}
+                            >
+                                <Text>Buy Me a Coffee</Text>
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onPress={openGitHubSponsors}
+                            >
+                                <Text>GitHub Sponsors</Text>
+                            </Button>
+                        </Flex>
                         <SupportersSection />
                     </Flex>
                 </Well>

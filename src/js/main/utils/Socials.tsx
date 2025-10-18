@@ -56,6 +56,12 @@ const openBuyMeACoffee = () => {
     window.cep.util.openURLInDefaultBrowser(buyMeACoffee);
 };
 
+const openGitHubSponsors = () => {
+    generateToast(3, "Opening GitHub Sponsors page...");
+    const githubSponsors = "https://github.com/sponsors/NevermindNilas";
+    window.cep.util.openURLInDefaultBrowser(githubSponsors);
+};
+
 const openGitHubWiki = () => {
     generateToast(3, "Opening GitHub Wiki...");
     const githubWiki =
@@ -85,6 +91,7 @@ export {
     openGitHub,
     openYoutube,
     openBuyMeACoffee,
+    openGitHubSponsors,
     openGithubWithLatestRelease,
     openGitHubWiki,
     openChangelog,

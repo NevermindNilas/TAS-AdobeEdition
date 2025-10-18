@@ -25,9 +25,12 @@ import Help from "@spectrum-icons/workflow/Help";
 import Gauge1 from "@spectrum-icons/workflow/Gauge1";
 import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
+import Keyboard from "@spectrum-icons/workflow/Keyboard";
 
 import { socialsPanel, openBuyMeACoffee, openGitHubSponsors, openReportIssue, openParameters } from "./Socials";
 import { useSupporterUsernames } from "./supporterUtils";
+import ShortcutsSettingsPanel from "./ShortcutsSettingsPanel";
+import type { ShortcutSettings } from "./shortcutSettings";
 
 const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
     <Flex alignItems="center" gap="size-100">
@@ -78,7 +81,7 @@ const SupportersSection = React.memo(() => {
     );
 });
 
-export function aboutTab(tasVersion: string) {
+export function aboutTab(tasVersion: string, onShortcutSettingsChange?: (settings: ShortcutSettings) => void) {
     return (
         <View
             borderWidth="thin"
@@ -240,7 +243,13 @@ export function aboutTab(tasVersion: string) {
                             </Flex>
                         </DisclosurePanel>
                     </Disclosure>
+
                 </Accordion>
+                <Divider size="S" />
+                
+                {/* Keyboard Shortcuts Settings Panel */}
+                <ShortcutsSettingsPanel onSettingsChange={onShortcutSettingsChange} />
+                
                 <Divider size="S" />
                 <Flex direction="column" alignItems="center" gap="size-150">
                     <Text>

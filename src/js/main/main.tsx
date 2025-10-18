@@ -57,6 +57,7 @@ import Alert from "@spectrum-icons/workflow/Alert";
 
 import { child_process, fs, path } from "../lib/cep/node";
 import { evalTS } from "../lib/utils/bolt";
+import CSInterface from "../lib/cep/csinterface";
 import { animeDownloadLogic } from "./utils/animeDownloadLogic";
 import autoCutLogic from "./utils/autoCutClipLogic";
 import checkForGPU from "./utils/checkForGPU";
@@ -76,6 +77,12 @@ import { useDebounce } from "./utils/useDebounce";
 import { depthMapExtractionLogic } from "./utils/depthMap";
 import { removeBackgroundLogic } from "./utils/removeBackground";
 import { checkDiskSpace } from "./utils/checkDiskSpace";
+import { 
+    type ShortcutSettings,
+    loadShortcutSettings, 
+    matchesBinding, 
+    getKeyEventsInterest 
+} from "./utils/shortcutSettings";
 
 // Tab Components
 import { aboutTab } from "./utils/aboutTab";
@@ -238,8 +245,8 @@ const Main = () => {
     const tabKeys = ["Chain", "Extra", "Toolbox", "Graph", "Logs", "About"];
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
 
+    const [shortcutSettings, setShortcutSettings] = useState<ShortcutSettings>(() => loadShortcutSettings());
 
-    // Store the previous tab for restoring after closing temporary panels
     const [previousTab, setPreviousTab] = useState<Key | null>(null);
 
     // Tab selection change (no direction logic)
@@ -526,7 +533,6 @@ const Main = () => {
     const checkIfBackendExists = useCallback(async () => {
         let isEmpty = true;
 
-
         const { drive, free, size } = await checkDiskSpace();
         const accurateValue = size - free;
         setDrive(drive);
@@ -592,27 +598,82 @@ const Main = () => {
 
             window.addEventListener("tas-log", handleLogEvent);
 
-            // Clear logs at the start of a new download
             setFullLogs(["Starting TAS dependency download..."]);
         }
 
-        // Cleanup function
         return () => {
             if (handleLogEvent) {
                 window.removeEventListener("tas-log", handleLogEvent);
             }
         };
-    }, [isDownloading]); // Only re-run when isDownloading changes
+    }, [isDownloading]);
+
+    useEffect(() => {
+        if (shortcutSettings.enabled) {
+            try {
+                const csInterface = new CSInterface();
+                const keyEventsInterest = getKeyEventsInterest(shortcutSettings);
+                if (keyEventsInterest) {
+                    csInterface.registerKeyEventsInterest(keyEventsInterest);
+                    console.log('Registered keyboard shortcuts with CEP');
+                }
+            } catch (error) {
+                console.warn('Failed to register key events interest:', error);
+            }
+        }
+    }, [shortcutSettings.enabled]);
+
+    useEffect(() => {
+        if (!shortcutSettings.enabled) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            let matchedAction: string | null = null;
+            
+            for (const binding of Object.values(shortcutSettings.bindings)) {
+                if (matchesBinding(event, binding)) {
+                    matchedAction = binding.action;
+                    break;
+                }
+            }
+
+            if (!matchedAction) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (matchedAction.startsWith('tab:')) {
+                const tabName = matchedAction.substring(4);
+                if (tabKeys.includes(tabName)) {
+                    setSelectedTab(tabName);
+                }
+            } else if (matchedAction === 'nav:prev') {
+                const currentIndex = tabKeys.indexOf(selectedTab as string);
+                const newIndex = currentIndex > 0 ? currentIndex - 1 : tabKeys.length - 1;
+                setSelectedTab(tabKeys[newIndex]);
+            } else if (matchedAction === 'nav:next') {
+                const currentIndex = tabKeys.indexOf(selectedTab as string);
+                const newIndex = currentIndex < tabKeys.length - 1 ? currentIndex + 1 : 0;
+                setSelectedTab(tabKeys[newIndex]);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [selectedTab, shortcutSettings]);
 
     const cancelProcessing = useCallback((toastMessage?: string, toastState?: number) => {
         processCancelledRef.current = true;
         
-        // Kill processes without any state updates that could crash the UI
         const killCommand = "taskkill /f /im python.exe & taskkill /f /im ffmpeg.exe & taskkill /f /im ffprobe.exe";
         child_process.exec(killCommand, () => {
         });
 
-        // Use requestAnimationFrame to defer state updates until the next render cycle
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 try {
@@ -2211,13 +2272,6 @@ const Main = () => {
                                                                                             the
                                                                                             framerate of
                                                                                             the clip.
-                                                                                            <br />
-                                                                                            <br />
-                                                                                            This is
-                                                                                            still in
-                                                                                            testing and
-                                                                                            may not work
-                                                                                            as expected.
                                                                                         </>
                                                                                     )}
                                                                                 </Flex>
@@ -4953,7 +5007,7 @@ const Main = () => {
                                     </Item>
                                     <Item key="About">
                                         <div style={{ width: '100%' }}>
-                                            {aboutTab(tasVersion)}
+                                            {aboutTab(tasVersion, setShortcutSettings)}
                                         </div>
                                     </Item>
                                     <Item key="Graph">
@@ -4986,3 +5040,5 @@ const Main = () => {
 Main.displayName = 'Main';
 
 export default Main;
+
+

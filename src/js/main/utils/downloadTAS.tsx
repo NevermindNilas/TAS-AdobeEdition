@@ -417,7 +417,6 @@ const downloadRequirements = async (
 ) => {
     const mainPyPath = path.join(tasAppDataPath, "main.py");
 
-    // Ensure the AE communications URL is provided to the backend via --ae
     const baseCommand = `"${tasPythonExecPath}" -u "${mainPyPath}" --download_requirements`;
     const command = addPortToCommand(baseCommand);
     return new Promise<void>((resolve, reject) => {
@@ -430,7 +429,6 @@ const downloadRequirements = async (
             }
         });
 
-        // Try to find package name from pip output text
         const extractPackageName = (line: string): string | null => {
             const collectingMatch = line.match(/Collecting\s+([^\s=\(]+)/);
             if (collectingMatch) {

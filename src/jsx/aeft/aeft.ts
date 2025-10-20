@@ -141,15 +141,7 @@ function renderActiveComp(renderMethod: string): any | string {
         var randomId = "";
         for (var r = 0; r < 5; r++) randomId += chars.charAt(Math.floor(Math.random() * chars.length));
 
-        var outputName;
-        if (comp.selectedLayers.length === 1) {
-            var layerName = comp.selectedLayers[0].name;
-            if (layerName.match(/\.(mp4|mov|avi|mkv)$/i)) layerName = layerName.replace(/\.(mp4|mov|avi|mkv)$/i, "");
-            var cleanLayerName = layerName.replace(/[^a-zA-Z0-9_\-]/g, "_");
-            outputName = cleanLayerName + "_" + randomId + outputContainer;
-        } else {
-            outputName = "Prerender_" + randomId + outputContainer;
-        }
+        var outputName = "PreRender_" + randomId + outputContainer;
         var outputPath = preRendersPath + outputName;
         var outputModule = renderQueueItem.outputModule(1);
 

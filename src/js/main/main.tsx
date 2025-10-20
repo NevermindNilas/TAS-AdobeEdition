@@ -247,9 +247,6 @@ const Main = () => {
 
     const [shortcutSettings, setShortcutSettings] = useState<ShortcutSettings>(() => loadShortcutSettings());
 
-    const [previousTab, setPreviousTab] = useState<Key | null>(null);
-
-    // Tab selection change (no direction logic)
     function handleTabSelectionChange(key: Key) {
         setSelectedTab(key);
     }
@@ -3808,6 +3805,15 @@ const Main = () => {
                                                                                                 / Better
                                                                                                 model
                                                                                                 accuracy
+                                                                                            </Text>
+                                                                                        </Item>
+                                                                                        <Item key="og_giant_v2">
+                                                                                            <Gauge1 />
+                                                                                            <Text>
+                                                                                                OG Depth Anything V2 Giant Cuda
+                                                                                            </Text>
+                                                                                            <Text slot="description">
+                                                                                                Original Paper implementation / Best model accuracy / VERY SLOW / Requires 3090/4000/5000
                                                                                             </Text>
                                                                                         </Item>
                                                                                         <Item key="distill_small_v2">

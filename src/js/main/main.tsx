@@ -54,6 +54,10 @@ import LinkIcon from "@spectrum-icons/workflow/Link";
 import Settings from "@spectrum-icons/workflow/Settings";
 import Asterisk from "@spectrum-icons/workflow/Asterisk";
 import Alert from "@spectrum-icons/workflow/Alert";
+import Add from "@spectrum-icons/workflow/Add";
+import Delete from "@spectrum-icons/workflow/Delete";
+import Edit from "@spectrum-icons/workflow/Edit";
+import BookmarkSingle from "@spectrum-icons/workflow/BookmarkSingle";
 
 import { child_process, fs, path } from "../lib/cep/node";
 import { evalTS } from "../lib/utils/bolt";
@@ -246,6 +250,169 @@ const Main = () => {
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
 
     const [shortcutSettings, setShortcutSettings] = useState<ShortcutSettings>(() => loadShortcutSettings());
+
+    interface QuickPreset {
+        id: string;
+        name: string;
+        options: {
+            preRenderAlgorithm: string | null;
+            resize: boolean;
+            resizeFactor: string | null;
+            deduplicate: boolean;
+            deduplicateMethod: string | null;
+            deduplicateSensitivity: number;
+            restore: boolean;
+            restoreModel: string | null;
+            upscale: boolean;
+            upscaleModel: string | null;
+            interpolate: boolean;
+            interpolationModel: string | null;
+            interpolateFactor: string;
+            rifeensemble: boolean;
+            dynamicScale: boolean;
+            slowMotion: boolean;
+            sharpening: boolean;
+            sharpeningSensitivity: number;
+            postResize: boolean;
+            postResizeResolution: string | null;
+            bitDepth: string | null;
+            aiPrecision: string | null;
+            deletePreRender: boolean;
+            forceStatic: boolean;
+        };
+    }
+
+    const [quickPresets, setQuickPresets] = useState<QuickPreset[]>(() => {
+        const saved = localStorage.getItem("quickPresets");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem("quickPresets", JSON.stringify(quickPresets));
+    }, [quickPresets]);
+
+    const createParserFromOptions = useCallback(() => {
+        const timestamp = Date.now();
+        const newPreset: QuickPreset = {
+            id: `preset-${timestamp}`,
+            name: `Preset ${quickPresets.length + 1}`,
+            options: {
+                preRenderAlgorithm,
+                resize,
+                resizeFactor,
+                deduplicate,
+                deduplicateMethod,
+                deduplicateSensitivity,
+                restore,
+                restoreModel,
+                upscale,
+                upscaleModel,
+                interpolate,
+                interpolationModel,
+                interpolateFactor,
+                rifeensemble,
+                dynamicScale,
+                slowMotion,
+                sharpening,
+                sharpeningSensitivity,
+                postResize,
+                postResizeResolution,
+                bitDepth,
+                aiPrecision,
+                deletePreRender,
+                forceStatic,
+            },
+        };
+        setQuickPresets(prev => [...prev, newPreset]);
+        generateToast(1, `Preset "${newPreset.name}" created`);
+    }, [
+        quickPresets.length,
+        preRenderAlgorithm,
+        resize,
+        resizeFactor,
+        deduplicate,
+        deduplicateMethod,
+        deduplicateSensitivity,
+        restore,
+        restoreModel,
+        upscale,
+        upscaleModel,
+        interpolate,
+        interpolationModel,
+        interpolateFactor,
+        rifeensemble,
+        dynamicScale,
+        slowMotion,
+        sharpening,
+        sharpeningSensitivity,
+        postResize,
+        postResizeResolution,
+        bitDepth,
+        aiPrecision,
+        deletePreRender,
+        forceStatic,
+    ]);
+
+    const applyPreset = useCallback((preset: QuickPreset) => {
+        setPreRenderAlgorithm(preset.options.preRenderAlgorithm);
+        setResize(preset.options.resize);
+        setResizeFactor(preset.options.resizeFactor);
+        setDeduplicate(preset.options.deduplicate);
+        setDeduplicateMethod(preset.options.deduplicateMethod);
+        setDeduplicateSensitivity(preset.options.deduplicateSensitivity);
+        setRestore(preset.options.restore);
+        setRestoreModel(preset.options.restoreModel);
+        setUpscale(preset.options.upscale);
+        setUpscaleModel(preset.options.upscaleModel);
+        setInterpolate(preset.options.interpolate);
+        setInterpolationModel(preset.options.interpolationModel);
+        setInterpolateFactor(preset.options.interpolateFactor);
+        setRifeEnsemble(preset.options.rifeensemble);
+        setDynamicScale(preset.options.dynamicScale);
+        setSlowMotion(preset.options.slowMotion);
+        setSharpening(preset.options.sharpening);
+        setSharpeningSensitivity(preset.options.sharpeningSensitivity);
+        setPostResize(preset.options.postResize);
+        setPostResizeResolution(preset.options.postResizeResolution);
+        setBitDepth(preset.options.bitDepth);
+        setAiPrecision(preset.options.aiPrecision);
+        setDeletePreRender(preset.options.deletePreRender);
+        setForceStatic(preset.options.forceStatic);
+        generateToast(1, `Preset "${preset.name}" applied`);
+    }, []);
+
+    const deletePreset = useCallback((presetId: string) => {
+        setQuickPresets(prev => prev.filter(p => p.id !== presetId));
+        generateToast(1, "Preset deleted");
+    }, []);
+
+    const renamePreset = useCallback((presetId: string, newName: string) => {
+        setQuickPresets(prev => prev.map(p =>
+            p.id === presetId ? { ...p, name: newName } : p
+        ));
+    }, []);
+
+    const formatPresetSettings = useCallback((preset: QuickPreset) => {
+        const settings: string[] = [];
+        const opts = preset.options;
+        
+        if (opts.resize) settings.push(`Resize: ${opts.resizeFactor}x`);
+        if (opts.deduplicate) settings.push(`Deduplicate: ${opts.deduplicateMethod}`);
+        if (opts.restore) settings.push(`Restore: ${opts.restoreModel}`);
+        if (opts.upscale) settings.push(`Upscale: ${opts.upscaleModel}`);
+        if (opts.interpolate) {
+            const interpDetails = [`Interpolate: ${opts.interpolationModel} ${opts.interpolateFactor}`];
+            if (opts.rifeensemble) interpDetails.push("RIFE Ensemble");
+            if (opts.dynamicScale) interpDetails.push("Dynamic Scale");
+            if (opts.slowMotion) interpDetails.push("Slow Motion");
+            settings.push(interpDetails.join(" + "));
+        }
+        if (opts.sharpening) settings.push(`Sharpening: ${opts.sharpeningSensitivity}`);
+        if (opts.postResize) settings.push(`Post-Resize: ${opts.postResizeResolution}`);
+        if (opts.forceStatic) settings.push("Force Static");
+        
+        return settings.length > 0 ? settings.join(", ") : "No options enabled";
+    }, []);
 
     function handleTabSelectionChange(key: Key) {
         setSelectedTab(key);
@@ -3445,12 +3612,175 @@ const Main = () => {
                                                                 <Text>Run Chain</Text>
                                                             </ActionButton>
                                                         </Flex>
+
                                                         {(resize || upscale || postResize || interpolate) && resolutionSteps.length > 1 && (
                                                             <Breadcrumbs size="S" marginStart={-6}>
                                                                 {resolutionSteps.map((s, idx) => (
                                                                     <Item key={`step-${idx}`}>{s}</Item>
                                                                 ))}
                                                             </Breadcrumbs>
+                                                        )}
+                                                    </Flex>
+                                                </View>
+
+                                                <View
+                                                    borderWidth="thin"
+                                                    borderColor="dark"
+                                                    borderRadius="medium"
+                                                    padding="size-200"
+                                                >
+                                                    <Flex direction="column" gap={12} width={"100%"}>
+                                                        <Flex direction="row" gap={8} alignItems="center" justifyContent="space-between">
+                                                            <Flex direction="row" gap={8} alignItems="center">
+                                                                <BookmarkSingle size="S" />
+                                                                <Heading level={4} margin={0}>
+                                                                    Quick Presets
+                                                                </Heading>
+                                                                {createGeneralContextualHelp(
+                                                                    "Quick Presets",
+                                                                    "Save your current processing options as a preset for quick access later. Click a preset to apply it, or use the edit/delete buttons to manage your presets."
+                                                                )}
+                                                            </Flex>
+                                                            <TooltipTrigger delay={0}>
+                                                                <ActionButton
+                                                                    isQuiet
+                                                                    onPress={createParserFromOptions}
+                                                                    isDisabled={isProcessing}
+                                                                >
+                                                                    <Add size="S" />
+                                                                </ActionButton>
+                                                                <Tooltip>Save current options as preset</Tooltip>
+                                                            </TooltipTrigger>
+                                                        </Flex>
+                                                        <Divider size="S" />
+                                                        {quickPresets.length > 0 ? (
+                                                            <Flex direction="row" gap={6} wrap="wrap" UNSAFE_style={{ width: "100%" }}>
+                                                                {quickPresets.map((preset) => (
+                                                                    <div
+                                                                        key={preset.id}
+                                                                        style={{
+                                                                            cursor: "pointer",
+                                                                            transition: "all 0.2s",
+                                                                            backgroundColor: "transparent",
+                                                                            padding: "5px 10px",
+                                                                            height: "34px",
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            border: "1px solid var(--spectrum-global-color-gray-400)",
+                                                                            borderRadius: "4px",
+                                                                            minWidth: "0",
+                                                                            flex: "1 1 auto",
+                                                                            maxWidth: "100%",
+                                                                        }}
+                                                                    >
+                                                                        <Flex direction="row" alignItems="center" justifyContent="space-between" width="100%" UNSAFE_style={{ minWidth: "0" }}>
+                                                                            <TooltipTrigger delay={500}>
+                                                                                <ActionButton
+                                                                                    isQuiet
+                                                                                    onPress={() => applyPreset(preset)}
+                                                                                    isDisabled={isProcessing}
+                                                                                    UNSAFE_style={{ 
+                                                                                        minWidth: "0",
+                                                                                        padding: 0,
+                                                                                        margin: 0,
+                                                                                        flex: "1 1 auto",
+                                                                                        justifyContent: "flex-start",
+                                                                                        height: "100%",
+                                                                                        backgroundColor: "transparent",
+                                                                                        overflow: "hidden",
+                                                                                    }}
+                                                                                >
+                                                                                    <Text UNSAFE_style={{ 
+                                                                                        fontSize: "14px", 
+                                                                                        textAlign: "left", 
+                                                                                        width: "100%",
+                                                                                        overflow: "hidden",
+                                                                                        textOverflow: "ellipsis",
+                                                                                        whiteSpace: "nowrap",
+                                                                                    }}>
+                                                                                        {preset.name}
+                                                                                    </Text>
+                                                                                </ActionButton>
+                                                                                <Tooltip>
+                                                                                    <Text UNSAFE_style={{ fontSize: "12px", maxWidth: "400px" }}>
+                                                                                        {formatPresetSettings(preset)}
+                                                                                    </Text>
+                                                                                </Tooltip>
+                                                                            </TooltipTrigger>
+                                                                            <Flex direction="row" gap={4} alignItems="center" UNSAFE_style={{ flexShrink: 0 }}>
+                                                                                <DialogTrigger isDismissable>
+                                                                                    <TooltipTrigger delay={0}>
+                                                                                        <ActionButton
+                                                                                            isQuiet
+                                                                                            isDisabled={isProcessing}
+                                                                                            UNSAFE_style={{ minWidth: "auto", padding: "2px" }}
+                                                                                        >
+                                                                                            <Edit size="XS" />
+                                                                                        </ActionButton>
+                                                                                        <Tooltip>Edit preset</Tooltip>
+                                                                                    </TooltipTrigger>
+                                                                                    {close => (
+                                                                                        <Dialog UNSAFE_className="alertDialogBorder">
+                                                                                            <Heading>Edit Preset</Heading>
+                                                                                            <Divider />
+                                                                                            <Content>
+                                                                                                <Flex direction="column" gap={12}>
+                                                                                                    <TextField
+                                                                                                        width={"100%"}
+                                                                                                        label="Preset Name"
+                                                                                                        defaultValue={preset.name}
+                                                                                                        onChange={(value) => {
+                                                                                                            renamePreset(preset.id, value);
+                                                                                                        }}
+                                                                                                    />
+                                                                                                    <Flex direction="column" gap={8}>
+                                                                                                        <Text UNSAFE_style={{ fontSize: "12px", fontWeight: "bold" }}>
+                                                                                                            Preset Settings:
+                                                                                                        </Text>
+                                                                                                        <Text UNSAFE_style={{ fontSize: "12px", opacity: 0.8 }}>
+                                                                                                            {formatPresetSettings(preset)}
+                                                                                                        </Text>
+                                                                                                    </Flex>
+                                                                                                </Flex>
+                                                                                            </Content>
+                                                                                        </Dialog>
+                                                                                    )}
+                                                                                </DialogTrigger>
+                                                                                <DialogTrigger>
+                                                                                    <TooltipTrigger delay={0}>
+                                                                                        <ActionButton
+                                                                                            isQuiet
+                                                                                            isDisabled={isProcessing}
+                                                                                        >
+                                                                                            <Delete size="XS" />
+                                                                                        </ActionButton>
+                                                                                        <Tooltip>Delete preset</Tooltip>
+                                                                                    </TooltipTrigger>
+                                                                                    {(close) => (
+                                                                                        <AlertDialog
+                                                                                            UNSAFE_className="alertDialogBorder"
+                                                                                            variant="destructive"
+                                                                                            title="Delete Preset"
+                                                                                            primaryActionLabel="Delete"
+                                                                                            cancelLabel="Cancel"
+                                                                                            onPrimaryAction={() => {
+                                                                                                deletePreset(preset.id);
+                                                                                                close();
+                                                                                            }}
+                                                                                        >
+                                                                                            Are you sure you want to delete "{preset.name}"?
+                                                                                        </AlertDialog>
+                                                                                    )}
+                                                                                </DialogTrigger>
+                                                                            </Flex>
+                                                                        </Flex>
+                                                                    </div>
+                                                                ))}
+                                                            </Flex>
+                                                        ) : (
+                                                            <Text UNSAFE_style={{ fontSize: "11px", fontStyle: "italic", opacity: 0.6 }}>
+                                                                No presets saved. Click + to create one.
+                                                            </Text>
                                                         )}
                                                     </Flex>
                                                 </View>

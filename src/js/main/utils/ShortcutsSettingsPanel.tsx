@@ -180,6 +180,7 @@ export const ShortcutsSettingsPanel: React.FC<ShortcutsSettingsPanelProps> = ({ 
                                 primaryActionLabel="Reset"
                                 cancelLabel="Cancel"
                                 onPrimaryAction={handleReset}
+                                UNSAFE_className="alertDialogBorder"
                             >
                                 This will reset all keyboard shortcuts to their default values. This action cannot be undone.
                             </AlertDialog>

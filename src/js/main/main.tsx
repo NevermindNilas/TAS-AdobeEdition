@@ -68,6 +68,7 @@ import checkForGPU from "./utils/checkForGPU";
 import checkForUpdates from "./utils/checkTASVersionGithub";
 import execClearCache from "./utils/clearCache";
 import downloadTASCLI from "./utils/downloadTAS";
+import { deleteTASBackend } from "./utils/deleteTASBackend";
 import { generateToast } from "./utils/generateToast";
 import getCurrentVersion from "./utils/getCurrentVersion";
 import { getAELayerInfo, getAEProjectFolderPath, ensureProjectIsSaved, createLayer, runProcess, executeProcessHelper, getValidatedAEContext, getTASPaths, addPortToCommand, quotePath, buildCommand, wrapCommandForCmd } from "./utils/helpers";
@@ -746,6 +747,36 @@ const Main = () => {
             });
             setIsDownloading(!progressInfo.isDone);
         }, enableCompression);
+    }, [tasAppDataPath, pythonExePath, enableCompression]);
+
+    const handleReinstallTAS = useCallback(() => {
+        try {
+            generateToast(3, "Starting TAS reinstallation...");
+            
+            deleteTASBackend(tasAppDataPath);
+            
+            if (!fs.existsSync(tasAppDataPath)) {
+                fs.mkdirSync(tasAppDataPath, { recursive: true });
+            }
+            
+            setisBackendAvailable(true);
+            setIsDownloading(true);
+            downloadTASCLI(tasAppDataPath, pythonExePath, (progressInfo) => {
+                setDownloadProgress(progressInfo.percentage);
+                setProgressBarState(progressInfo.status);
+                setDownloadInfo({
+                    speed: progressInfo.formattedSpeed,
+                    size: progressInfo.formattedSize,
+                    eta: progressInfo.eta,
+                    phase: progressInfo.phase
+                });
+                setIsDownloading(!progressInfo.isDone);
+            }, enableCompression);
+            
+            generateToast(1, "TAS reinstallation started successfully");
+        } catch (error) {
+            generateToast(2, `Failed to reinstall TAS: ${error}`);
+        }
     }, [tasAppDataPath, pythonExePath, enableCompression]);
 
     useEffect(() => {
@@ -4850,6 +4881,12 @@ const Main = () => {
                                                                             View version history and
                                                                             updates
                                                                         </li>
+                                                                        <li>
+                                                                            <strong>Reinstall TAS:</strong>
+                                                                            Completely remove and reinstall
+                                                                            TAS backend (useful for fixing
+                                                                            corrupted installations)
+                                                                        </li>
                                                                     </ul>
                                                                 </Text>
                                                             )}
@@ -4878,6 +4915,43 @@ const Main = () => {
                                                             >
                                                                 Changelogs
                                                             </ActionButton>
+                                                        </Flex>
+                                                        <Flex
+                                                            direction="row"
+                                                            gap={8}
+                                                            alignItems="center"
+                                                        >
+                                                            <DialogTrigger>
+                                                                <ActionButton width="100%">
+                                                                    Reinstall TAS
+                                                                </ActionButton>
+                                                                {(close) => (
+                                                                    <AlertDialog
+                                                                        variant="warning"
+                                                                        title="Confirm Reinstallation"
+                                                                        primaryActionLabel="Reinstall"
+                                                                        cancelLabel="Cancel"
+                                                                        UNSAFE_className="alertDialogBorder"
+                                                                        onPrimaryAction={() => {
+                                                                            close();
+                                                                            setTimeout(() => {
+                                                                                handleReinstallTAS();
+                                                                            }, 100);
+                                                                        }}
+                                                                    >
+                                                                        <Content>
+                                                                            <Text>
+                                                                                This will completely delete and reinstall TAS backend.
+                                                                                All existing files in the TAS folder will be removed.
+                                                                                <br /><br />
+                                                                                <strong>Note:</strong> Your settings and cached models will be preserved.
+                                                                                <br /><br />
+                                                                                Are you sure you want to continue?
+                                                                            </Text>
+                                                                        </Content>
+                                                                    </AlertDialog>
+                                                                )}
+                                                            </DialogTrigger>
                                                         </Flex>
 
                                                     </Flex>

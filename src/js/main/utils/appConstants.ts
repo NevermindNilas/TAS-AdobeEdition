@@ -12,7 +12,7 @@
  */
 export const DEFAULT_VALUES = {
     // Version and core settings
-    tasVersion: "2.4.6",
+    tasVersion: "2.4.7",
     preRenderAlgorithm: "high",
     
     // Processing options

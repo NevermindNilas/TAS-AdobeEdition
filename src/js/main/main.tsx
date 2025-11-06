@@ -2208,6 +2208,17 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
+                                                                                    <Item key="hurrdeblur">
+                                                                                        <Gauge1 />
+                                                                                        <Text>
+                                                                                            HurrDeblur
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime /
+                                                                                            Cartoons /
+                                                                                            Deblur
+                                                                                        </Text>
+                                                                                    </Item>
                                                                                 </Section>
                                                                                 <Section title="NVIDIA RTX GPUs">
                                                                                     <Item key="scunet-tensorrt">
@@ -2274,6 +2285,18 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
+                                                                                    <Item key="hurrdeblur-tensorrt">
+                                                                                        <Gauge2 />
+                                                                                        <Text>
+                                                                                            HurrDeblur
+                                                                                            TensorRT
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime /
+                                                                                            Cartoons /
+                                                                                            Deblur
+                                                                                        </Text>
+                                                                                    </Item>
                                                                                 </Section>
                                                                                 <Section title="ALL GPUS">
                                                                                     <Item key="anime1080fixer-directml">
@@ -2325,6 +2348,18 @@ const Main = () => {
                                                                                             Anime /
                                                                                             DeH264
                                                                                             Artifacts
+                                                                                        </Text>
+                                                                                    </Item>
+                                                                                    <Item key="hurrdeblur-directml">
+                                                                                        <Gauge1 />
+                                                                                        <Text>
+                                                                                            HurrDeblur
+                                                                                            DirectML
+                                                                                        </Text>
+                                                                                        <Text slot="description">
+                                                                                            Anime /
+                                                                                            Cartoons /
+                                                                                            Deblur
                                                                                         </Text>
                                                                                     </Item>
                                                                                 </Section>

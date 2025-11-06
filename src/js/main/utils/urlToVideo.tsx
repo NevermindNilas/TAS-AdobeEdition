@@ -1,6 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
 import { quotePath, buildCommand } from "./helpers";
-import { child_process, fs, path } from "../../lib/cep/node";
 
 const youtubeDownloadLogic = (
     youtubeURL: string,

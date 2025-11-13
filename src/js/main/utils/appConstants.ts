@@ -28,7 +28,7 @@ export const DEFAULT_VALUES = {
     segmentMethod: "anime",
     deduplicateMethod: "ssim",
     encodeAlgorithm: "x264",
-    restoreModel: "anime1080fixer",
+    restoreModels: ["anime1080fixer"],
     upscaleModel: "fallin_soft",
     interpolationModel: "rife4.6",
     depthModel: "og_distill_small_v2",

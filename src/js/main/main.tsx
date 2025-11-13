@@ -1,6 +1,7 @@
 import {
     ActionButton,
     AlertDialog,
+    Button,
     Checkbox,
     ComboBox,
     Content,
@@ -23,6 +24,7 @@ import {
     TabPanels,
     Meter,
     Tabs,
+    TagGroup,
     Text,
     TextField,
     Link,
@@ -72,6 +74,7 @@ import { deleteTASBackend } from "./utils/deleteTASBackend";
 import { generateToast } from "./utils/generateToast";
 import getCurrentVersion from "./utils/getCurrentVersion";
 import { getAELayerInfo, getAEProjectFolderPath, ensureProjectIsSaved, createLayer, runProcess, executeProcessHelper, getValidatedAEContext, getTASPaths, addPortToCommand, quotePath, buildCommand, wrapCommandForCmd } from "./utils/helpers";
+import { buildJsonConfig, saveJsonConfig, buildJsonCommand, cleanupJsonConfig } from "./utils/jsonConfigBuilder";
 import { offlineModeLogic } from "./utils/offlineMode";
 import OpenTASFolder from "./utils/openTASFolder";
 import execPrecompose from "./utils/precompose";
@@ -142,7 +145,7 @@ const Main = () => {
     const [postResizeResolution, setPostResizeResolution] = useState<string | null>("1920x1080");
     const [deduplicateMethod, setDeduplicateMethod] = useState<string | null>("ssim");
     const [encodeAlgorithm, setEncodeAlgorithm] = useState<string | null>("x264");
-    const [restoreModel, setRestoreModel] = useState<string | null>("anime1080fixer");
+    const [restoreModels, setRestoreModels] = useState<string[]>(["anime1080fixer"]);
     const [upscaleModel, setUpscaleModel] = useState<string | null>("fallin_soft");
     const [forceStatic, setForceStatic] = useState(false);
     const [disableDonatePopup, setDisableDonatePopup] = useState(false);
@@ -161,6 +164,19 @@ const Main = () => {
             },
         []
     );
+
+    // Handler for adding restore models to the chain
+    const handleAddRestoreModel = useCallback((key: Key | null) => {
+        if (key && typeof key === 'string') {
+            setRestoreModels(prev => [...prev, key]);
+        }
+    }, []);
+
+    // Handler for removing restore models from the chain
+    const handleRemoveRestoreModels = useCallback((keys: Set<Key>) => {
+        const keysToRemove = Array.from(keys).map(k => String(k));
+        setRestoreModels(prev => prev.filter((_, index) => !keysToRemove.includes(`restore-${index}`)));
+    }, []);
 
     const [youtubeUrl, setYoutubeUrl] = useState("");
 
@@ -263,7 +279,7 @@ const Main = () => {
             deduplicateMethod: string | null;
             deduplicateSensitivity: number;
             restore: boolean;
-            restoreModel: string | null;
+            restoreModels: string[];
             upscale: boolean;
             upscaleModel: string | null;
             interpolate: boolean;
@@ -295,7 +311,7 @@ const Main = () => {
                 deduplicateMethod: "ssim",
                 deduplicateSensitivity: 0.5,
                 restore: false,
-                restoreModel: "anime1080fixer",
+                restoreModels: ["anime1080fixer"],
                 upscale: true,
                 upscaleModel: "fallin_strong",
                 interpolate: true,
@@ -325,7 +341,7 @@ const Main = () => {
                 deduplicateMethod: "ssim",
                 deduplicateSensitivity: 0.5,
                 restore: false,
-                restoreModel: "anime1080fixer",
+                restoreModels: ["anime1080fixer"],
                 upscale: true,
                 upscaleModel: "superultracompact",
                 interpolate: true,
@@ -383,7 +399,7 @@ const Main = () => {
                 deduplicateMethod,
                 deduplicateSensitivity,
                 restore,
-                restoreModel,
+                restoreModels,
                 upscale,
                 upscaleModel,
                 interpolate,
@@ -413,7 +429,7 @@ const Main = () => {
         deduplicateMethod,
         deduplicateSensitivity,
         restore,
-        restoreModel,
+        restoreModels,
         upscale,
         upscaleModel,
         interpolate,
@@ -440,7 +456,7 @@ const Main = () => {
         setDeduplicateMethod(preset.options.deduplicateMethod);
         setDeduplicateSensitivity(preset.options.deduplicateSensitivity);
         setRestore(preset.options.restore);
-        setRestoreModel(preset.options.restoreModel);
+        setRestoreModels(preset.options.restoreModels);
         setUpscale(preset.options.upscale);
         setUpscaleModel(preset.options.upscaleModel);
         setInterpolate(preset.options.interpolate);
@@ -487,7 +503,7 @@ const Main = () => {
         
         if (opts.resize) settings.push(`Resize: ${opts.resizeFactor}x`);
         if (opts.deduplicate) settings.push(`Deduplicate: ${opts.deduplicateMethod}`);
-        if (opts.restore) settings.push(`Restore: ${opts.restoreModel}`);
+        if (opts.restore) settings.push(`Restore: ${opts.restoreModels.join(' → ')}`);
         if (opts.upscale) settings.push(`Upscale: ${opts.upscaleModel}`);
         if (opts.interpolate) {
             const interpDetails = [`Interpolate: ${opts.interpolationModel} ${opts.interpolateFactor}`];
@@ -735,26 +751,24 @@ const Main = () => {
     useEffect(() => {
         let unsubProgress: (() => void) | null = null;
         let unsubComplete: (() => void) | null = null;
-        let cancelled = false;
 
-        const initializeSocket = async () => {
-            await socketManager.init();
-            if (cancelled) return;
+        if (isProcessing) {
+            socketManager.init();
             unsubProgress = socketManager.onProgressUpdate(updateProgress);
             unsubComplete = socketManager.onProcessComplete((success) => {
                 resetProgress("Progress complete!");
+                socketManager.close();
             });
-        };
-
-        initializeSocket();
+        }
 
         return () => {
-            cancelled = true;
             if (unsubProgress) unsubProgress();
             if (unsubComplete) unsubComplete();
-            resetProgress("Initializing...");
+            if (!isProcessing) {
+                socketManager.close();
+            }
         };
-    }, [updateProgress, resetProgress]);
+    }, [isProcessing, updateProgress, resetProgress]);
 
     useEffect(() => {
         const initialize = async () => {
@@ -969,6 +983,8 @@ const Main = () => {
                         progressBarStatus: "Processing cancelled"
                     }));
                     
+                    socketManager.close();
+                    
                     generateToast(toastState || 2, toastMessage || "Processing cancelled.");
                 } catch (error) {
                     console.error("Error in deferred cancel processing:", error);
@@ -982,7 +998,8 @@ const Main = () => {
         toastMessage: string,
         onSuccess?: any,
         inputFile?: any,
-        outputFile?: any
+        outputFile?: any,
+        configPath?: string
     ) => {
         return executeProcessHelper({
             child_process,
@@ -998,7 +1015,8 @@ const Main = () => {
             deletePreRender,
             onSuccess,
             inputFile,
-            outputFile
+            outputFile,
+            configPath
         });
     }, [resetProgress, setFullLogs, setIsProcessCancelled, deletePreRender]);
 
@@ -1020,17 +1038,16 @@ const Main = () => {
 
             const { inpoint, outpoint, input, name } = info;
 
-            var command = await autoCutLogic(
+            var { command, configPath } = await autoCutLogic(
                 pythonExePath,
                 mainPyPath,
                 input,
                 autoCutSensitivity || DEFAULT.autoCutSensitivity,
             );
-            command = addPortToCommand(command);
             setIsProcessing(true);
             runProcess(executeProcess, command, "Auto Cutting Clip", () => {
                 evalTS("autoClip", tasRoamingPath);
-            });
+            }, undefined, undefined, configPath);
         } catch (error) {
             console.error("Error in startAutoCut:", error);
         }
@@ -1046,18 +1063,17 @@ const Main = () => {
         if (!projectFolderPath) {
             return;
         }
-        var { command, outputPath } = youtubeDownloadLogic(
+        var { command, outputPath, configPath } = youtubeDownloadLogic(
             youtubeUrl,
             mainPyPath,
             pythonExePath,
             projectFolderPath
         );
-        command = wrapCommandForCmd(command);
         generateToast(3, "Youtube download initiated...");
 
         runProcess(executeProcess, command, "Youtube download", () => {
             evalTS("importVideo", outputPath);
-        });
+        }, undefined, outputPath, configPath);
     }, [youtubeUrl, mainPyPath, pythonExePath, executeProcess]);
 
     const startExtraTabLogic = useCallback(async (mode: string) => {
@@ -1091,6 +1107,7 @@ const Main = () => {
             const half = aiPrecision || DEFAULT.aiPrecision;
             let command: string;
             let outputPath: string;
+            let configPath: string | undefined;
             let toast: string;
 
             if (mode === "depth") {
@@ -1110,8 +1127,9 @@ const Main = () => {
                     depthQuality,
                     half
                 );
-                command = addPortToCommand(result.command);
+                command = result.command;
                 outputPath = result.outputPath;
+                configPath = result.configPath;
 
             } else if (mode === "background") {
                 toast = "Background removal";
@@ -1124,8 +1142,9 @@ const Main = () => {
                     backgroundMethod,
                     half
                 );
-                command = addPortToCommand(result.command);
+                command = result.command;
                 outputPath = result.outputPath;
+                configPath = result.configPath;
 
             } else {
                 generateToast(2, "Invalid mode selected for extraction.");
@@ -1135,7 +1154,7 @@ const Main = () => {
             setIsProcessing(true);
             runProcess(executeProcess, command, toast, () => {
                 evalTS("importVideo", outputPath);
-            }, input, outputPath);
+            }, input, outputPath, configPath);
 
         } catch (error) {
             console.error("Error in startExtraTabLogic:", error);
@@ -1155,96 +1174,59 @@ const Main = () => {
     }, [pythonExePath, mainPyPath, executeProcess]);
 
     const buildChainCommand = useCallback((input: string, outFile: string) => {
-        const attempt = [
-            quotePath(pythonExePath),
-            quotePath(mainPyPath),
-            "--input",
-            quotePath(input),
-            "--output",
-            quotePath(outFile),
-            "--ae",
-        ];
+        const newinterpolateFactor = interpolate && interpolateFactor.endsWith("x")
+            ? interpolateFactor.slice(0, -1)
+            : interpolateFactor;
 
-        if (enablePreview) {
-            attempt.push("--preview");
+        if (interpolate && isNaN(Number(newinterpolateFactor))) {
+            throw new Error("Invalid interpolation factor");
         }
 
-        if (encodeAlgorithm !== null) {
-            attempt.push("--encode_method", encodeAlgorithm);
-        }
+        const config = buildJsonConfig(
+            input,
+            outFile,
+            {
+                resize: resize,
+                resizeFactor: resize ? parseFloat(resizeFactor || DEFAULT.resizeFactor) : undefined,
+                interpolate: interpolate,
+                interpolationModel: interpolate ? (interpolationModel || DEFAULT.interpolationModel) as any : undefined,
+                interpolateFactor: interpolate ? Number(newinterpolateFactor || DEFAULT.interpolateFactor) : undefined,
+                interpolateMode: 'normal',
+                upscale: upscale,
+                upscaleModel: upscale ? (upscaleModel || DEFAULT.upscaleModel) as any : undefined,
+                forceStatic: upscale ? forceStatic : undefined,
+                deduplicate: deduplicate,
+                deduplicateThreshold: deduplicate ? (deduplicateSensitivity * 100 || DEFAULT.deduplicateSensitivity * 100) : undefined,
+                deduplicateMethod: deduplicate ? (deduplicateMethod || DEFAULT.deduplicateMethod) as any : undefined,
+                restore: restore,
+                restoreModels: restore ? (restoreModels.length > 0 ? restoreModels : ["anime1080fixer"]) : undefined,
+                bitDepth: bitDepth ? parseInt(bitDepth) : parseInt(DEFAULT.bitDepth),
+                aiPrecision: aiPrecision === "true",
+            },
+            "http://127.0.0.1:8080"
+        );
 
-        if (bitDepth !== null) {
-            attempt.push("--bit_depth", bitDepth || DEFAULT.bitDepth);
-        }
-
-        if (resize) {
-            attempt.push("--resize", "--resize_factor", resizeFactor || DEFAULT.resizeFactor);
-        }
-
-        if (interpolate) {
-            const newinterpolateFactor = interpolateFactor.endsWith("x")
-                ? interpolateFactor.slice(0, -1)
-                : interpolateFactor;
-
-            if (isNaN(Number(newinterpolateFactor))) {
-                throw new Error("Invalid interpolation factor");
-            }
-
-            attempt.push(
-                "--interpolate",
-                "--interpolate_factor",
-                newinterpolateFactor || DEFAULT.interpolateFactor,
-                "--interpolate_method",
-                interpolationModel || DEFAULT.interpolationModel
-            );
-
-            if (slowMotion) attempt.push("--slowmo");
-            if (rifeensemble) attempt.push("--ensemble");
-            if (dynamicScale) attempt.push("--dynamic_scale");
-        }
-
-        if (upscale) {
-            attempt.push("--upscale", "--upscale_method", upscaleModel || DEFAULT.upscaleModel);
-            if (forceStatic) attempt.push("--static");
-        }
-
-        if (deduplicate) {
-            attempt.push(
-                "--dedup",
-                "--dedup_sens",
-                String(deduplicateSensitivity * 100 || DEFAULT.deduplicateSensitivity * 100),
-                "--dedup_method",
-                deduplicateMethod || DEFAULT.deduplicateMethod
-            );
-        }
-
-        if (restore) {
-            attempt.push("--restore", "--restore_method", restoreModel || DEFAULT.restoreModel);
-        }
-
+        if (enablePreview) config.preview = true;
+        if (encodeAlgorithm !== null) config.encode_method = encodeAlgorithm;
+        if (interpolate && slowMotion) config.slowmo = true;
+        if (interpolate && rifeensemble) config.ensemble = true;
+        if (interpolate && dynamicScale) config.dynamic_scale = true;
         if (sharpening) {
-            attempt.push(
-                "--sharpen",
-                "--sharpen_sens",
-                String(sharpeningSensitivity * 100 || DEFAULT.sharpeningSensitivity * 100)
-            );
+            config.sharpen = true;
+            config.sharpen_sens = sharpeningSensitivity * 100 || DEFAULT.sharpeningSensitivity * 100;
         }
-
         if (postResize && postResizeResolution) {
             const [width, height] = postResizeResolution.split('x');
-            attempt.push("--output_scale", `${width}x${height}`);
+            config.output_scale = `${width}x${height}`;
         }
 
-        if (aiPrecision) {
-            attempt.push("--half", aiPrecision || DEFAULT.aiPrecision);
-        }
-
-        return addPortToCommand(buildCommand(attempt));
+        const configPath = saveJsonConfig(config);
+        return { command: buildJsonCommand(pythonExePath, mainPyPath, configPath), configPath };
     }, [
         pythonExePath, mainPyPath, enablePreview, encodeAlgorithm, bitDepth, resize, resizeFactor,
         interpolate, interpolateFactor, interpolationModel, slowMotion, rifeensemble, dynamicScale,
         upscale, upscaleModel, forceStatic, deduplicate, deduplicateSensitivity, deduplicateMethod,
-        restore, restoreModel, sharpening, sharpeningSensitivity, postResize, postResizeResolution, aiPrecision
+        restore, restoreModels, sharpening, sharpeningSensitivity, postResize, postResizeResolution, aiPrecision
     ]);
 
     const hasProcessingOptions = useMemo(() =>
@@ -1297,12 +1279,12 @@ const Main = () => {
             }
 
             const outFile = outputFolder + "\\TAS-Chain\\" + outName;
-            const command = buildChainCommand(input, outFile);
+            const { command, configPath } = buildChainCommand(input, outFile);
 
             setIsProcessing(true);
             runProcess(executeProcess, command, "Chained Process", () => {
                 evalTS("importVideo", outFile);
-            }, input, outFile);
+            }, input, outFile, configPath);
         } catch (error) {
             if (error instanceof Error && error.message === "Invalid interpolation factor") {
                 generateToast(2, "Error: Interpolation factor is not valid. Please select a valid interpolation factor.");
@@ -1406,7 +1388,12 @@ const Main = () => {
             setRifeEnsemble(parsedSettings.rifeensemble);
             setDeduplicateMethod(parsedSettings.deduplicateMethod);
             setEncodeAlgorithm(parsedSettings.encodeAlgorithm);
-            setRestoreModel(parsedSettings.restoreModel);
+            // Handle both old single model and new array format
+            if (Array.isArray(parsedSettings.restoreModels)) {
+                setRestoreModels(parsedSettings.restoreModels);
+            } else if (parsedSettings.restoreModel) {
+                setRestoreModels([parsedSettings.restoreModel]);
+            }
             setUpscaleModel(parsedSettings.upscaleModel);
             setInterpolationModel(parsedSettings.interpolationModel);
             setDepthModel(parsedSettings.depthModel);
@@ -1457,7 +1444,7 @@ const Main = () => {
         rifeensemble,
         deduplicateMethod,
         encodeAlgorithm,
-        restoreModel,
+        restoreModels,
         upscaleModel,
         interpolationModel,
         depthModel,
@@ -1500,7 +1487,7 @@ const Main = () => {
         deduplicateMethod,
         enablePreview,
         encodeAlgorithm,
-        restoreModel,
+        restoreModels,
         upscaleModel,
         interpolationModel,
         depthModel,
@@ -2101,17 +2088,38 @@ const Main = () => {
                                                                         </Heading>
                                                                         <Divider />
                                                                         <Content>
-                                                                            <Picker
-                                                                                label="Restore Model"
-                                                                                selectedKey={
-                                                                                    restoreModel
-                                                                                }
-                                                                                onSelectionChange={handleSelectionChange(
-                                                                                    setRestoreModel
+                                                                            <Flex direction="column" gap="size-200" width="100%">
+                                                                                {restoreModels.length > 0 && (
+                                                                                    <Flex direction="column" gap="size-100">
+                                                                                        <Flex direction="row" justifyContent="space-between" alignItems="center">
+                                                                                            <Text>Selected Restore Models (applied in order):</Text>
+                                                                                            <ActionButton
+                                                                                                onPress={() => setRestoreModels([])}
+                                                                                                isQuiet
+                                                                                            >
+                                                                                                <Delete />
+                                                                                                <Text>Clear All</Text>
+                                                                                            </ActionButton>
+                                                                                        </Flex>
+                                                                                        <TagGroup
+                                                                                            items={restoreModels.map((model, idx) => ({
+                                                                                                id: `restore-${idx}`,
+                                                                                                name: model
+                                                                                            }))}
+                                                                                            onRemove={handleRemoveRestoreModels}
+                                                                                            maxWidth="100%"
+                                                                                        >
+                                                                                            {item => <Item key={item.id}>{item.name}</Item>}
+                                                                                        </TagGroup>
+                                                                                    </Flex>
                                                                                 )}
+                                                                                
+                                                                            <Picker
+                                                                                label="Add Restore Model to Chain"
+                                                                                onSelectionChange={handleAddRestoreModel}
                                                                                 contextualHelp={createPickerContextualHelp(
                                                                                     "Model Selection",
-                                                                                    "Select the model to use for restoring the video."
+                                                                                    "Select models to add to the restoration chain. Models are applied in the order shown above."
                                                                                 )}
                                                                                 width={"100%"}
                                                                             >
@@ -2364,6 +2372,7 @@ const Main = () => {
                                                                                     </Item>
                                                                                 </Section>
                                                                             </Picker>
+                                                                            </Flex>
                                                                         </Content>
                                                                     </Dialog>
                                                                 )}

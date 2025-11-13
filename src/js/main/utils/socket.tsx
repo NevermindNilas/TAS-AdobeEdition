@@ -32,6 +32,7 @@ class SSEManager {
   public init(): void {
     if (this.eventSource || this.destroyed) return;
     // Hardcoded port 8080 as per backend
+    console.log('SSE: Opening connection to http://127.0.0.1:8080/progress/stream');
     this.eventSource = new window.EventSource("http://127.0.0.1:8080/progress/stream");
     this.eventSource.onmessage = (event: MessageEvent) => {
       try {
@@ -44,6 +45,15 @@ class SSEManager {
     this.eventSource.onerror = () => {
       // Optionally handle errors (e.g., reconnect logic)
     };
+  }
+
+  public close(): void {
+    if (this.eventSource) {
+      console.log('SSE: Closing connection');
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    this.lastStatus = null;
   }
 
   private handleProgressUpdate(data: ProgressData) {
@@ -71,10 +81,7 @@ class SSEManager {
 
   public destroy(): void {
     this.destroyed = true;
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
+    this.close();
     this.progressCallbacks.clear();
     this.completeCallbacks.clear();
   }

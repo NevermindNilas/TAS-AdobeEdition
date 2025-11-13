@@ -1,5 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
-import { quotePath, buildCommand } from "./helpers";
+import { buildJsonConfig, saveJsonConfig, buildJsonCommand } from "./jsonConfigBuilder";
 
 const depthMapExtractionLogic = async (
     pathToTasExe: string,
@@ -18,26 +18,24 @@ const depthMapExtractionLogic = async (
         ".mp4"
     );
 
-    const command = buildCommand([
-        quotePath(pathToTasExe),
-        quotePath(mainPyPath),
-        "--input",
-        quotePath(pathToVideo),
-        "--output",
-        quotePath(outputPath),
-        "--depth",
-        "--depth_method",
-        depthMethod,
-        "--bit_depth",
-        bitDepth,
-        "--depth_quality",
-        depthQuality,
-        "--half",
-        aiPrecision,
-        "--ae"
-    ]);
+    const config = buildJsonConfig(
+        pathToVideo,
+        outputPath,
+        {
+            depthMap: true,
+            depthModel: depthMethod,
+            bitDepth: parseInt(bitDepth),
+            aiPrecision: aiPrecision === "true"
+        },
+        "http://127.0.0.1:8080"
+    );
 
-    return { command, outputPath };
+    config.depth_quality = depthQuality;
+
+    const configPath = saveJsonConfig(config);
+    const command = buildJsonCommand(pathToTasExe, mainPyPath, configPath);
+
+    return { command, outputPath, configPath };
 };
 
 export { depthMapExtractionLogic };

@@ -1,5 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
-import { quotePath, buildCommand } from "./helpers";
+import { buildJsonConfig, saveJsonConfig, buildJsonCommand } from "./jsonConfigBuilder";
 
 const youtubeDownloadLogic = (
     youtubeURL: string,
@@ -14,16 +14,17 @@ const youtubeDownloadLogic = (
         ".mp4"
     );
 
-    const command = buildCommand([
-        quotePath(pathToTasExe),
-        quotePath(mainPyPath),
-        "--input",
+    const config = buildJsonConfig(
         youtubeURL,
-        "--output",
-        quotePath(outputPath),
-    ]);
+        outputPath,
+        {},
+        "http://127.0.0.1:8080"
+    );
 
-    return { command, outputPath };
+    const configPath = saveJsonConfig(config);
+    const command = buildJsonCommand(pathToTasExe, mainPyPath, configPath);
+
+    return { command, outputPath, configPath };
 };
 
 export { youtubeDownloadLogic };

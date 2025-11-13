@@ -1,5 +1,5 @@
 import { generateRandomOutputPath } from "./outputUtils";
-import { quotePath, buildCommand } from "./helpers";
+import { buildJsonConfig, saveJsonConfig, buildJsonCommand } from "./jsonConfigBuilder";
 
 const removeBackgroundLogic = async (
     pathToTasExe: string,
@@ -16,22 +16,22 @@ const removeBackgroundLogic = async (
         ".mov"
     );
 
-    const command = buildCommand([
-        quotePath(pathToTasExe),
-        quotePath(mainPyPath),
-        "--input",
-        quotePath(pathToVideo),
-        "--output",
-        quotePath(outputPath),
-        "--segment",
-        "--segment_method",
-        backgroundMethod,
-        "--half",
-        aiPrecision,
-        "--ae"
-    ]);
+    const config = buildJsonConfig(
+        pathToVideo,
+        outputPath,
+        {
+            aiPrecision: aiPrecision === "true"
+        },
+        "http://127.0.0.1:8080"
+    );
 
-    return { command, outputPath };
+    config.segment = true;
+    config.segment_method = backgroundMethod;
+
+    const configPath = saveJsonConfig(config);
+    const command = buildJsonCommand(pathToTasExe, mainPyPath, configPath);
+
+    return { command, outputPath, configPath };
 };
 
 export { removeBackgroundLogic };

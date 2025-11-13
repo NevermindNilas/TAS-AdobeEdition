@@ -77,9 +77,10 @@ export function saveSettings(settings: Record<string, any>) {
  * @param onSuccess - Success callback.
  * @param inputFile - Input file (optional).
  * @param outputFile - Output file (optional).
+ * @param configPath - JSON config file path to cleanup (optional).
  */
-export function runProcess(execFn: any, command: any, toastMsg: string, onSuccess?: any, inputFile?: any, outputFile?: any) {
-    return execFn(command, toastMsg, onSuccess, inputFile, outputFile);
+export function runProcess(execFn: any, command: any, toastMsg: string, onSuccess?: any, inputFile?: any, outputFile?: any, configPath?: string) {
+    return execFn(command, toastMsg, onSuccess, inputFile, outputFile, configPath);
 }
 
 /**
@@ -242,6 +243,7 @@ export async function getValidatedAEContext(): Promise<{layerInfo: any, projectF
  * @param onSuccess - Success callback
  * @param inputFile - Input file (optional)
  * @param outputFile - Output file (optional)
+ * @param configPath - JSON config file path to cleanup (optional)
  */
 export function executeProcessHelper({
     child_process,
@@ -257,7 +259,8 @@ export function executeProcessHelper({
     deletePreRender,
     onSuccess,
     inputFile,
-    outputFile
+    outputFile,
+    configPath
 }: {
     child_process: any,
     fs: any,
@@ -272,7 +275,8 @@ export function executeProcessHelper({
     deletePreRender: boolean,
     onSuccess?: any,
     inputFile?: any,
-    outputFile?: any
+    outputFile?: any,
+    configPath?: string
 }) {
     processCancelledRef.current = false;
     setIsProcessCancelled(false);
@@ -519,6 +523,19 @@ export function executeProcessHelper({
             }
             setIsProcessCancelled(false);
             processCancelledRef.current = false;
+            
+            // Cleanup JSON config file if provided
+            if (configPath) {
+                try {
+                    if (fs.existsSync(configPath)) {
+                        fs.unlinkSync(configPath);
+                        console.log(`Cleaned up config file: ${configPath}`);
+                    }
+                } catch (error) {
+                    console.warn("Failed to cleanup config file:", error);
+                }
+            }
+            
             if (!deletePreRender) {
                 if (inputFile) {
                     try {

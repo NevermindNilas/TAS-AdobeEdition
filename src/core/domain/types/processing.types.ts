@@ -66,7 +66,8 @@ export interface ProcessingOptions {
   
   // Restoration
   restore: boolean;
-  restoreModel: RestoreModel;
+  restoreModel?: RestoreModel | string;
+  restoreModels?: string[];
   
   // Upscaling
   upscale: boolean;

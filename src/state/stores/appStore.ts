@@ -38,7 +38,7 @@ interface AppState {
 }
 
 const initialState = {
-  tasVersion: '2.4.7',
+  tasVersion: '2.4.8',
   latestVersion: 'unknown',
   currentExeVersion: 'Not Available',
   isNvidia: false,

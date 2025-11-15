@@ -870,6 +870,7 @@ export default function KeyframeGraphEditor() {
               <Text>Curve Presets</Text>
               <Flex direction="row" gap={4} alignItems="center">
                 <SearchField
+                  aria-label="Search curve presets"
                   placeholder="Search presets..."
                   value={presetSearchQuery}
                   onChange={setPresetSearchQuery}

@@ -1672,22 +1672,22 @@ const Main = () => {
                         onSelectionChange={handleTabSelectionChange}
                     >
                         <TabList>
-                            <Item key="Chain">
+                            <Item key="Chain" textValue="Chain">
                                 <LinkIcon />
                             </Item>
-                            <Item key="Extra">
+                            <Item key="Extra" textValue="Extra">
                                 <Effects />
                             </Item>
-                            <Item key="Toolbox">
+                            <Item key="Toolbox" textValue="Toolbox">
                                 <Beaker />
                             </Item>
-                            <Item key="Graph">
+                            <Item key="Graph" textValue="Graph">
                                 <Asterisk />
                             </Item>
-                            <Item key="Logs">
+                            <Item key="Logs" textValue="Logs">
                                 <Inbox />
                             </Item>
-                            <Item key="About">
+                            <Item key="About" textValue="About">
                                 <Info />
                             </Item>
                         </TabList>
@@ -1868,46 +1868,13 @@ const Main = () => {
                                                                                     width={"100%"}
                                                                                 >
                                                                                     <Section title="Resize Factors">
-                                                                                        <Item key="0.25">
-                                                                                            <Text>
-                                                                                                0.25x
-                                                                                            </Text>
-                                                                                        </Item>
-
-                                                                                        <Item key="0.5">
-                                                                                            <Text>
-                                                                                                0.5x
-                                                                                            </Text>
-                                                                                        </Item>
-
-                                                                                        <Item key="0.75">
-                                                                                            <Text>
-                                                                                                0.75x
-                                                                                            </Text>
-                                                                                        </Item>
-
-                                                                                        <Item key="1.25">
-                                                                                            <Text>
-                                                                                                1.25x
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="1.5">
-                                                                                            <Text>
-                                                                                                1.5x
-                                                                                            </Text>
-                                                                                        </Item>
-
-                                                                                        <Item key="1.75">
-                                                                                            <Text>
-                                                                                                1.75x
-                                                                                            </Text>
-                                                                                        </Item>
-
-                                                                                        <Item key="2">
-                                                                                            <Text>
-                                                                                                2x
-                                                                                            </Text>
-                                                                                        </Item>
+                                                                                        <Item key="0.25">0.25x</Item>
+                                                                                        <Item key="0.5">0.5x</Item>
+                                                                                        <Item key="0.75">0.75x</Item>
+                                                                                        <Item key="1.25">1.25x</Item>
+                                                                                        <Item key="1.5">1.5x</Item>
+                                                                                        <Item key="1.75">1.75x</Item>
+                                                                                        <Item key="2">2x</Item>
                                                                                     </Section>
                                                                                 </Picker>
                                                                             </Flex>
@@ -1977,7 +1944,7 @@ const Main = () => {
                                                                                     width={"100%"}
                                                                                 >
                                                                                     <Section title="ALL CPUs">
-                                                                                        <Item key="ssim">
+                                                                                        <Item key="ssim" textValue="SSIM">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 SSIM
@@ -1986,7 +1953,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="mse">
+                                                                                        <Item key="mse" textValue="MSE">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 MSE
@@ -1997,7 +1964,7 @@ const Main = () => {
                                                                                         </Item>
                                                                                     </Section>
                                                                                     <Section title="NVIDIA GPUs">
-                                                                                        <Item key="ssim-cuda">
+                                                                                        <Item key="ssim-cuda" textValue="SSIM CUDA">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 SSIM
@@ -2007,7 +1974,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="flownets">
+                                                                                        <Item key="flownets" textValue="FlownetS">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 FlownetS
@@ -2124,7 +2091,7 @@ const Main = () => {
                                                                                 width={"100%"}
                                                                             >
                                                                                 <Section title="NVIDIA GPUs">
-                                                                                    <Item key="nafnet">
+                                                                                    <Item key="nafnet" textValue="NAFNET">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             NAFNET
@@ -2136,7 +2103,7 @@ const Main = () => {
                                                                                         </Text>
                                                                                     </Item>
 
-                                                                                    <Item key="scunet">
+                                                                                    <Item key="scunet" textValue="SCUNet">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             SCUNet
@@ -2147,7 +2114,7 @@ const Main = () => {
                                                                                             / Denoise
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="real-plksr">
+                                                                                    <Item key="real-plksr" textValue="Real-PLKSR">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             Real-PLKSR
@@ -2158,7 +2125,7 @@ const Main = () => {
                                                                                             / DeJPEG
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="anime1080fixer">
+                                                                                    <Item key="anime1080fixer" textValue="Anime Fixer">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             Anime Fixer
@@ -2171,7 +2138,7 @@ const Main = () => {
                                                                                             compressions
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="fastlinedarken">
+                                                                                    <Item key="fastlinedarken" textValue="Fast Line Darken">
                                                                                         <Gauge4 />
                                                                                         <Text>
                                                                                             Fast Line
@@ -2182,7 +2149,7 @@ const Main = () => {
                                                                                             Darken Lines
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="gater3">
+                                                                                    <Item key="gater3" textValue="Gater3">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             Gater3
@@ -2194,7 +2161,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="deh264_real">
+                                                                                    <Item key="deh264_real" textValue="DeH264 Real">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             DeH264 Real
@@ -2205,7 +2172,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="deh264_span">
+                                                                                    <Item key="deh264_span" textValue="DeH264 Span">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             DeH264 Span
@@ -2216,7 +2183,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="hurrdeblur">
+                                                                                    <Item key="hurrdeblur" textValue="HurrDeblur">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             HurrDeblur
@@ -2229,7 +2196,7 @@ const Main = () => {
                                                                                     </Item>
                                                                                 </Section>
                                                                                 <Section title="NVIDIA RTX GPUs">
-                                                                                    <Item key="scunet-tensorrt">
+                                                                                    <Item key="scunet-tensorrt" textValue="SCUNet TensorRT">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             SCUNet
@@ -2243,7 +2210,7 @@ const Main = () => {
                                                                                             HUNGRY!
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="anime1080fixer-tensorrt">
+                                                                                    <Item key="anime1080fixer-tensorrt" textValue="Anime Fixer TensorRT">
                                                                                         <Gauge5 />
                                                                                         <Text>
                                                                                             Anime Fixer
@@ -2257,7 +2224,7 @@ const Main = () => {
                                                                                             compressions
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="fastlinedarken-tensorrt">
+                                                                                    <Item key="fastlinedarken-tensorrt" textValue="Fast Line Darken TensorRT">
                                                                                         <Gauge5 />
                                                                                         <Text>
                                                                                             Fast Line
@@ -2269,7 +2236,7 @@ const Main = () => {
                                                                                             Darken Lines
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="deh264_real-tensorrt">
+                                                                                    <Item key="deh264_real-tensorrt" textValue="DeH264 Real TensorRT">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             DeH264 Real
@@ -2281,7 +2248,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="deh264_span-tensorrt">
+                                                                                    <Item key="deh264_span-tensorrt" textValue="DeH264 Span TensorRT">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             DeH264 Span
@@ -2293,7 +2260,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="hurrdeblur-tensorrt">
+                                                                                    <Item key="hurrdeblur-tensorrt" textValue="HurrDeblur TensorRT">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             HurrDeblur
@@ -2307,7 +2274,7 @@ const Main = () => {
                                                                                     </Item>
                                                                                 </Section>
                                                                                 <Section title="ALL GPUS">
-                                                                                    <Item key="anime1080fixer-directml">
+                                                                                    <Item key="anime1080fixer-directml" textValue="Anime Fixer DirectML">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             Anime Fixer
@@ -2321,7 +2288,7 @@ const Main = () => {
                                                                                             compressions
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="gater3-directml">
+                                                                                    <Item key="gater3-directml" textValue="Gater3 DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             Gater3
@@ -2334,7 +2301,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="deh264_real-directml">
+                                                                                    <Item key="deh264_real-directml" textValue="DeH264 Real DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             DeH264 Real
@@ -2346,7 +2313,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="deh264_span-directml">
+                                                                                    <Item key="deh264_span-directml" textValue="DeH264 Span DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             DeH264 Span
@@ -2358,7 +2325,7 @@ const Main = () => {
                                                                                             Artifacts
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="hurrdeblur-directml">
+                                                                                    <Item key="hurrdeblur-directml" textValue="HurrDeblur DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             HurrDeblur
@@ -2722,7 +2689,7 @@ const Main = () => {
                                                                                     width={"100%"}
                                                                                 >
                                                                                     <Section title="NVIDIA GPUs">
-                                                                                        <Item key="rife4.25-heavy">
+                                                                                        <Item key="rife4.25-heavy" textValue="Rife 4.25 Heavy CUDA">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2734,7 +2701,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.25">
+                                                                                        <Item key="rife4.25" textValue="Rife 4.25 CUDA">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2745,7 +2712,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.25-lite">
+                                                                                        <Item key="rife4.25-lite" textValue="Rife 4.25 Lite CUDA">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2757,7 +2724,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.22">
+                                                                                        <Item key="rife4.22" textValue="Rife 4.22 CUDA">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2768,7 +2735,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.22-lite">
+                                                                                        <Item key="rife4.22-lite" textValue="Rife 4.22 Lite CUDA">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2780,7 +2747,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife_elexor">
+                                                                                        <Item key="rife_elexor" textValue="Rife 4.7 Elexor CUDA">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Rife 4.7
@@ -2794,7 +2761,7 @@ const Main = () => {
                                                                                                 movements
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.6">
+                                                                                        <Item key="rife4.6" textValue="Rife 4.6 CUDA">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 Rife 4.6
@@ -2804,7 +2771,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="gmfss">
+                                                                                        <Item key="gmfss" textValue="GMFSS CUDA">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 GMFSS
@@ -2821,7 +2788,7 @@ const Main = () => {
                                                                                         </Item>
                                                                                     </Section>
                                                                                     <Section title="NVIDIA RTX GPUs">
-                                                                                        <Item key="rife4.25-heavy-tensorrt">
+                                                                                        <Item key="rife4.25-heavy-tensorrt" textValue="Rife 4.25 Heavy TensorRT">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2833,7 +2800,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.25-tensorrt">
+                                                                                        <Item key="rife4.25-tensorrt" textValue="Rife 4.25 TensorRT">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2844,7 +2811,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.25-lite-tensorrt">
+                                                                                        <Item key="rife4.25-lite-tensorrt" textValue="Rife 4.25 Lite TensorRT">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2856,7 +2823,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.22-tensorrt">
+                                                                                        <Item key="rife4.22-tensorrt" textValue="Rife 4.22 TensorRT">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2867,7 +2834,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.22-lite-tensorrt">
+                                                                                        <Item key="rife4.22-lite-tensorrt" textValue="Rife 4.22 Lite TensorRT">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2879,7 +2846,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife_elexor-tensorrt">
+                                                                                        <Item key="rife_elexor-tensorrt" textValue="Rife 4.7 Elexor TensorRT">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 Rife 4.7
@@ -2893,7 +2860,7 @@ const Main = () => {
                                                                                                 movements
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.6-tensorrt">
+                                                                                        <Item key="rife4.6-tensorrt" textValue="Rife 4.6 TensorRT">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 Rife 4.6
@@ -2905,7 +2872,7 @@ const Main = () => {
                                                                                         </Item>
                                                                                     </Section>
                                                                                     <Section title="ALL GPUS">
-                                                                                        <Item key="rife4.22-ncnn">
+                                                                                        <Item key="rife4.22-ncnn" textValue="Rife 4.22 NCNN">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2916,7 +2883,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.22-lite-ncnn">
+                                                                                        <Item key="rife4.22-lite-ncnn" textValue="Rife 4.22 Lite NCNN">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2928,7 +2895,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.18-ncnn">
+                                                                                        <Item key="rife4.18-ncnn" textValue="Rife 4.18 NCNN">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Rife
@@ -2939,7 +2906,7 @@ const Main = () => {
                                                                                                 Universal
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="rife4.6-ncnn">
+                                                                                        <Item key="rife4.6-ncnn" textValue="Rife 4.6 NCNN">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Rife 4.6
@@ -3122,7 +3089,7 @@ const Main = () => {
                                                                                 width={"100%"}
                                                                             >
                                                                                 <Section title="NVIDIA GPUs">
-                                                                                    <Item key="fallin_soft">
+                                                                                    <Item key="fallin_soft" textValue="Fallin Soft CUDA">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             Fallin Soft
@@ -3132,7 +3099,7 @@ const Main = () => {
                                                                                         </Text>
                                                                                     </Item>
 
-                                                                                    <Item key="fallin_strong">
+                                                                                    <Item key="fallin_strong" textValue="Fallin Strong CUDA">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             Fallin
@@ -3144,7 +3111,7 @@ const Main = () => {
                                                                                     </Item>
 
 
-                                                                                    <Item key="shufflecugan">
+                                                                                    <Item key="shufflecugan" textValue="ShuffleCugan CUDA">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             ShuffleCugan
@@ -3154,7 +3121,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="compact">
+                                                                                    <Item key="compact" textValue="Compact CUDA">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             Compact Cuda
@@ -3163,7 +3130,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="ultracompact">
+                                                                                    <Item key="ultracompact" textValue="UltraCompact CUDA">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             UltraCompact
@@ -3173,7 +3140,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="superultracompact">
+                                                                                    <Item key="superultracompact" textValue="SuperUltraCompact CUDA">
                                                                                         <Gauge4 />
                                                                                         <Text>
                                                                                             SuperUltraCompact
@@ -3183,7 +3150,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="aniscale2">
+                                                                                    <Item key="aniscale2" textValue="AniScale2 CUDA">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             AniScale2
@@ -3193,7 +3160,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="open-proteus">
+                                                                                    <Item key="open-proteus" textValue="Open Proteus CUDA">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             Open Proteus
@@ -3204,7 +3171,7 @@ const Main = () => {
                                                                                             Games / CGI
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="animesr">
+                                                                                    <Item key="animesr" textValue="AnimeSR CUDA">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             AnimeSR
@@ -3216,7 +3183,7 @@ const Main = () => {
                                                                                     </Item>
                                                                                 </Section>
                                                                                 <Section title="NVIDIA RTX GPUs">
-                                                                                    <Item key="fallin_soft-tensorrt">
+                                                                                    <Item key="fallin_soft-tensorrt" textValue="Fallin Soft TensorRT">
                                                                                         <Gauge4 />
                                                                                         <Text>
                                                                                             Fallin Soft
@@ -3227,7 +3194,7 @@ const Main = () => {
                                                                                         </Text>
                                                                                     </Item>
 
-                                                                                    <Item key="fallin_strong-tensorrt">
+                                                                                    <Item key="fallin_strong-tensorrt" textValue="Fallin Strong TensorRT">
                                                                                         <Gauge5 />
                                                                                         <Text>
                                                                                             Fallin
@@ -3239,7 +3206,7 @@ const Main = () => {
                                                                                         </Text>
                                                                                     </Item>
 
-                                                                                    <Item key="shufflecugan-tensorrt">
+                                                                                    <Item key="shufflecugan-tensorrt" textValue="ShuffleCugan TensorRT">
                                                                                         <Gauge4 />
                                                                                         <Text>
                                                                                             ShuffleCugan
@@ -3249,7 +3216,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="compact-tensorrt">
+                                                                                    <Item key="compact-tensorrt" textValue="Compact TensorRT">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             Compact
@@ -3259,7 +3226,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="ultracompact-tensorrt">
+                                                                                    <Item key="ultracompact-tensorrt" textValue="UltraCompact TensorRT">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             UltraCompact
@@ -3269,7 +3236,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="superultracompact-tensorrt">
+                                                                                    <Item key="superultracompact-tensorrt" textValue="SuperUltraCompact TensorRT">
                                                                                         <Gauge5 />
                                                                                         <Text>
                                                                                             SuperUltraCompact
@@ -3279,7 +3246,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="aniscale2-tensorrt">
+                                                                                    <Item key="aniscale2-tensorrt" textValue="AniScale2 TensorRT">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             AniScale2
@@ -3289,7 +3256,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="open-proteus-tensorrt">
+                                                                                    <Item key="open-proteus-tensorrt" textValue="Open Proteus TensorRT">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             Open Proteus
@@ -3300,7 +3267,7 @@ const Main = () => {
                                                                                             Games / CGI
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="rtmosr-tensorrt">
+                                                                                    <Item key="rtmosr-tensorrt" textValue="Rtmosr V2 TensorRT">
                                                                                         <Gauge5 />
                                                                                         <Text>
                                                                                             Rtmosr V2
@@ -3310,7 +3277,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="animesr-tensorrt">
+                                                                                    <Item key="animesr-tensorrt" textValue="AnimeSR TensorRT">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             AnimeSR
@@ -3322,7 +3289,7 @@ const Main = () => {
                                                                                     </Item>
                                                                                 </Section>
                                                                                 <Section title="All GPUs">
-                                                                                    <Item key="span-directml">
+                                                                                    <Item key="span-directml" textValue="SPAN DirectML">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             SPAN
@@ -3332,7 +3299,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="compact-directml">
+                                                                                    <Item key="compact-directml" textValue="Compact DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             Compact
@@ -3342,7 +3309,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="ultracompact-directml">
+                                                                                    <Item key="ultracompact-directml" textValue="UltraCompact DirectML">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             UltraCompact
@@ -3352,7 +3319,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="superultracompact-directml">
+                                                                                    <Item key="superultracompact-directml" textValue="SuperUltraCompact DirectML">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             SuperUltraCompact
@@ -3362,7 +3329,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="span-ncnn">
+                                                                                    <Item key="span-ncnn" textValue="SPAN NCNN">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             SPAN NCNN
@@ -3371,7 +3338,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="shufflecugan-ncnn">
+                                                                                    <Item key="shufflecugan-ncnn" textValue="ShuffleCugan NCNN">
                                                                                         <Gauge2 />
                                                                                         <Text>
                                                                                             ShuffleCugan
@@ -3381,7 +3348,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="aniscale2-directml">
+                                                                                    <Item key="aniscale2-directml" textValue="AniScale2 DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             AniScale2
@@ -3391,7 +3358,7 @@ const Main = () => {
                                                                                             Anime
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="open-proteus-directml">
+                                                                                    <Item key="open-proteus-directml" textValue="Open Proteus DirectML">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             Open Proteus
@@ -3402,7 +3369,7 @@ const Main = () => {
                                                                                             Games / CGI
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="rtmosr-directml">
+                                                                                    <Item key="rtmosr-directml" textValue="Rtmosr V2 DirectML">
                                                                                         <Gauge3 />
                                                                                         <Text>
                                                                                             Rtmosr V2
@@ -3690,89 +3657,27 @@ const Main = () => {
                                                                                     width={"100%"}
                                                                                 >
                                                                                     <Section title="16:9 Resolutions">
-                                                                                        <Item key="1280x720">
-                                                                                            <Text>
-                                                                                                1280×720 (HD)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="1920x1080">
-                                                                                            <Text>
-                                                                                                1920×1080 (Full HD)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="2560x1440">
-                                                                                            <Text>
-                                                                                                2560×1440 (2K)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="3840x2160">
-                                                                                            <Text>
-                                                                                                3840×2160 (4K)
-                                                                                            </Text>
-                                                                                        </Item>
+                                                                                        <Item key="1280x720">1280×720 (HD)</Item>
+                                                                                        <Item key="1920x1080">1920×1080 (Full HD)</Item>
+                                                                                        <Item key="2560x1440">2560×1440 (2K)</Item>
+                                                                                        <Item key="3840x2160">3840×2160 (4K)</Item>
                                                                                     </Section>
                                                                                     <Section title="21:9 Resolutions">
-
-                                                                                        <Item key="1720x720">
-                                                                                            <Text>
-                                                                                                1720×720 (Ultrawide HD)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="2560x1080">
-                                                                                            <Text>
-                                                                                                2560×1080 (Ultrawide FHD)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="3440x1440">
-                                                                                            <Text>
-                                                                                                3440×1440 (Ultrawide 2K)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="5120x2160">
-                                                                                            <Text>
-                                                                                                5120×2160 (Ultrawide 4K)
-                                                                                            </Text>
-                                                                                        </Item>
+                                                                                        <Item key="1720x720">1720×720 (Ultrawide HD)</Item>
+                                                                                        <Item key="2560x1080">2560×1080 (Ultrawide FHD)</Item>
+                                                                                        <Item key="3440x1440">3440×1440 (Ultrawide 2K)</Item>
+                                                                                        <Item key="5120x2160">5120×2160 (Ultrawide 4K)</Item>
                                                                                     </Section>
                                                                                     <Section title="32:9 Resolutions">
-
-                                                                                        <Item key="2560x720">
-                                                                                            <Text>
-                                                                                                2560×720 (Super Ultrawide HD)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="3840x1080">
-                                                                                            <Text>
-                                                                                                3840×1080 (Super Ultrawide FHD)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="5120x1440">
-                                                                                            <Text>
-                                                                                                5120×1440 (Super Ultrawide 2K)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="7680x2160">
-                                                                                            <Text>
-                                                                                                7680×2160 (Super Ultrawide 4K)
-                                                                                            </Text>
-                                                                                        </Item>
+                                                                                        <Item key="2560x720">2560×720 (Super Ultrawide HD)</Item>
+                                                                                        <Item key="3840x1080">3840×1080 (Super Ultrawide FHD)</Item>
+                                                                                        <Item key="5120x1440">5120×1440 (Super Ultrawide 2K)</Item>
+                                                                                        <Item key="7680x2160">7680×2160 (Super Ultrawide 4K)</Item>
                                                                                     </Section>
                                                                                     <Section title="4:3 Resolutions">
-                                                                                        <Item key="1024x768">
-                                                                                            <Text>
-                                                                                                1024×768 (XGA)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="1600x1200">
-                                                                                            <Text>
-                                                                                                1600×1200 (UXGA)
-                                                                                            </Text>
-                                                                                        </Item>
-                                                                                        <Item key="2048x1536">
-                                                                                            <Text>
-                                                                                                2048×1536 (QXGA)
-                                                                                            </Text>
-                                                                                        </Item>
+                                                                                        <Item key="1024x768">1024×768 (XGA)</Item>
+                                                                                        <Item key="1600x1200">1600×1200 (UXGA)</Item>
+                                                                                        <Item key="2048x1536">2048×1536 (QXGA)</Item>
                                                                                     </Section>
                                                                                 </Picker>
                                                                             </Flex>
@@ -4360,7 +4265,7 @@ const Main = () => {
                                                                                     width="100%"
                                                                                 >
                                                                                     <Section title="NVIDIA GPUs">
-                                                                                        <Item key="og_distill_small_v2">
+                                                                                        <Item key="og_distill_small_v2" textValue="OG Distilled Small V2 CUDA">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 OG
@@ -4377,7 +4282,7 @@ const Main = () => {
                                                                                                 accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_distill_base_v2">
+                                                                                        <Item key="og_distill_base_v2" textValue="OG Distilled Base V2 CUDA">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 OG
@@ -4394,7 +4299,7 @@ const Main = () => {
                                                                                                 accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_distill_large_v2">
+                                                                                        <Item key="og_distill_large_v2" textValue="OG Distilled Large V2 CUDA">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 OG
@@ -4411,7 +4316,7 @@ const Main = () => {
                                                                                                 accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_small_v2">
+                                                                                        <Item key="og_small_v2" textValue="OG Depth Anything V2 Small CUDA">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 OG Depth
@@ -4428,7 +4333,7 @@ const Main = () => {
                                                                                                 accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_base_v2">
+                                                                                        <Item key="og_base_v2" textValue="OG Depth Anything V2 Base CUDA">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 OG Depth
@@ -4445,7 +4350,7 @@ const Main = () => {
                                                                                                 accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_large_v2">
+                                                                                        <Item key="og_large_v2" textValue="OG Depth Anything V2 Large CUDA">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 ( DEMO )
@@ -4463,7 +4368,7 @@ const Main = () => {
                                                                                                 accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_giant_v2">
+                                                                                        <Item key="og_giant_v2" textValue="OG Depth Anything V2 Giant CUDA">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 OG Depth Anything V2 Giant Cuda
@@ -4472,7 +4377,7 @@ const Main = () => {
                                                                                                 Original Paper implementation / Best model accuracy / VERY SLOW / Requires 3090/4000/5000
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_small_v2">
+                                                                                        <Item key="distill_small_v2" textValue="Distilled Small V2 CUDA">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 Distilled
@@ -4490,7 +4395,7 @@ const Main = () => {
                                                                                                 /
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_base_v2">
+                                                                                        <Item key="distill_base_v2" textValue="Distilled Base V2 CUDA">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Distilled
@@ -4508,7 +4413,7 @@ const Main = () => {
                                                                                                 /
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_large_v2">
+                                                                                        <Item key="distill_large_v2" textValue="Distilled Large V2 CUDA">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 ( DEMO )
@@ -4529,7 +4434,7 @@ const Main = () => {
                                                                                         </Item>
                                                                                     </Section>
                                                                                     <Section title="NVIDIA RTX GPUs">
-                                                                                        <Item key="small_v2-tensorrt">
+                                                                                        <Item key="small_v2-tensorrt" textValue="Depth Anything V2 Small TensorRT">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 Depth
@@ -4545,7 +4450,7 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="base_v2-tensorrt">
+                                                                                        <Item key="base_v2-tensorrt" textValue="Depth Anything V2 Base TensorRT">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Depth
@@ -4561,7 +4466,7 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="large_v2-tensorrt">
+                                                                                        <Item key="large_v2-tensorrt" textValue="Depth Anything V2 Large TensorRT">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Depth
@@ -4577,7 +4482,7 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_small_v2-tensorrt">
+                                                                                        <Item key="distill_small_v2-tensorrt" textValue="Distilled Small V2 TensorRT">
                                                                                             <Gauge4 />
                                                                                             <Text>
                                                                                                 Distilled Small V2 TensorRT
@@ -4586,7 +4491,7 @@ const Main = () => {
                                                                                                 Optimized for speed / TensorRT / 5-10x Faster / Mediocre Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_base_v2-tensorrt">
+                                                                                        <Item key="distill_base_v2-tensorrt" textValue="Distilled Base V2 TensorRT">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Distilled Base V2 TensorRT
@@ -4595,7 +4500,7 @@ const Main = () => {
                                                                                                 Optimized for speed / TensorRT / 5-10x Faster / Mediocre Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_large_v2-tensorrt">
+                                                                                        <Item key="distill_large_v2-tensorrt" textValue="Distilled Large V2 TensorRT">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Distilled Large V2 TensorRT
@@ -4604,7 +4509,7 @@ const Main = () => {
                                                                                                 Optimized for speed / TensorRT / 5-10x Faster / Mediocre Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_small_v2-tensorrt">
+                                                                                        <Item key="og_small_v2-tensorrt" textValue="OG Depth Anything V2 Small TensorRT">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 OG Depth Anything V2 Small TensorRT
@@ -4613,7 +4518,7 @@ const Main = () => {
                                                                                                 Original Paper implementation / TensorRT / Better model accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_base_v2-tensorrt">
+                                                                                        <Item key="og_base_v2-tensorrt" textValue="OG Depth Anything V2 Base TensorRT">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 OG Depth Anything V2 Base TensorRT
@@ -4622,7 +4527,7 @@ const Main = () => {
                                                                                                 Original Paper implementation / TensorRT / Better model accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_large_v2-tensorrt">
+                                                                                        <Item key="og_large_v2-tensorrt" textValue="OG Depth Anything V2 Large TensorRT">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 OG Depth Anything V2 Large TensorRT
@@ -4631,7 +4536,7 @@ const Main = () => {
                                                                                                 Original Paper implementation / TensorRT / Better model accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_distill_small_v2-tensorrt">
+                                                                                        <Item key="og_distill_small_v2-tensorrt" textValue="OG Distilled Small V2 TensorRT">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 OG Distilled Small V2 TensorRT
@@ -4640,7 +4545,7 @@ const Main = () => {
                                                                                                 Original Paper implementation / TensorRT / Better model accuracy
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="og_distill_base_v2-tensorrt">
+                                                                                        <Item key="og_distill_base_v2-tensorrt" textValue="OG Distilled Base V2 TensorRT">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 OG Distilled Base V2 TensorRT
@@ -4651,7 +4556,7 @@ const Main = () => {
                                                                                         </Item>
                                                                                     </Section>
                                                                                     <Section title="ALL GPUS">
-                                                                                        <Item key="small_v2-directml">
+                                                                                        <Item key="small_v2-directml" textValue="Depth Anything V2 Small DirectML">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Depth
@@ -4666,7 +4571,7 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="base_v2-directml">
+                                                                                        <Item key="base_v2-directml" textValue="Depth Anything V2 Base DirectML">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Depth
@@ -4681,7 +4586,7 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="large_v2-directml">
+                                                                                        <Item key="large_v2-directml" textValue="Depth Anything V2 Large DirectML">
 
                                                                                             <Gauge1 />
                                                                                             <Text>
@@ -4697,7 +4602,7 @@ const Main = () => {
                                                                                                 Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_small_v2-directml">
+                                                                                        <Item key="distill_small_v2-directml" textValue="Distilled Small V2 DirectML">
                                                                                             <Gauge2 />
                                                                                             <Text>
                                                                                                 Distilled Small V2 DirectML
@@ -4706,7 +4611,7 @@ const Main = () => {
                                                                                                 Optimized for speed / DirectML / Mediocre Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_base_v2-directml">
+                                                                                        <Item key="distill_base_v2-directml" textValue="Distilled Base V2 DirectML">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Distilled Base V2 DirectML
@@ -4715,7 +4620,7 @@ const Main = () => {
                                                                                                 Optimized for speed / DirectML / Mediocre Quality
                                                                                             </Text>
                                                                                         </Item>
-                                                                                        <Item key="distill_large_v2-directml">
+                                                                                        <Item key="distill_large_v2-directml" textValue="Distilled Large V2 DirectML">
                                                                                             <Gauge1 />
                                                                                             <Text>
                                                                                                 Distilled Large V2 DirectML
@@ -4769,14 +4674,14 @@ const Main = () => {
                                                                                     )}
                                                                                     width="100%"
                                                                                 >
-                                                                                    <Item key="low">
+                                                                                    <Item key="low" textValue="Low Quality">
                                                                                         <Gauge5 />
                                                                                         <Text>Low</Text>
                                                                                         <Text slot="description">
                                                                                             518x518
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="medium">
+                                                                                    <Item key="medium" textValue="Medium Quality">
                                                                                         <Gauge4 />
                                                                                         <Text>
                                                                                             Medium
@@ -4788,7 +4693,7 @@ const Main = () => {
                                                                                             recommended
                                                                                         </Text>
                                                                                     </Item>
-                                                                                    <Item key="high">
+                                                                                    <Item key="high" textValue="High Quality">
                                                                                         <Gauge1 />
                                                                                         <Text>
                                                                                             High
@@ -4981,7 +4886,7 @@ const Main = () => {
                                                                                     width="100%"
                                                                                 >
                                                                                     <Section title="NVIDIA GPUs">
-                                                                                        <Item key="anime">
+                                                                                        <Item key="anime" textValue="Anime CUDA">
                                                                                             <Gauge3 />
                                                                                             <Text>
                                                                                                 Anime
@@ -4990,7 +4895,7 @@ const Main = () => {
                                                                                         </Item>
                                                                                     </Section>
                                                                                     <Section title="NVIDIA RTX">
-                                                                                        <Item key="anime-tensorrt">
+                                                                                        <Item key="anime-tensorrt" textValue="Anime TensorRT">
                                                                                             <Gauge5 />
                                                                                             <Text>
                                                                                                 Anime
@@ -5364,14 +5269,14 @@ const Main = () => {
                                                                     )}
                                                                     width="100%"
                                                                 >
-                                                                    <Item key="true">
+                                                                    <Item key="true" textValue="FP16 Precision">
                                                                         <Gauge5 />
                                                                         <Text>FP16</Text>
                                                                         <Text slot="description">
                                                                             Everyone should prefer this.
                                                                         </Text>
                                                                     </Item>
-                                                                    <Item key="false">
+                                                                    <Item key="false" textValue="FP32 Precision">
                                                                         <Gauge1 />
                                                                         <Text>FP32</Text>
                                                                         <Text slot="description">
@@ -5395,14 +5300,14 @@ const Main = () => {
                                                                     width="100%"
                                                                 >
                                                                     <Section title="All CPUs">
-                                                                        <Item key="x264">
+                                                                        <Item key="x264" textValue="x264">
                                                                             <Gauge5 />
                                                                             <Text>x264</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="x264_10bit">
+                                                                        <Item key="x264_10bit" textValue="x264 10 Bit">
                                                                             <Gauge4 />
                                                                             <Text>x264 10 Bit</Text>
                                                                             <Text slot="description">
@@ -5410,14 +5315,14 @@ const Main = () => {
                                                                                 Bit Depth
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="x264_animation">
+                                                                        <Item key="x264_animation" textValue="x264 Animation">
                                                                             <Gauge5 />
                                                                             <Text>x264 Animation</Text>
                                                                             <Text slot="description">
                                                                                 Anime
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="x264_animation_10bit">
+                                                                        <Item key="x264_animation_10bit" textValue="x264 Animation 10 Bit">
                                                                             <Gauge1 />
                                                                             <Text>
                                                                                 x264 Animation 10 Bit
@@ -5427,14 +5332,14 @@ const Main = () => {
                                                                                 Depth
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="x265">
+                                                                        <Item key="x265" textValue="x265">
                                                                             <Gauge4 />
                                                                             <Text>x265</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="x265_10bit">
+                                                                        <Item key="x265_10bit" textValue="x265 10 Bit">
                                                                             <Gauge3 />
                                                                             <Text>x265 10 Bit</Text>
                                                                             <Text slot="description">
@@ -5442,7 +5347,7 @@ const Main = () => {
                                                                                 Bit Depth
                                                                             </Text>
                                                                         </Item>
-                                                                            <Item key="prores">
+                                                                            <Item key="prores" textValue="ProRes 444 HQ">
                                                                             <Gauge2 />
                                                                             <Text>ProRes 444 HQ</Text>
                                                                             <Text slot="description">
@@ -5450,7 +5355,7 @@ const Main = () => {
                                                                                 Filesizes
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="slow_x264">
+                                                                        <Item key="slow_x264" textValue="Slow x264">
                                                                             <Gauge1 />
                                                                             <Text>Slow x264</Text>
                                                                             <Text slot="description">
@@ -5458,7 +5363,7 @@ const Main = () => {
                                                                                 Small Filesizes
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="slow_x265">
+                                                                        <Item key="slow_x265" textValue="Slow x265">
                                                                             <Gauge1 />
                                                                             <Text>Slow x265</Text>
                                                                             <Text slot="description">
@@ -5466,7 +5371,7 @@ const Main = () => {
                                                                                 Small Filesizes
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="lossless">
+                                                                        <Item key="lossless" textValue="Lossless">
                                                                             <Gauge5 />
                                                                             <Text>Lossless</Text>
                                                                             <Text slot="description">
@@ -5483,21 +5388,21 @@ const Main = () => {
                                                                 */}
                                                                     </Section>
                                                                     <Section title="NVIDIA GPUs">
-                                                                        <Item key="nvenc_h264">
+                                                                        <Item key="nvenc_h264" textValue="NVENC h264">
                                                                             <Gauge5 />
                                                                             <Text>NVENC h264</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="nvenc_h265">
+                                                                        <Item key="nvenc_h265" textValue="NVENC h265">
                                                                             <Gauge5 />
                                                                             <Text>NVENC h265</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="nvenc_h265_10bit">
+                                                                        <Item key="nvenc_h265_10bit" textValue="NVENC h265 10 Bit">
                                                                             <Gauge4 />
                                                                             <Text>NVENC h265 10 Bit</Text>
                                                                             <Text slot="description">
@@ -5505,7 +5410,7 @@ const Main = () => {
                                                                                 Bit Depth
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="slow_nvenc_h264">
+                                                                        <Item key="slow_nvenc_h264" textValue="Slow NVENC h264">
                                                                             <Gauge1 />
                                                                             <Text>Slow NVENC h264</Text>
                                                                             <Text slot="description">
@@ -5513,7 +5418,7 @@ const Main = () => {
                                                                                 Small Filesizes
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="slow_nvenc_h265">
+                                                                        <Item key="slow_nvenc_h265" textValue="Slow NVENC h265">
                                                                             <Gauge1 />
                                                                             <Text>Slow NVENC h265</Text>
                                                                             <Text slot="description">
@@ -5523,21 +5428,21 @@ const Main = () => {
                                                                         </Item>
                                                                     </Section>
                                                                     <Section title="AMD GPUs">
-                                                                        <Item key="h264_amf">
+                                                                        <Item key="h264_amf" textValue="AMF h264">
                                                                             <Gauge5 />
                                                                             <Text>AMF h264</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="hevc_amf">
+                                                                        <Item key="hevc_amf" textValue="AMF h265">
                                                                             <Gauge4 />
                                                                             <Text>AMF h265</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="hevc_amf_10bit">
+                                                                        <Item key="hevc_amf_10bit" textValue="AMF h265 10 Bit">
                                                                             <Gauge4 />
                                                                             <Text>AMF h265 10 Bit</Text>
                                                                             <Text slot="description">
@@ -5547,21 +5452,21 @@ const Main = () => {
                                                                         </Item>
                                                                     </Section>
                                                                     <Section title="Intel iGPUs">
-                                                                        <Item key="qsv_h264">
+                                                                        <Item key="qsv_h264" textValue="QSV h264">
                                                                             <Gauge5 />
                                                                             <Text>QSV h264</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="qsv_h265">
+                                                                        <Item key="qsv_h265" textValue="QSV h265">
                                                                             <Gauge4 />
                                                                             <Text>QSV h265</Text>
                                                                             <Text slot="description">
                                                                                 Universal
                                                                             </Text>
                                                                         </Item>
-                                                                        <Item key="qsv_h265_10bit">
+                                                                        <Item key="qsv_h265_10bit" textValue="QSV h265 10 Bit">
                                                                             <Gauge1 />
                                                                             <Text>QSV h265 10 Bit</Text>
                                                                             <Text slot="description">
@@ -5598,7 +5503,7 @@ const Main = () => {
                                                                     )}
                                                                     width="100%"
                                                                 >
-                                                                    <Item key="8bit">
+                                                                    <Item key="8bit" textValue="8 Bits Per Channel">
                                                                         <Gauge5 />
                                                                         <Text>8 Bits Per Channel</Text>
                                                                         <Text slot="description">
@@ -5606,7 +5511,7 @@ const Main = () => {
                                                                             with this
                                                                         </Text>
                                                                     </Item>
-                                                                    <Item key="16bit">
+                                                                    <Item key="16bit" textValue="16 Bits Per Channel">
                                                                         <Gauge1 />
                                                                         <Text>16 Bits Per Channel</Text>
                                                                         <Text slot="description">
@@ -5630,7 +5535,7 @@ const Main = () => {
                                                                     )}
                                                                     width="100%"
                                                                 >
-                                                                    <Item key="lossless">
+                                                                    <Item key="lossless" textValue="Lossless Pre-Render">
                                                                         <Gauge5 />
                                                                         <Text>Lossless</Text>
                                                                         <Text slot="description">
@@ -5638,7 +5543,7 @@ const Main = () => {
                                                                             2020+
                                                                         </Text>
                                                                     </Item>
-                                                                    <Item key="high">
+                                                                    <Item key="high" textValue="Quicktime Pre-Render">
                                                                         <Gauge4 />
                                                                         <Text>Quicktime</Text>
                                                                         <Text slot="description">

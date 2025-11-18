@@ -193,6 +193,19 @@ function renderActiveComp(renderMethod: string): any | string {
         app.project.renderQueue.render();
         app.project.renderQueue.showWindow(false);
 
+        var finalFile = new File(outputPath);
+        if (!finalFile.exists) {
+            var foundFiles = preRendersDir.getFiles("*" + randomId + "*.*");
+            if (foundFiles && foundFiles.length > 0) {
+                foundFiles.sort(function (a, b) {
+                    return b.modified.getTime() - a.modified.getTime();
+                });
+                finalFile = foundFiles[0] as File;
+                outputPath = finalFile.fsName;
+                outputName = finalFile.name;
+            }
+        }
+
         if (originalCompName) {
             for (var idx = 1; idx <= app.project.numItems; idx++) {
                 var item = app.project.item(idx);
@@ -470,8 +483,8 @@ export const takeAScreenshot = (output: string): boolean | string => {
             return "SCREENSHOT ERROR: No composition selected. Please open and select a composition.";
         }
 
-    var comp = app.project.activeItem as CompItem;
-    var originalCompName = comp && comp.name ? comp.name : null;
+        var comp = app.project.activeItem as CompItem;
+        var originalCompName = comp && comp.name ? comp.name : null;
 
         var outFile = new File(output);
         var outFolder = outFile.parent as Folder;
@@ -656,7 +669,7 @@ export const takeAScreenshot = (output: string): boolean | string => {
         comp.workAreaStart = originalWorkAreaStart;
         comp.workAreaDuration = originalWorkAreaDuration;
         try { (rqItem as any).remove(); } catch (eRm) { /* ignore */ }
-    try { comp.openInViewer(); } catch (eOpen3) { /* ignore */ }
+        try { comp.openInViewer(); } catch (eOpen3) { /* ignore */ }
 
         if (copied) return true;
         try {

@@ -754,7 +754,7 @@ export default function KeyframeGraphEditor() {
           <Flex direction="row" gap={8} alignItems="center">
             <Asterisk size="S" />
             <Heading level={4} margin={0}>
-              Keyframe Graph Editor ( Early Alpha )
+              Keyframe Graph Editor ( Beta )
             </Heading>
             {createGeneralContextualHelp(
               "Keyframe Graph Editor Help",

@@ -28,12 +28,6 @@ export const DEFAULT_SHORTCUTS: Record<string, ShortcutBinding> = {
         description: 'Switch to Extra tab',
         action: 'tab:Extra'
     },
-    'tab_toolbox': {
-        key: '3',
-        ctrlKey: true,
-        description: 'Switch to Toolbox tab',
-        action: 'tab:Toolbox'
-    },
     'tab_graph': {
         key: '4',
         ctrlKey: true,

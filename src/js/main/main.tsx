@@ -60,6 +60,9 @@ import Add from "@spectrum-icons/workflow/Add";
 import Delete from "@spectrum-icons/workflow/Delete";
 import Edit from "@spectrum-icons/workflow/Edit";
 import BookmarkSingle from "@spectrum-icons/workflow/BookmarkSingle";
+import Layers from "@spectrum-icons/workflow/Layers";
+import ImageProfile from "@spectrum-icons/workflow/ImageProfile";
+import Cut from "@spectrum-icons/workflow/Cut";
 
 import { child_process, fs, path } from "../lib/cep/node";
 import { evalTS } from "../lib/utils/bolt";
@@ -264,7 +267,7 @@ const Main = () => {
     const [uiScale, setUIScale] = useState<string | null>(DEFAULT.uiScale);
 
     // Tab management for swipe gestures
-    const tabKeys = ["Chain", "Extra", "Toolbox", "Graph", "Logs", "Settings", "About"];
+    const tabKeys = ["Chain", "Extra", "Graph", "Logs", "Settings", "About"];
     const [selectedTab, setSelectedTab] = useState<Key>(tabKeys[0]);
 
     const [shortcutSettings, setShortcutSettings] = useState<ShortcutSettings>(() => loadShortcutSettings());
@@ -1678,9 +1681,6 @@ const Main = () => {
                             </Item>
                             <Item key="Extra" textValue="Extra">
                                 <Effects />
-                            </Item>
-                            <Item key="Toolbox" textValue="Toolbox">
-                                <Beaker />
                             </Item>
                             <Item key="Graph" textValue="Graph">
                                 <Asterisk />
@@ -4222,7 +4222,8 @@ const Main = () => {
                                                                     onPress={() => { void startExtraTabLogic("depth"); }}
                                                                     width="100%"
                                                                 >
-                                                                    Extract Depth Map
+                                                                    <Layers />
+                                                                    <Text>Extract Depth Map</Text>
                                                                 </ActionButton>
                                                                 <DialogTrigger isDismissable>
                                                                     <TooltipTrigger delay={0}>
@@ -4827,7 +4828,8 @@ const Main = () => {
                                                                     onPress={() => { void startExtraTabLogic("background"); }}
                                                                     width="100%"
                                                                 >
-                                                                    Remove Background
+                                                                    <ImageProfile />
+                                                                    <Text>Remove Background</Text>
                                                                 </ActionButton>
                                                                 <DialogTrigger isDismissable>
                                                                     <TooltipTrigger delay={0}>
@@ -4981,7 +4983,8 @@ const Main = () => {
                                                                     onPress={() => { void startAutoCut(); }}
                                                                     width="100%"
                                                                 >
-                                                                    Auto Cut Clip
+                                                                    <Cut />
+                                                                    <Text>Auto Cut Clip</Text>
                                                                 </ActionButton>
                                                                 <DialogTrigger isDismissable>
                                                                     <TooltipTrigger delay={0}>
@@ -5054,33 +5057,31 @@ const Main = () => {
 
 
 
+                                                <ToolboxTab
+                                                    viewportZoom={viewportZoom}
+                                                    setViewportZoom={setViewportZoom}
+                                                    evalTS={evalTS}
+                                                    createGeneralContextualHelp={createGeneralContextualHelp}
+                                                    createPickerContextualHelp={createPickerContextualHelp}
+                                                    toolboxLayerLength={toolboxLayerLength}
+                                                    handleSelectionChange={handleSelectionChange}
+                                                    setToolboxLayerLength={setToolboxLayerLength}
+                                                    startAddAdjustmentLayerLogic={startAddAdjustmentLayerLogic}
+                                                    startAddNullLayerLogic={startAddNullLayerLogic}
+                                                    startAddSolidLayerLogic={startAddSolidLayerLogic}
+                                                    sortLayerMethod={sortLayerMethod}
+                                                    setSortLayerMethod={setSortLayerMethod}
+                                                    startSortLayersLogic={startSortLayersLogic}
+                                                    startSortLayersLogicWith={startSortLayersLogicWith}
+                                                    execTakeScreenshot={execTakeScreenshot}
+                                                    execPrecompose={execPrecompose}
+                                                    execClearCache={execClearCache}
+                                                    startDeduplicateLayerTimemapLogic={startDeduplicateLayerTimemapLogic}
+                                                    startTrimToWorkAreaLogic={startTrimToWorkAreaLogic}
+                                                    startFreezeOnCurrentFrameLogic={startFreezeOnCurrentFrameLogic}
+                                                />
                                             </Flex>
                                         </div>
-                                    </Item>
-                                    <Item key="Toolbox">
-                                        <ToolboxTab
-                                            viewportZoom={viewportZoom}
-                                            setViewportZoom={setViewportZoom}
-                                            evalTS={evalTS}
-                                            createGeneralContextualHelp={createGeneralContextualHelp}
-                                            createPickerContextualHelp={createPickerContextualHelp}
-                                            toolboxLayerLength={toolboxLayerLength}
-                                            handleSelectionChange={handleSelectionChange}
-                                            setToolboxLayerLength={setToolboxLayerLength}
-                                            startAddAdjustmentLayerLogic={startAddAdjustmentLayerLogic}
-                                            startAddNullLayerLogic={startAddNullLayerLogic}
-                                            startAddSolidLayerLogic={startAddSolidLayerLogic}
-                                            sortLayerMethod={sortLayerMethod}
-                                            setSortLayerMethod={setSortLayerMethod}
-                                            startSortLayersLogic={startSortLayersLogic}
-                                            startSortLayersLogicWith={startSortLayersLogicWith}
-                                            execTakeScreenshot={execTakeScreenshot}
-                                            execPrecompose={execPrecompose}
-                                            execClearCache={execClearCache}
-                                            startDeduplicateLayerTimemapLogic={startDeduplicateLayerTimemapLogic}
-                                            startTrimToWorkAreaLogic={startTrimToWorkAreaLogic}
-                                            startFreezeOnCurrentFrameLogic={startFreezeOnCurrentFrameLogic}
-                                        />
                                     </Item>
                                     <Item key="Logs">
                                         <div style={{ width: '100%' }}>

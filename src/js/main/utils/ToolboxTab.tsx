@@ -16,6 +16,14 @@ import SortOrderUp from "@spectrum-icons/workflow/SortOrderUp";
 import SortOrderDown from "@spectrum-icons/workflow/SortOrderDown";
 import Wrench from "@spectrum-icons/workflow/Wrench";
 import Download from "@spectrum-icons/workflow/Download";
+import Camera from "@spectrum-icons/workflow/Camera";
+import Box from "@spectrum-icons/workflow/Box";
+import Delete from "@spectrum-icons/workflow/Delete";
+import Crop from "@spectrum-icons/workflow/Crop";
+import Pause from "@spectrum-icons/workflow/Pause";
+import Image from "@spectrum-icons/workflow/Image";
+import Anchor from "@spectrum-icons/workflow/Anchor";
+import Remove from "@spectrum-icons/workflow/Remove";
 
 
 import type { Scripts } from "@esTypes/index";
@@ -147,12 +155,14 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                     onPress={execTakeScreenshot}
                                     width="100%"
                                 >
+                                    <Camera />
                                     <Text>Take Screenshot</Text>
                                 </ActionButton>
                                 <ActionButton
                                     onPress={execPrecompose}
                                     width="100%"
                                 >
+                                    <Box />
                                     <Text>PreCompose</Text>
                                 </ActionButton>
                             </Flex>
@@ -161,12 +171,14 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                     onPress={execClearCache}
                                     width="100%"
                                 >
+                                    <Delete />
                                     <Text>Purge Cache</Text>
                                 </ActionButton>
                                 <ActionButton
                                     onPress={startDeduplicateLayerTimemapLogic}
                                     width="100%"
                                 >
+                                    <Remove />
                                     <Text>Remove Dead Frames</Text>
                                 </ActionButton>
                             </Flex>
@@ -175,12 +187,14 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                     onPress={startTrimToWorkAreaLogic}
                                     width="100%"
                                 >
+                                    <Crop />
                                     <Text>Trim to Work Area</Text>
                                 </ActionButton>
                                 <ActionButton
                                     onPress={startFreezeOnCurrentFrameLogic}
                                     width="100%"
                                 >
+                                    <Pause />
                                     <Text>Freeze on Current Frame</Text>
                                 </ActionButton>
                             </Flex>
@@ -251,19 +265,22 @@ const ToolboxTab: React.FC<ToolboxTabProps> = ({
                                     onPress={startAddAdjustmentLayerLogic}
                                     width="100%"
                                 >
-                                    Adjustment
+                                    <Layers />
+                                    <Text>Adjustment</Text>
                                 </ActionButton>
                                 <ActionButton
                                     onPress={() => { void startAddNullLayerLogic(); }}
                                     width="100%"
                                 >
-                                    Null
+                                    <Anchor />
+                                    <Text>Null</Text>
                                 </ActionButton>
                                 <ActionButton
                                     onPress={() => { void startAddSolidLayerLogic(); }}
                                     width="100%"
                                 >
-                                    Solid
+                                    <Image />
+                                    <Text>Solid</Text>
                                 </ActionButton>
                             </Flex>
                         </Flex>

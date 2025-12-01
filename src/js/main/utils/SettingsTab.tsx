@@ -30,7 +30,6 @@ import type { ShortcutSettings } from "./shortcutSettings";
 interface SettingsTabProps {
     startOfflineMode: () => void;
     OpenTASFolder: () => void;
-    openChangelog: () => void;
     handleReinstallTAS: () => void;
     createGeneralContextualHelp: (title: string, content: React.ReactNode) => React.ReactNode;
 
@@ -60,7 +59,6 @@ interface SettingsTabProps {
 export const SettingsTab: React.FC<SettingsTabProps> = ({
     startOfflineMode,
     OpenTASFolder,
-    openChangelog,
     handleReinstallTAS,
     createGeneralContextualHelp,
     enablePreview,
@@ -163,18 +161,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                             >
                                 Open TAS Folder
                             </ActionButton>
-                            <ActionButton
-                                onPress={openChangelog}
-                                width="100%"
-                            >
-                                Changelogs
-                            </ActionButton>
-                        </Flex>
-                        <Flex
-                            direction="row"
-                            gap={8}
-                            alignItems="center"
-                        >
                             <DialogTrigger>
                                 <ActionButton width="100%">
                                     Reinstall TAS

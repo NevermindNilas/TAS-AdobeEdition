@@ -14,6 +14,7 @@ import {
     TagGroup,
     StatusLight,
     ActionGroup,
+    ActionButton,
     Item,
     InlineAlert,
     Content,
@@ -25,9 +26,13 @@ import Help from "@spectrum-icons/workflow/Help";
 import Gauge1 from "@spectrum-icons/workflow/Gauge1";
 import Gauge4 from "@spectrum-icons/workflow/Gauge4";
 import Gauge5 from "@spectrum-icons/workflow/Gauge5";
+import NewItem from "@spectrum-icons/workflow/NewItem";
+import LinkOut from "@spectrum-icons/workflow/LinkOut";
+import Refresh from "@spectrum-icons/workflow/Refresh";
 
 import { socialsPanel, openBuyMeACoffee, openGitHubSponsors, openReportIssue, openParameters } from "./Socials";
 import { useSupporterUsernames } from "./supporterUtils";
+import { useChangelog, formatReleaseDate } from "./changelogUtils";
 
 const DisclosureTitleContent = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
     <Flex alignItems="center" gap="size-100">
@@ -73,6 +78,192 @@ const SupportersSection = React.memo(() => {
                 </TagGroup>
             ) : (
                 <StatusLight variant="neutral">No supporters yet</StatusLight>
+            )}
+        </Flex>
+    );
+});
+
+
+const renderMarkdownText = (text: string): React.ReactNode => {
+    const parts: React.ReactNode[] = [];
+    let remaining = text;
+    let key = 0;
+
+    while (remaining.length > 0) {
+        const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/);
+        if (boldMatch) {
+            parts.push(<strong key={key++}>{boldMatch[1]}</strong>);
+            remaining = remaining.slice(boldMatch[0].length);
+            continue;
+        }
+
+        const codeMatch = remaining.match(/^`([^`]+)`/);
+        if (codeMatch) {
+            parts.push(
+                <code key={key++} style={{ 
+                    backgroundColor: 'var(--spectrum-global-color-gray-200)', 
+                    padding: '1px 4px', 
+                    borderRadius: '3px',
+                    fontSize: '12px'
+                }}>
+                    {codeMatch[1]}
+                </code>
+            );
+            remaining = remaining.slice(codeMatch[0].length);
+            continue;
+        }
+
+        const italicMatch = remaining.match(/^\*([^*]+)\*/);
+        if (italicMatch) {
+            parts.push(<em key={key++}>{italicMatch[1]}</em>);
+            remaining = remaining.slice(italicMatch[0].length);
+            continue;
+        }
+
+        const nextSpecial = remaining.search(/[*`]/);
+        if (nextSpecial === -1) {
+            parts.push(remaining);
+            break;
+        } else if (nextSpecial === 0) {
+            parts.push(remaining[0]);
+            remaining = remaining.slice(1);
+        } else {
+            parts.push(remaining.slice(0, nextSpecial));
+            remaining = remaining.slice(nextSpecial);
+        }
+    }
+
+    return parts;
+};
+
+
+const ChangelogBody: React.FC<{ body: string }> = ({ body }) => {
+    const lines = body.split('\n');
+    const elements: React.ReactNode[] = [];
+    let key = 0;
+    let skipSection = false;
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        
+        if (!trimmed) continue;
+
+        if (trimmed.toLowerCase().includes("what's changed") || 
+            trimmed.toLowerCase().includes("whats changed")) {
+            skipSection = true;
+            continue;
+        }
+
+        if (skipSection) continue;
+        
+        if (trimmed.includes('@dependabot') || 
+            trimmed.includes('deps: bump') ||
+            trimmed.startsWith('Full Changelog:') ||
+            trimmed.startsWith('**Full Changelog**')) {
+            continue;
+        }
+
+        const headerMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
+        if (headerMatch) {
+            elements.push(
+                <Text key={key++} UNSAFE_style={{ fontWeight: 'bold', fontSize: '13px', display: 'block', marginTop: '8px', marginBottom: '4px' }}>
+                    {renderMarkdownText(headerMatch[2])}
+                </Text>
+            );
+            continue;
+        }
+
+        const boldHeaderMatch = trimmed.match(/^\*\*([^*]+)\*\*\s*$/);
+        if (boldHeaderMatch) {
+            elements.push(
+                <Text key={key++} UNSAFE_style={{ fontWeight: 'bold', fontSize: '13px', display: 'block', marginTop: '8px', marginBottom: '4px' }}>
+                    {boldHeaderMatch[1]}
+                </Text>
+            );
+            continue;
+        }
+
+        const listMatch = trimmed.match(/^[-*•]\s+(.+)$/) || trimmed.match(/^\d+\.\s+(.+)$/);
+        if (listMatch) {
+            elements.push(
+                <Text key={key++} UNSAFE_style={{ fontSize: '12px', marginLeft: '12px', display: 'block', marginBottom: '2px' }}>
+                    • {renderMarkdownText(listMatch[1])}
+                </Text>
+            );
+            continue;
+        }
+
+        if (trimmed) {
+            elements.push(
+                <Text key={key++} UNSAFE_style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
+                    {renderMarkdownText(trimmed)}
+                </Text>
+            );
+        }
+    }
+
+    return <>{elements}</>;
+};
+
+
+const WhatsNewSection = React.memo(() => {
+    const { releases, loading, error, refresh } = useChangelog(1);
+    const latestRelease = releases[0];
+
+    if (loading) {
+        return (
+            <Flex direction="row" alignItems="center" justifyContent="center" gap="size-100" marginY="size-100">
+                <ProgressCircle size="S" isIndeterminate aria-label="Loading changelog" />
+                <Text>Loading changelog…</Text>
+            </Flex>
+        );
+    }
+
+    if (error) {
+        return (
+            <Flex direction="column" alignItems="center" gap="size-100" marginY="size-100">
+                <StatusLight variant="negative">Failed to load changelog</StatusLight>
+                <ActionButton onPress={refresh} isQuiet>
+                    <Refresh size="S" />
+                    <Text>Retry</Text>
+                </ActionButton>
+            </Flex>
+        );
+    }
+
+    if (!latestRelease) {
+        return (
+            <Text UNSAFE_style={{ fontStyle: 'italic' }}>No releases found.</Text>
+        );
+    }
+
+    return (
+        <Flex direction="column" gap="size-150" marginStart="size-100">
+            <Flex direction="row" justifyContent="space-between" alignItems="center">
+                <Flex direction="row" alignItems="baseline" gap="size-100">
+                    <Text UNSAFE_style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                        v{latestRelease.version}
+                    </Text>
+                    <Text UNSAFE_style={{ fontSize: '12px', color: 'var(--spectrum-global-color-green-600)', fontWeight: '500' }}>
+                        Latest
+                    </Text>
+                    <Text UNSAFE_style={{ fontSize: '12px', color: 'var(--spectrum-global-color-gray-500)' }}>
+                        {formatReleaseDate(latestRelease.publishedAt)}
+                    </Text>
+                </Flex>
+                <ActionButton
+                    isQuiet
+                    onPress={() => window.cep.util.openURLInDefaultBrowser(latestRelease.htmlUrl)}
+                    aria-label="Open release in browser"
+                >
+                    <LinkOut size="S" />
+                </ActionButton>
+            </Flex>
+            
+            {latestRelease.body && (
+                <View marginStart="size-100">
+                    <ChangelogBody body={latestRelease.body} />
+                </View>
             )}
         </Flex>
     );
@@ -128,6 +319,18 @@ export function aboutTab(tasVersion: string) {
                 </InlineAlert>
                 <Divider size="S" />
                 <Accordion isQuiet>
+                    <Disclosure id="whats-new">
+                        <DisclosureTitle>
+                            <DisclosureTitleContent
+                                icon={<NewItem size="S" />}
+                                text="What's New"
+                            />
+                        </DisclosureTitle>
+                        <DisclosurePanel>
+                            <WhatsNewSection />
+                        </DisclosurePanel>
+                    </Disclosure>
+
                     <Disclosure id="system-requirements">
                         <DisclosureTitle>
                             <DisclosureTitleContent

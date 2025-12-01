@@ -5092,7 +5092,6 @@ const Main = () => {
                                         <SettingsTab
                                             startOfflineMode={startOfflineMode}
                                             OpenTASFolder={OpenTASFolder}
-                                            openChangelog={openChangelog}
                                             handleReinstallTAS={handleReinstallTAS}
                                             createGeneralContextualHelp={createGeneralContextualHelp}
                                             enablePreview={enablePreview}

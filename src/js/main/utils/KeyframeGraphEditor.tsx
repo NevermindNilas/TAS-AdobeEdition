@@ -496,6 +496,58 @@ export default function KeyframeGraphEditor() {
     }
   }, [canvasSize, getClosestPoint]);
 
+  const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas || canvasSize.width <= 0 || canvasSize.height <= 0) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvasSize.width / rect.width;
+      const scaleY = canvasSize.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+
+      const closestPoint = getClosestPoint(canvasX, canvasY);
+      
+      const bezier1X = point1.x / canvasSize.width;
+      const bezier1Y = 1 - point1.y / canvasSize.height;
+      const bezier2X = point2.x / canvasSize.width;
+      const bezier2Y = 1 - point2.y / canvasSize.height;
+
+      const cp1 = bezierToCanvas(bezier1X, bezier1Y);
+      const cp2 = bezierToCanvas(bezier2X, bezier2Y);
+
+      const point1Dist = Math.sqrt(Math.pow(canvasX - cp1.x, 2) + Math.pow(canvasY - cp1.y, 2));
+      const point2Dist = Math.sqrt(Math.pow(canvasX - cp2.x, 2) + Math.pow(canvasY - cp2.y, 2));
+
+      const clickThreshold = 20; // pixels
+
+      if (closestPoint === 1 && point1Dist < clickThreshold) {
+        const newPoint1 = { x: 0, y: canvasSize.height };
+        setPoint1(newPoint1);
+        
+        const x2 = Math.round(point2.x / canvasSize.width * 100) / 100;
+        const y2 = Math.round((1 - point2.y / canvasSize.height) * 100) / 100;
+        setBezierInput(`0, 0, ${x2}, ${y2}`);
+        setSelectedPreset(null);
+        setNeedsRedraw(true);
+      } else if (closestPoint === 2 && point2Dist < clickThreshold) {
+        const newPoint2 = { x: canvasSize.width, y: 0 };
+        setPoint2(newPoint2);
+        
+        const x1 = Math.round(point1.x / canvasSize.width * 100) / 100;
+        const y1 = Math.round((1 - point1.y / canvasSize.height) * 100) / 100;
+        setBezierInput(`${x1}, ${y1}, 1, 1`);
+        setSelectedPreset(null);
+        setNeedsRedraw(true);
+      }
+
+      e.preventDefault();
+    } catch (error) {
+      console.error("Error in handleDoubleClick:", error);
+    }
+  }, [canvasSize, getClosestPoint, point1, point2, bezierToCanvas]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     try {
       const canvas = canvasRef.current;
@@ -550,6 +602,26 @@ export default function KeyframeGraphEditor() {
         bezierY = Math.round(bezierY * 20) / 20;
       }
 
+      // Shift key snaps to nearest wall (horizontal or vertical)
+      if (e.shiftKey) {
+        // Calculate distances to all four walls
+        const distToLeft = clampedBezierX;      // distance to x=0
+        const distToRight = 1 - clampedBezierX; // distance to x=1
+        const distToBottom = bezierY;           // distance to y=0
+        const distToTop = 1 - bezierY;          // distance to y=1
+
+        const minHorizontalDist = Math.min(distToLeft, distToRight);
+        const minVerticalDist = Math.min(distToBottom, distToTop);
+
+        if (minHorizontalDist <= minVerticalDist) {
+          // Snap to vertical wall (left or right)
+          clampedBezierX = distToLeft < distToRight ? 0 : 1;
+        } else {
+          // Snap to horizontal wall (bottom or top)
+          bezierY = distToBottom < distToTop ? 0 : 1;
+        }
+      }
+
       const newPoint = {
         x: clampedBezierX * canvasSize.width,
         y: (1 - bezierY) * canvasSize.height
@@ -581,42 +653,6 @@ export default function KeyframeGraphEditor() {
       setNeedsRedraw(true);
     } catch (error) {
       console.error("Error in handleMouseUp:", error);
-    }
-  }, []);
-
-  const copyBezierToClipboard = useCallback(async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(bezierInput);
-          generateToast(1, "Copied to clipboard!");
-      } else {
-          const textArea = document.createElement("textarea");
-          textArea.value = bezierInput;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand("copy");
-          document.body.removeChild(textArea);
-          generateToast(1, "Copied to clipboard!");
-      }
-    } catch (error) {
-      console.error(error);
-      generateToast(2, "Failed to copy to clipboard");
-    }
-  }, [bezierInput]);
-
-  const pasteBezierFromClipboard = useCallback(async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      const values = text.split(",").map((v) => parseFloat(v.trim()));
-      if (values.length === 4 && values.every((v) => !isNaN(v))) {
-        setBezierInput(text);
-        setSelectedPreset(null);
-        generateToast(1, "Pasted from clipboard!");
-      } else {
-        generateToast(2, "Invalid bezier values in clipboard");
-      }
-    } catch (error) {
-      generateToast(2, "Failed to paste from clipboard");
     }
   }, []);
 
@@ -761,27 +797,6 @@ export default function KeyframeGraphEditor() {
     }
   }, [customPresets]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !e.shiftKey && !e.altKey) {
-        if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          copyBezierToClipboard();
-        }
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !e.shiftKey && !e.altKey) {
-        if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          pasteBezierFromClipboard();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [copyBezierToClipboard, pasteBezierFromClipboard]);
-
   const applyToAE = useCallback(async () => {
     const input = bezierInput.trim();
     const values = input.split(",").map((v) => v.trim());
@@ -853,6 +868,10 @@ export default function KeyframeGraphEditor() {
                   - Orange points indicate values outside normal [0,1] range<br />
                   - "Apply" sends curve to AE (select 2+ keyframes first)<br />
                   <br />
+                  <b>Shortcuts:</b><br />
+                  - <strong>Double-click</strong> a control point to reset it (P1→0,0 | P2→1,1)<br />
+                  - <strong>Shift+Drag</strong> to snap point to nearest wall<br />
+                  <br />
                   <strong>Note:</strong> This is an experimental feature, tested only with AE 2025<br />
                 </>
               )}
@@ -898,6 +917,7 @@ export default function KeyframeGraphEditor() {
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
+                    onDoubleClick={handleDoubleClick}
                 />
                 </div>
             </Flex>

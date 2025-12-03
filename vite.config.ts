@@ -37,8 +37,8 @@ const config = {
   debugReact,
   dir: `${__dirname}/${devDist}`,
   cepDist: cepDist,
-  zxpDir: `${__dirname}/${devDist}/zxp`,
-  zipDir: `${__dirname}/${devDist}/zip`,
+  zxpOutput: `${__dirname}/${devDist}/zxp/TAS-${cepConfig.version.replace(/\./g, "")}-AdobeEdition`,
+  zipOutput: `${__dirname}/${devDist}/zip/TAS-${cepConfig.version.replace(/\./g, "")}-AdobeEdition`,
   packages: cepConfig.installModules || [],
 };
 
